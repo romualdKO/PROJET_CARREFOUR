@@ -32,25 +32,35 @@ def login_view(request):
             user.derniere_connexion_custom = timezone.now()
             user.save()
             
-            # 🕐 POINTAGE AUTOMATIQUE D'ARRIVÉE
+            # 🕐 POINTAGE AUTOMATIQUE D'ARRIVÉE (NOUVELLE SESSION)
             today = timezone.now().date()
             current_time = timezone.now().time()
             
             # Vérifier si l'employé est dans les heures de travail
             if user.heure_debut_travail <= current_time <= user.heure_fin_travail:
+                # Importer le modèle SessionPresence
+                from .models import SessionPresence
+                
+                # Créer une nouvelle session de connexion
+                SessionPresence.objects.create(
+                    employe=user,
+                    date=today,
+                    heure_connexion=current_time
+                )
+                
                 # Créer ou récupérer la présence du jour
                 presence, created = Presence.objects.get_or_create(
                     employe=user,
                     date=today,
                     defaults={
-                        'heure_arrivee': current_time,
+                        'heure_premiere_arrivee': current_time,
                         'tolerance_retard': 60  # 1 heure par défaut
                     }
                 )
                 
-                # Si la présence existe déjà mais sans heure d'arrivée, la mettre à jour
-                if not created and not presence.heure_arrivee:
-                    presence.heure_arrivee = current_time
+                # Si c'est la première connexion du jour, enregistrer l'heure
+                if not created and not presence.heure_premiere_arrivee:
+                    presence.heure_premiere_arrivee = current_time
                     presence.save()
             
             # Redirection selon le rôle
@@ -77,21 +87,35 @@ def login_view(request):
 
 # Déconnexion
 def logout_view(request):
-    # 🕔 POINTAGE AUTOMATIQUE DE DÉPART
+    # 🕔 POINTAGE AUTOMATIQUE DE DÉPART (FERMER LA SESSION EN COURS)
     if request.user.is_authenticated:
+        from .models import SessionPresence
         today = timezone.now().date()
         current_time = timezone.now().time()
         
         try:
-            # Récupérer la présence du jour
-            presence = Presence.objects.get(employe=request.user, date=today)
+            # Trouver la dernière session active (sans heure de déconnexion)
+            session_active = SessionPresence.objects.filter(
+                employe=request.user,
+                date=today,
+                heure_deconnexion__isnull=True
+            ).last()
             
-            # Si l'employé a pointé l'arrivée mais pas encore le départ
-            if presence.heure_arrivee and not presence.heure_depart:
-                presence.heure_depart = current_time
-                presence.save()  # Le statut sera recalculé automatiquement
-        except Presence.DoesNotExist:
-            # Aucune présence pour aujourd'hui, l'employé ne s'est pas connecté pendant les heures de travail
+            if session_active:
+                # Fermer la session en enregistrant l'heure de déconnexion
+                session_active.heure_deconnexion = current_time
+                session_active.save()  # Calcule automatiquement la durée
+                
+                # Mettre à jour la présence du jour
+                try:
+                    presence = Presence.objects.get(employe=request.user, date=today)
+                    presence.heure_derniere_depart = current_time
+                    presence.save()  # Recalcule le statut automatiquement
+                except Presence.DoesNotExist:
+                    pass
+                    
+        except Exception as e:
+            # En cas d'erreur, continuer la déconnexion normalement
             pass
     
     logout(request)
@@ -1004,8 +1028,8 @@ def rh_presence_add(request):
     if request.method == 'POST':
         employe_id = request.POST.get('employe_id')
         date = request.POST.get('date')
-        heure_arrivee = request.POST.get('heure_arrivee')
-        heure_depart = request.POST.get('heure_depart')
+        heure_premiere_arrivee = request.POST.get('heure_premiere_arrivee')
+        heure_derniere_depart = request.POST.get('heure_derniere_depart')
         motif_absence = request.POST.get('motif_absence', '')
         tolerance_retard = request.POST.get('tolerance_retard', 60)
         
@@ -1014,8 +1038,8 @@ def rh_presence_add(request):
             presence = Presence.objects.create(
                 employe=employe,
                 date=date,
-                heure_arrivee=heure_arrivee if heure_arrivee else None,
-                heure_depart=heure_depart if heure_depart else None,
+                heure_premiere_arrivee=heure_premiere_arrivee if heure_premiere_arrivee else None,
+                heure_derniere_depart=heure_derniere_depart if heure_derniere_depart else None,
                 motif_absence=motif_absence,
                 tolerance_retard=int(tolerance_retard)
             )
@@ -1041,8 +1065,8 @@ def rh_presence_edit(request, presence_id):
     
     if request.method == 'POST':
         presence.date = request.POST.get('date')
-        presence.heure_arrivee = request.POST.get('heure_arrivee') or None
-        presence.heure_depart = request.POST.get('heure_depart') or None
+        presence.heure_premiere_arrivee = request.POST.get('heure_premiere_arrivee') or None
+        presence.heure_derniere_depart = request.POST.get('heure_derniere_depart') or None
         presence.motif_absence = request.POST.get('motif_absence', '')
         presence.tolerance_retard = int(request.POST.get('tolerance_retard', 60))
         

@@ -138,14 +138,7 @@
                                     {% endif %}
                                 </td>
                                 <td style="padding: 12px; text-align: center;">
-                                    <div style="display: flex; gap: 8px; justify-content: center;">
-                                        <a href="{% url 'rh_presence_edit' item.presence.id %}" style="background: #3B82F6; color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 0.85em; display: inline-flex; align-items: center; gap: 4px;">
-                                            ✏️ Modifier
-                                        </a>
-                                        <a href="{% url 'rh_presence_delete' item.presence.id %}" style="background: #EF4444; color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 0.85em; display: inline-flex; align-items: center; gap: 4px;">
-                                            🗑️ Supprimer
-                                        </a>
-                                    </div>
+                                    <span style="color: #6B7280; font-size: 0.85em;">Automatique</span>
                                 </td>
                             </tr>
                             {% empty %}

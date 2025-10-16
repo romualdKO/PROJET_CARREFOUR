@@ -1,0 +1,167 @@
+================================================================================
+           IDENTIFIANTS DE CONNEXION - PROJET CARREFOUR
+================================================================================
+
+URL DE CONNEXION : http://127.0.0.1:8000/login/
+
+================================================================================
+                        COMPTES PAR DÉFAUT
+================================================================================
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│                     DIRECTEUR GÉNÉRAL (DG)                               │
+├──────────────────────────────────────────────────────────────────────────┤
+│  Identifiant : dg                                                        │
+│  Mot de passe : DG2025@Admin                                             │
+│  Email : dg@carrefour.com                                                │
+└──────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│           DIRECTEUR ADMINISTRATIF ET FINANCIER (DAF)                     │
+├──────────────────────────────────────────────────────────────────────────┤
+│  Identifiant : daf                                                       │
+│  Mot de passe : DAF2025@Admin                                            │
+│  Email : daf@carrefour.com                                               │
+└──────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│              RESPONSABLE RESSOURCES HUMAINES (RH)                        │
+├──────────────────────────────────────────────────────────────────────────┤
+│  Identifiant : rh                                                        │
+│  Mot de passe : RH2025@Admin                                             │
+│  Email : rh@carrefour.com                                                │
+└──────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+                        IMPORTANT À SAVOIR
+================================================================================
+
+⚠️  Les mots de passe sont SENSIBLES À LA CASSE (majuscules/minuscules)
+
+EXEMPLES :
+  ✅ CORRECT   : DG2025@Admin
+  ❌ INCORRECT : dg2025@admin
+  ❌ INCORRECT : DG2025@ADMIN
+
+⚠️  Les identifiants sont en MINUSCULES
+
+EXEMPLES :
+  ✅ CORRECT   : dg
+  ❌ INCORRECT : DG
+
+⚠️  Vérifiez le caractère @ dans le mot de passe
+
+================================================================================
+                    INSTRUCTIONS DE CONNEXION
+================================================================================
+
+1. Ouvrez votre navigateur (Chrome, Firefox, Edge, etc.)
+
+2. Accédez à l'URL : http://127.0.0.1:8000/login/
+
+3. Saisissez votre identifiant (en minuscules) :
+   - Pour DG  : dg
+   - Pour DAF : daf
+   - Pour RH  : rh
+
+4. Saisissez le mot de passe (respectez les majuscules) :
+   - Pour DG  : DG2025@Admin
+   - Pour DAF : DAF2025@Admin
+   - Pour RH  : RH2025@Admin
+
+5. Cliquez sur "Se connecter"
+
+6. Vous serez automatiquement redirigé vers votre dashboard
+
+================================================================================
+                    EN CAS DE PROBLÈME
+================================================================================
+
+Si vous voyez le message "Identifiants invalides" :
+
+□ Vérifiez que l'identifiant est en MINUSCULES
+□ Vérifiez les MAJUSCULES dans le mot de passe
+□ Vérifiez le caractère @ dans le mot de passe
+□ Essayez de COPIER-COLLER le mot de passe depuis ce document
+□ Vérifiez qu'il n'y a pas d'ESPACES avant ou après
+
+Si le problème persiste :
+→ Contactez l'administrateur système
+→ Indiquez-lui votre rôle (DG, DAF ou RH)
+
+================================================================================
+                    FONCTIONNALITÉS PAR RÔLE
+================================================================================
+
+DIRECTEUR GÉNÉRAL (DG) :
+  • Vue d'ensemble complète de l'entreprise
+  • Statistiques de ventes et performances
+  • Suivi du personnel et des stocks
+  • Accès à tous les rapports
+
+DIRECTEUR FINANCIER (DAF) :
+  • Gestion de la caisse
+  • Rapports financiers détaillés
+  • Suivi des transactions
+  • Analyse des ventes
+
+RESPONSABLE RH (RH) :
+  • Gestion des employés (création, modification, suppression)
+  • Gestion automatique des présences
+  • Suivi du temps de travail (système multi-sessions)
+  • Statistiques du personnel
+
+================================================================================
+                    NOUVEAUTÉ : SYSTÈME DE PRÉSENCE
+================================================================================
+
+Les employés peuvent maintenant se connecter et se déconnecter plusieurs fois
+par jour. Le système calcule automatiquement :
+
+  • Le temps actif total de la journée
+  • Les heures travaillées (temps actif - pause)
+  • Le statut (Présent/Retard/Absent) selon la règle des 60%
+
+EXEMPLE :
+  08:00 - Connexion
+  10:00 - Déconnexion  (2h)
+  14:00 - Connexion
+  17:00 - Déconnexion  (3h)
+  
+  → Temps actif total : 5h
+  → Statut calculé automatiquement
+
+================================================================================
+                    INFORMATIONS TECHNIQUES
+================================================================================
+
+Version : 2.0.0
+Date : 16 octobre 2025
+Statut : ✅ Opérationnel et testé
+
+Framework : Django 5.2
+Base de données : SQLite3
+Python : 3.13.5
+
+================================================================================
+                    RECOMMANDATIONS DE SÉCURITÉ
+================================================================================
+
+Pour votre sécurité :
+
+1. Changez votre mot de passe après la première connexion
+2. Utilisez un mot de passe fort :
+   - Au moins 8 caractères
+   - Majuscules et minuscules
+   - Chiffres
+   - Caractères spéciaux (@, #, !, etc.)
+3. Ne partagez jamais votre mot de passe
+
+================================================================================
+
+Questions ou problèmes ? Consultez le fichier GUIDE_CONNEXION.md pour plus
+de détails ou contactez l'administrateur système.
+
+✅ Tous les comptes ont été testés et fonctionnent correctement !
+
+================================================================================

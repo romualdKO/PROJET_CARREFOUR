@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from .models import (
     Employe, Produit, Vente, LigneVente, Client, 
-    Promotion, Presence, Conge, Formation, Reclamation
+    Promotion, Presence, SessionPresence, Conge, Formation, Reclamation
 )
 
 @admin.register(Employe)
@@ -51,8 +51,14 @@ class PromotionAdmin(admin.ModelAdmin):
 
 @admin.register(Presence)
 class PresenceAdmin(admin.ModelAdmin):
-    list_display = ['employe', 'date', 'heure_arrivee', 'heure_depart', 'statut']
+    list_display = ['employe', 'date', 'heure_premiere_arrivee', 'heure_derniere_depart', 'temps_actif_total', 'statut']
     list_filter = ['statut', 'date']
+    date_hierarchy = 'date'
+
+@admin.register(SessionPresence)
+class SessionPresenceAdmin(admin.ModelAdmin):
+    list_display = ['employe', 'date', 'heure_connexion', 'heure_deconnexion', 'duree_active']
+    list_filter = ['date']
     date_hierarchy = 'date'
 
 @admin.register(Conge)

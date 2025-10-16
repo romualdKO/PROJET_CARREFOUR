@@ -237,6 +237,41 @@ class Promotion(models.Model):
 
 
 # Modèle Présence
+class SessionPresence(models.Model):
+    """Enregistre chaque session de connexion/déconnexion d'un employé"""
+    employe = models.ForeignKey(Employe, on_delete=models.CASCADE, related_name='sessions')
+    date = models.DateField(default=timezone.now)
+    heure_connexion = models.TimeField()
+    heure_deconnexion = models.TimeField(null=True, blank=True)
+    duree_active = models.FloatField(default=0, help_text="Durée en heures")
+    
+    def calculer_duree_active(self):
+        """Calcule la durée active de cette session"""
+        if not self.heure_connexion or not self.heure_deconnexion:
+            return 0
+        
+        from datetime import datetime
+        connexion = datetime.combine(self.date, self.heure_connexion)
+        deconnexion = datetime.combine(self.date, self.heure_deconnexion)
+        
+        duree_secondes = (deconnexion - connexion).total_seconds()
+        return duree_secondes / 3600  # Convertir en heures
+    
+    def save(self, *args, **kwargs):
+        # Calculer automatiquement la durée avant sauvegarde
+        if self.heure_deconnexion:
+            self.duree_active = self.calculer_duree_active()
+        super().save(*args, **kwargs)
+    
+    def __str__(self):
+        return f"{self.employe.get_full_name()} - {self.date} ({self.heure_connexion} - {self.heure_deconnexion or 'En cours'})"
+    
+    class Meta:
+        verbose_name = 'Session de Présence'
+        verbose_name_plural = 'Sessions de Présence'
+        ordering = ['-date', '-heure_connexion']
+
+
 class Presence(models.Model):
     STATUTS = [
         ('PRESENT', 'Présent'),
@@ -246,41 +281,50 @@ class Presence(models.Model):
     
     employe = models.ForeignKey(Employe, on_delete=models.CASCADE, related_name='presences')
     date = models.DateField(default=timezone.now)
-    heure_arrivee = models.TimeField(null=True, blank=True)
-    heure_depart = models.TimeField(null=True, blank=True)
+    heure_premiere_arrivee = models.TimeField(null=True, blank=True, help_text="Première connexion de la journée")
+    heure_derniere_depart = models.TimeField(null=True, blank=True, help_text="Dernière déconnexion de la journée")
+    temps_actif_total = models.FloatField(default=0, help_text="Temps total actif en heures (somme de toutes les sessions)")
     statut = models.CharField(max_length=20, choices=STATUTS, default='ABSENT')
     motif_absence = models.CharField(max_length=200, blank=True)
     tolerance_retard = models.IntegerField(default=60, help_text="Tolérance en minutes avant d'être marqué absent (défaut: 60min)")
     
+    def calculer_temps_actif_total(self):
+        """Calcule le temps total actif à partir de toutes les sessions de la journée"""
+        sessions = SessionPresence.objects.filter(employe=self.employe, date=self.date)
+        total = sum(session.duree_active for session in sessions if session.duree_active > 0)
+        return total
+    
     def calculer_statut(self):
         """
-        Calcule le statut basé sur l'heure d'arrivée et les heures travaillées:
-        - ABSENT: Si pas d'arrivée OU arrivée > tolerance_retard (défaut 1h) OU heures travaillées < 60%
-        - RETARD: Si arrivée en retard mais heures travaillées ≥ 60%
-        - PRESENT: Si arrivée à l'heure et heures travaillées ≥ 60%
+        Calcule le statut basé sur la première arrivée et le temps actif total:
+        - ABSENT: Si pas d'arrivée OU arrivée > tolerance_retard (défaut 1h) OU temps actif < 60% des heures requises
+        - RETARD: Si arrivée en retard mais temps actif ≥ 60%
+        - PRESENT: Si arrivée à l'heure et temps actif ≥ 60%
         """
-        if not self.heure_arrivee:
+        if not self.heure_premiere_arrivee:
             return 'ABSENT'
         
         from datetime import datetime, timedelta
         heure_debut = datetime.combine(self.date, self.employe.heure_debut_travail)
-        heure_arrivee_dt = datetime.combine(self.date, self.heure_arrivee)
+        heure_arrivee_dt = datetime.combine(self.date, self.heure_premiere_arrivee)
         
-        # Règle 1: Si arrivée > tolérance (défaut 60 min), c'est ABSENT
+        # Règle 1: Si première arrivée > tolérance (défaut 60 min), c'est ABSENT
         tolerance_absence = timedelta(minutes=self.tolerance_retard)
         if heure_arrivee_dt > heure_debut + tolerance_absence:
             return 'ABSENT'
         
-        # Si heure de départ existe, vérifier le pourcentage d'heures travaillées
-        if self.heure_depart:
-            heures_travaillees = self.calculer_heures_travaillees()
-            heures_requises = self.calculer_heures_requises()
-            
-            # Règle 2: Si < 60% des heures requises, c'est ABSENT
-            if heures_requises > 0:
-                pourcentage = (heures_travaillees / heures_requises) * 100
-                if pourcentage < 60:
-                    return 'ABSENT'
+        # Recalculer le temps actif total depuis toutes les sessions
+        temps_actif = self.calculer_temps_actif_total()
+        
+        # Calculer les heures requises et soustraire la pause
+        heures_requises = self.calculer_heures_requises()
+        temps_actif_net = temps_actif - (self.employe.duree_pause / 60)
+        
+        # Règle 2: Si temps actif net < 60% des heures requises, c'est ABSENT
+        if heures_requises > 0:
+            pourcentage = (max(0, temps_actif_net) / heures_requises) * 100
+            if pourcentage < 60:
+                return 'ABSENT'
         
         # Règle 3: Vérifier le retard (15 minutes de tolérance pour le retard)
         tolerance_retard_simple = timedelta(minutes=15)
@@ -301,21 +345,11 @@ class Presence(models.Model):
         return duree_totale - pause_heures
     
     def calculer_heures_travaillees(self):
-        """Calcule les heures effectivement travaillées (excluant la pause)"""
-        if not self.heure_arrivee or not self.heure_depart:
-            return 0
-        
-        from datetime import datetime, timedelta
-        arrivee = datetime.combine(self.date, self.heure_arrivee)
-        depart = datetime.combine(self.date, self.heure_depart)
-        
-        # Calculer la durée totale
-        duree_totale = (depart - arrivee).total_seconds() / 3600  # en heures
-        
-        # Soustraire la pause (convertir minutes en heures)
+        """Calcule les heures effectivement travaillées (temps actif moins la pause)"""
+        temps_actif = self.calculer_temps_actif_total()
         pause_heures = self.employe.duree_pause / 60
         
-        heures_travaillees = duree_totale - pause_heures
+        heures_travaillees = temps_actif - pause_heures
         return max(0, heures_travaillees)  # Ne pas retourner de valeur négative
     
     def calculer_pourcentage_presence(self):
@@ -328,8 +362,11 @@ class Presence(models.Model):
         return 0
     
     def save(self, *args, **kwargs):
+        # Mettre à jour le temps actif total depuis les sessions
+        self.temps_actif_total = self.calculer_temps_actif_total()
+        
         # Calculer automatiquement le statut avant de sauvegarder
-        if self.heure_arrivee:
+        if self.heure_premiere_arrivee:
             self.statut = self.calculer_statut()
         super().save(*args, **kwargs)
     

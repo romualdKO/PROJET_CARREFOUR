@@ -5,7 +5,7 @@ __pycache__/
 
 # Fichiers sensibles
 .env
-*.sqlite3
+# *.sqlite3  # COMMENTÉ pour partager la base de données de test avec les collaborateurs
 
 # Docker
 postgres_data/
