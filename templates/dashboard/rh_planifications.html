@@ -1,0 +1,80 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planifications - RH</title>
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">🛒</div>
+                <h2>SuperMarché Plus</h2>
+                <p>Module Ressources Humaines</p>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="{% url 'dashboard_rh' %}" class="nav-item"><span class="icon">📊</span><span>Tableau de Bord</span></a>
+                <a href="{% url 'rh_employees_list' %}" class="nav-item"><span class="icon">👥</span><span>Employés</span></a>
+                <a href="{% url 'rh_create_employee' %}" class="nav-item"><span class="icon">➕</span><span>Nouvel Employé</span></a>
+                <a href="{% url 'rh_planifications' %}" class="nav-item active"><span class="icon">📅</span><span>Planifications</span></a>
+                <a href="{% url 'rh_presences' %}" class="nav-item"><span class="icon">✅</span><span>Présences</span></a>
+                <a href="{% url 'rh_conges' %}" class="nav-item"><span class="icon">🏖️</span><span>Congés</span></a>
+                <a href="{% url 'rh_formations' %}" class="nav-item"><span class="icon">🎓</span><span>Formations</span></a>
+                <a href="{% url 'logout' %}" class="nav-item logout"><span class="icon">🚪</span><span>Déconnexion</span></a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="content-header">
+                <h1>Planifications du Personnel</h1>
+                <div class="user-info"><span>👤 {{ user.get_full_name }}</span></div>
+            </header>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2>📅 Planning par Département</h2>
+                </div>
+                <div class="card-body">
+                    {% regroup employes by departement as departement_list %}
+                    {% for departement in departement_list %}
+                        <div style="margin-bottom: 30px;">
+                            <h3 style="background: linear-gradient(135deg, #E0E7FF, #DBEAFE); padding: 12px; border-radius: 8px; margin-bottom: 10px;">
+                                {{ departement.grouper }} - {{ departement.list|length }} employé(s)
+                            </h3>
+                            <table style="width: 100%; border-collapse: collapse; margin-left: 20px;">
+                                <thead>
+                                    <tr style="background: #F3F4F6;">
+                                        <th style="padding: 10px; text-align: left;">Employé</th>
+                                        <th style="padding: 10px; text-align: left;">Poste</th>
+                                        <th style="padding: 10px; text-align: center;">Statut</th>
+                                        <th style="padding: 10px; text-align: left;">Contact</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for emp in departement.list %}
+                                    <tr style="border-bottom: 1px solid #E5E7EB;">
+                                        <td style="padding: 10px;">{{ emp.get_full_name }}</td>
+                                        <td style="padding: 10px;">{{ emp.get_role_display }}</td>
+                                        <td style="padding: 10px; text-align: center;">
+                                            {% if emp.est_actif %}
+                                                <span style="background: #D1FAE5; color: #065F46; padding: 4px 12px; border-radius: 12px; font-size: 0.85em;">✅ Actif</span>
+                                            {% else %}
+                                                <span style="background: #FEE2E2; color: #991B1B; padding: 4px 12px; border-radius: 12px; font-size: 0.85em;">❌ Inactif</span>
+                                            {% endif %}
+                                        </td>
+                                        <td style="padding: 10px;">{{ emp.telephone|default:"—" }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

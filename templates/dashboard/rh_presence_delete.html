@@ -1,0 +1,142 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supprimer Présence - RH</title>
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">🛒</div>
+                <h2>SuperMarché Plus</h2>
+                <p>Module Ressources Humaines</p>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="{% url 'dashboard_rh' %}" class="nav-item">
+                    <span class="icon">📊</span>
+                    <span>Tableau de Bord</span>
+                </a>
+                <a href="{% url 'rh_employees_list' %}" class="nav-item">
+                    <span class="icon">👥</span>
+                    <span>Employés</span>
+                </a>
+                <a href="{% url 'rh_create_employee' %}" class="nav-item">
+                    <span class="icon">➕</span>
+                    <span>Nouvel Employé</span>
+                </a>
+                <a href="{% url 'rh_planifications' %}" class="nav-item">
+                    <span class="icon">📅</span>
+                    <span>Planifications</span>
+                </a>
+                <a href="{% url 'rh_presences' %}" class="nav-item active">
+                    <span class="icon">✅</span>
+                    <span>Présences</span>
+                </a>
+                <a href="{% url 'rh_conges' %}" class="nav-item">
+                    <span class="icon">🏖️</span>
+                    <span>Congés</span>
+                </a>
+                <a href="{% url 'rh_formations' %}" class="nav-item">
+                    <span class="icon">🎓</span>
+                    <span>Formations</span>
+                </a>
+                <a href="{% url 'logout' %}" class="nav-item logout">
+                    <span class="icon">🚪</span>
+                    <span>Déconnexion</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="content-header">
+                <h1>🗑️ Supprimer Présence</h1>
+                <div class="user-info">
+                    <span>👤 {{ user.get_full_name }}</span>
+                </div>
+            </header>
+
+            <!-- Confirmation -->
+            <div class="card" style="max-width: 600px; margin: 40px auto;">
+                <div class="card-header" style="background: linear-gradient(135deg, #FEE2E2, #FECACA); border-left: 4px solid #DC2626;">
+                    <h2 style="color: #991B1B;">⚠️ Confirmation de Suppression</h2>
+                </div>
+                <div class="card-body">
+                    <div style="background: #FFF7ED; padding: 20px; border-radius: 8px; border-left: 4px solid #F59E0B; margin-bottom: 20px;">
+                        <p style="margin: 0; color: #92400E; font-weight: 500;">
+                            Êtes-vous sûr de vouloir supprimer cette présence ?
+                        </p>
+                    </div>
+                    
+                    <div style="background: #F9FAFB; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                        <table style="width: 100%;">
+                            <tr>
+                                <td style="padding: 8px 0; font-weight: 600; color: #374151;">Employé:</td>
+                                <td style="padding: 8px 0; color: #6B7280;">{{ presence.employe.get_full_name }}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0; font-weight: 600; color: #374151;">Date:</td>
+                                <td style="padding: 8px 0; color: #6B7280;">{{ presence.date|date:"d/m/Y" }}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0; font-weight: 600; color: #374151;">Heure Arrivée:</td>
+                                <td style="padding: 8px 0; color: #6B7280;">
+                                    {% if presence.heure_arrivee %}
+                                        {{ presence.heure_arrivee|time:"H:i" }}
+                                    {% else %}
+                                        <span style="color: #EF4444;">Non pointé</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0; font-weight: 600; color: #374151;">Heure Départ:</td>
+                                <td style="padding: 8px 0; color: #6B7280;">
+                                    {% if presence.heure_depart %}
+                                        {{ presence.heure_depart|time:"H:i" }}
+                                    {% else %}
+                                        En cours
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0; font-weight: 600; color: #374151;">Statut:</td>
+                                <td style="padding: 8px 0;">
+                                    {% if presence.statut == 'PRESENT' %}
+                                        <span style="background: #D1FAE5; color: #065F46; padding: 4px 12px; border-radius: 12px; font-size: 0.85em; font-weight: 600;">✅ Présent</span>
+                                    {% elif presence.statut == 'RETARD' %}
+                                        <span style="background: #FEF3C7; color: #92400E; padding: 4px 12px; border-radius: 12px; font-size: 0.85em; font-weight: 600;">⚠️ Retard</span>
+                                    {% else %}
+                                        <span style="background: #FEE2E2; color: #991B1B; padding: 4px 12px; border-radius: 12px; font-size: 0.85em; font-weight: 600;">❌ Absent</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <div style="background: #FEE2E2; padding: 16px; border-radius: 8px; border-left: 4px solid #DC2626; margin-bottom: 20px;">
+                        <p style="margin: 0; color: #991B1B; font-weight: 500; font-size: 0.9em;">
+                            ⚠️ <strong>Attention:</strong> Cette action est irréversible. Toutes les données liées à cette présence seront définitivement supprimées.
+                        </p>
+                    </div>
+                    
+                    <form method="POST" style="display: flex; gap: 12px; justify-content: flex-end;">
+                        {% csrf_token %}
+                        <a href="{% url 'rh_presences' %}" style="background: #6B7280; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+                            Annuler
+                        </a>
+                        <button type="submit" style="background: linear-gradient(135deg, #DC2626, #B91C1C); color: white; padding: 12px 32px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 1em;">
+                            🗑️ Confirmer la Suppression
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

@@ -1,0 +1,121 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Congés - RH</title>
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">🛒</div>
+                <h2>SuperMarché Plus</h2>
+                <p>Module Ressources Humaines</p>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="{% url 'dashboard_rh' %}" class="nav-item"><span class="icon">📊</span><span>Tableau de Bord</span></a>
+                <a href="{% url 'rh_employees_list' %}" class="nav-item"><span class="icon">👥</span><span>Employés</span></a>
+                <a href="{% url 'rh_create_employee' %}" class="nav-item"><span class="icon">➕</span><span>Nouvel Employé</span></a>
+                <a href="{% url 'rh_planifications' %}" class="nav-item"><span class="icon">📅</span><span>Planifications</span></a>
+                <a href="{% url 'rh_presences' %}" class="nav-item"><span class="icon">✅</span><span>Présences</span></a>
+                <a href="{% url 'rh_conges' %}" class="nav-item active"><span class="icon">🏖️</span><span>Congés</span></a>
+                <a href="{% url 'rh_formations' %}" class="nav-item"><span class="icon">🎓</span><span>Formations</span></a>
+                <a href="{% url 'logout' %}" class="nav-item logout"><span class="icon">🚪</span><span>Déconnexion</span></a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="content-header">
+                <h1>Gestion des Congés</h1>
+                <div class="user-info"><span>👤 {{ user.get_full_name }}</span></div>
+            </header>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="card">
+                <div class="card-header" style="background: linear-gradient(135deg, #FEF3C7, #FDE68A);">
+                    <h2>⏳ Demandes en Attente ({{ conges_en_attente.count }})</h2>
+                </div>
+                <div class="card-body">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: linear-gradient(135deg, #E0E7FF, #DBEAFE); border-bottom: 2px solid #2563EB;">
+                                <th style="padding: 12px; text-align: left;">Employé</th>
+                                <th style="padding: 12px; text-align: left;">Type</th>
+                                <th style="padding: 12px; text-align: center;">Du</th>
+                                <th style="padding: 12px; text-align: center;">Au</th>
+                                <th style="padding: 12px; text-align: center;">Durée</th>
+                                <th style="padding: 12px; text-align: center;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for conge in conges_en_attente %}
+                            <tr style="border-bottom: 1px solid #E5E7EB;">
+                                <td style="padding: 12px; font-weight: 500;">{{ conge.employe.get_full_name }}</td>
+                                <td style="padding: 12px;">{{ conge.get_type_conge_display }}</td>
+                                <td style="padding: 12px; text-align: center;">{{ conge.date_debut|date:"d/m/Y" }}</td>
+                                <td style="padding: 12px; text-align: center;">{{ conge.date_fin|date:"d/m/Y" }}</td>
+                                <td style="padding: 12px; text-align: center;">{{ conge.duree }} jours</td>
+                                <td style="padding: 12px; text-align: center;">
+                                    <a href="{% url 'rh_conge_action' conge.id 'approve' %}" style="background: linear-gradient(135deg, #10B981, #059669); color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; margin-right: 5px; font-size: 0.9em;">✅ Approuver</a>
+                                    <a href="{% url 'rh_conge_action' conge.id 'reject' %}" style="background: linear-gradient(135deg, #DC2626, #B91C1C); color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 0.9em;">❌ Refuser</a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="6" style="padding: 40px; text-align: center; color: #6B7280;">Aucune demande en attente</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card" style="margin-top: 20px;">
+                <div class="card-header">
+                    <h2>📋 Tous les Congés</h2>
+                </div>
+                <div class="card-body">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: linear-gradient(135deg, #E0E7FF, #DBEAFE); border-bottom: 2px solid #2563EB;">
+                                <th style="padding: 12px; text-align: left;">Employé</th>
+                                <th style="padding: 12px; text-align: left;">Type</th>
+                                <th style="padding: 12px; text-align: center;">Période</th>
+                                <th style="padding: 12px; text-align: center;">Durée</th>
+                                <th style="padding: 12px; text-align: center;">Statut</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for conge in tous_conges %}
+                            <tr style="border-bottom: 1px solid #E5E7EB;">
+                                <td style="padding: 12px;">{{ conge.employe.get_full_name }}</td>
+                                <td style="padding: 12px;">{{ conge.get_type_conge_display }}</td>
+                                <td style="padding: 12px; text-align: center;">{{ conge.date_debut|date:"d/m" }} - {{ conge.date_fin|date:"d/m/Y" }}</td>
+                                <td style="padding: 12px; text-align: center;">{{ conge.duree }} j</td>
+                                <td style="padding: 12px; text-align: center;">
+                                    {% if conge.statut == 'APPROUVE' %}
+                                        <span style="background: #D1FAE5; color: #065F46; padding: 4px 12px; border-radius: 12px; font-size: 0.85em;">✅ Approuvé</span>
+                                    {% elif conge.statut == 'REFUSE' %}
+                                        <span style="background: #FEE2E2; color: #991B1B; padding: 4px 12px; border-radius: 12px; font-size: 0.85em;">❌ Refusé</span>
+                                    {% else %}
+                                        <span style="background: #FEF3C7; color: #92400E; padding: 4px 12px; border-radius: 12px; font-size: 0.85em;">⏳ En attente</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="5" style="padding: 40px; text-align: center; color: #6B7280;">Aucun congé enregistré</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

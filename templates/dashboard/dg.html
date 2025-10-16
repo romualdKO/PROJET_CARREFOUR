@@ -1,0 +1,330 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tableau de Bord Directeur Général - SuperMarché Plus</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="dashboard-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div style="text-align: center; padding: 0 1.5rem; margin-bottom: 2rem;">
+                <div style="width: 60px; height: 60px; background: var(--primary-blue); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin: 0 auto; color: white; font-size: 2rem;">🛒</div>
+                <h3 style="margin-top: 1rem; font-size: 1.1rem;">SuperMarché Plus</h3>
+                <p style="font-size: 0.85rem; color: var(--text-light);">Tableau de Bord Directeur Général</p>
+            </div>
+
+            <ul class="sidebar-menu">
+                <li><a href="{% url 'dashboard_dg' %}" class="active"><span class="icon">📊</span> Tableau de Bord</a></li>
+                <li><a href="#"><span class="icon">👥</span> Employés</a></li>
+                <li><a href="#"><span class="icon">📦</span> Planifications</a></li>
+                <li><a href="#"><span class="icon">🎓</span> Présences</a></li>
+                <li><a href="#"><span class="icon">🏖️</span> Congés</a></li>
+                <li><a href="#"><span class="icon">📚</span> Formations</a></li>
+                <li><a href="#"><span class="icon">📈</span> Rapports</a></li>
+            </ul>
+
+            <div style="padding: 1.5rem; margin-top: auto;">
+                <a href="{% url 'logout' %}" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: var(--bg-gray); border-radius: 8px; text-decoration: none; color: var(--text-dark);">
+                    <span style="font-size: 1.2rem;">🚪</span>
+                    <span>Déconnexion</span>
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <div class="page-header">
+                    <h1>Tableau de Bord Directeur Général</h1>
+                    <p>Vue d'ensemble des performances et indicateurs clés</p>
+                </div>
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1rem; background: white; border-radius: 8px;">
+                        <div style="width: 35px; height: 35px; background: var(--light-blue); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--primary-blue); font-weight: bold;">
+                            {{ user.first_name.0 }}{{ user.last_name.0 }}
+                        </div>
+                        <div>
+                            <div style="font-weight: 600; font-size: 0.9rem;">Jean-Baptiste KONE</div>
+                            <div style="font-size: 0.8rem; color: var(--text-light);">Directeur Général</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPI Cards -->
+            <div class="cards-grid" style="grid-template-columns: repeat(4, 1fr);">
+                <div class="kpi-card" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: white;">
+                    <div style="flex: 1;">
+                        <p style="opacity: 0.9; margin-bottom: 0.5rem;">Chiffre d'Affaires Mensuel</p>
+                        <h3 style="font-size: 1.75rem; color: white;">45,2 millions de FCFA</h3>
+                        <div class="kpi-trend" style="color: white; opacity: 0.9;">📈 +12,5% rapport au mois dernier</div>
+                    </div>
+                    <div class="kpi-icon" style="background: rgba(255,255,255,0.2); color: white;">💰</div>
+                </div>
+
+                <div class="kpi-card" style="background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%); color: white;">
+                    <div style="flex: 1;">
+                        <p style="opacity: 0.9; margin-bottom: 0.5rem;">Bénéfice Net</p>
+                        <h3 style="font-size: 1.75rem; color: white;">8,7 millions de FCFA</h3>
+                        <div class="kpi-trend" style="color: white; opacity: 0.9;">Marge: 18,2 %</div>
+                    </div>
+                    <div class="kpi-icon" style="background: rgba(255,255,255,0.2); color: white;">💵</div>
+                </div>
+
+                <div class="kpi-card" style="background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%); color: white;">
+                    <div style="flex: 1;">
+                        <p style="opacity: 0.9; margin-bottom: 0.5rem;">Transactions Journalières</p>
+                        <h3 style="font-size: 1.75rem; color: white;">1 847</h3>
+                        <div class="kpi-trend" style="color: white; opacity: 0.9;">Panier moyen: 24 500 FCFA</div>
+                    </div>
+                    <div class="kpi-icon" style="background: rgba(255,255,255,0.2); color: white;">🛒</div>
+                </div>
+
+                <div class="kpi-card" style="background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); color: white;">
+                    <div style="flex: 1;">
+                        <p style="opacity: 0.9; margin-bottom: 0.5rem;">ROI Mensuel</p>
+                        <h3 style="font-size: 1.75rem; color: white;">23,8%</h3>
+                        <div class="kpi-trend" style="color: white; opacity: 0.9;">↗️ +2,1% vs objectif</div>
+                    </div>
+                    <div class="kpi-icon" style="background: rgba(255,255,255,0.2); color: white;">📊</div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin: 2rem 0;">
+                <!-- Évolution du Chiffre d'Affaires -->
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h3>Évolution du Chiffre d'Affaires</h3>
+                        <select style="padding: 0.5rem; border: 1px solid var(--border-gray); border-radius: 6px;">
+                            <option>2 dernières années</option>
+                            <option>6 derniers mois</option>
+                            <option>Cette année</option>
+                        </select>
+                    </div>
+                    <canvas id="caChart" height="80"></canvas>
+                </div>
+
+                <!-- Analyse des Marges -->
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h3>Analyse des marges</h3>
+                        <div style="display: flex; gap: 1rem; font-size: 0.85rem;">
+                            <span style="display: flex; align-items: center; gap: 0.25rem;">
+                                <div style="width: 12px; height: 12px; background: var(--primary-green); border-radius: 2px;"></div>
+                                Bénéfice
+                            </span>
+                            <span style="display: flex; align-items: center; gap: 0.25rem;">
+                                <div style="width: 12px; height: 12px; background: var(--red); border-radius: 2px;"></div>
+                                Coûts
+                            </span>
+                            <span style="display: flex; align-items: center; gap: 0.25rem;">
+                                <div style="width: 12px; height: 12px; background: var(--primary-blue); border-radius: 2px;"></div>
+                                Bénéfice
+                            </span>
+                        </div>
+                    </div>
+                    <canvas id="margesChart" height="120"></canvas>
+                </div>
+            </div>
+
+            <!-- Meilleurs Produits et Indicateurs -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 2rem 0;">
+                <!-- Meilleurs produits -->
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h3>Meilleurs produits (revenus)</h3>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 1rem;">
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <div style="width: 40px; height: 40px; background: var(--light-green); border-radius: 8px; display: flex; align-items: center; justify-content: center;">🍚</div>
+                            <div style="flex: 1;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                                    <span style="font-weight: 600;">Produits Alimentaires</span>
+                                    <span style="font-weight: 600; color: var(--primary-green);">18,2 millions de FCFA</span>
+                                </div>
+                                <div style="background: var(--bg-gray); height: 6px; border-radius: 3px; overflow: hidden;">
+                                    <div style="background: var(--primary-green); width: 85%; height: 100%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <div style="width: 40px; height: 40px; background: var(--light-blue); border-radius: 8px; display: flex; align-items: center; justify-content: center;">👕</div>
+                            <div style="flex: 1;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                                    <span style="font-weight: 600;">Vêtements</span>
+                                    <span style="font-weight: 600; color: var(--primary-blue);">12,5 millions de FCFA</span>
+                                </div>
+                                <div style="background: var(--bg-gray); height: 6px; border-radius: 3px; overflow: hidden;">
+                                    <div style="background: var(--primary-blue); width: 65%; height: 100%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <div style="width: 40px; height: 40px; background: #FAF5FF; border-radius: 8px; display: flex; align-items: center; justify-content: center;">📱</div>
+                            <div style="flex: 1;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                                    <span style="font-weight: 600;">Électronique</span>
+                                    <span style="font-weight: 600; color: var(--purple);">8,8 millions de FCFA</span>
+                                </div>
+                                <div style="background: var(--bg-gray); height: 6px; border-radius: 3px; overflow: hidden;">
+                                    <div style="background: var(--purple); width: 45%; height: 100%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <div style="width: 40px; height: 40px; background: #FFF7ED; border-radius: 8px; display: flex; align-items: center; justify-content: center;">🏡</div>
+                            <div style="flex: 1;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                                    <span style="font-weight: 600;">Maison & Jardin</span>
+                                    <span style="font-weight: 600; color: var(--orange);">5,6 millions de FCFA</span>
+                                </div>
+                                <div style="background: var(--bg-gray); height: 6px; border-radius: 3px; overflow: hidden;">
+                                    <div style="background: var(--orange); width: 30%; height: 100%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Indicateurs Opérationnels -->
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h3>Indicateurs Opérationnels</h3>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                        <div style="text-align: center; padding: 1rem; background: var(--bg-gray); border-radius: 8px;">
+                            <div style="font-size: 2rem; color: var(--primary-blue); font-weight: bold;">3.2 min</div>
+                            <div style="font-size: 0.9rem; color: var(--text-light); margin-top: 0.25rem;">Temps moyen en caisse</div>
+                        </div>
+                        <div style="text-align: center; padding: 1rem; background: var(--bg-gray); border-radius: 8px;">
+                            <div style="font-size: 2rem; color: var(--primary-green); font-weight: bold;">94.7%</div>
+                            <div style="font-size: 0.9rem; color: var(--text-light); margin-top: 0.25rem;">Satisfaction client</div>
+                        </div>
+                        <div style="text-align: center; padding: 1rem; background: var(--bg-gray); border-radius: 8px;">
+                            <div style="font-size: 2rem; color: var(--purple); font-weight: bold;">127%</div>
+                            <div style="font-size: 0.9rem; color: var(--text-light); margin-top: 0.25rem;">Productivité employés</div>
+                        </div>
+                        <div style="text-align: center; padding: 1rem; background: var(--bg-gray); border-radius: 8px;">
+                            <div style="font-size: 2rem; color: var(--red); font-weight: bold;">2.1%</div>
+                            <div style="font-size: 0.9rem; color: var(--text-light); margin-top: 0.25rem;">Taux de déchet</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rapports détaillés -->
+            <div class="table-container">
+                <div style="padding: 1.5rem; border-bottom: 1px solid var(--border-gray); display: flex; justify-content: space-between; align-items: center;">
+                    <h3>Rapports détaillés</h3>
+                    <div style="display: flex; gap: 0.75rem;">
+                        <button class="btn" style="padding: 0.5rem 1rem; background: var(--primary-blue); color: white;">📊 Exportatuer</button>
+                        <button class="btn" style="padding: 0.5rem 1rem; background: transparent; border: 1px solid var(--border-gray);">🔍 Filtrer</button>
+                    </div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Période</th>
+                            <th>CA (FCFA)</th>
+                            <th>Bénéfice (FCFA)</th>
+                            <th>Marge (%)</th>
+                            <th>Transactions</th>
+                            <th>Évolution</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for rapport in rapports %}
+                        <tr>
+                            <td><strong>{{ rapport.periode }}</strong></td>
+                            <td>{{ rapport.ca|floatformat:0 }}</td>
+                            <td style="color: var(--primary-green); font-weight: 600;">{{ rapport.benefice|floatformat:0 }}</td>
+                            <td>{{ rapport.marge }}%</td>
+                            <td>{{ rapport.transactions }}</td>
+                            <td><span class="badge badge-success">{{ rapport.evolution }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Graphique CA
+        const caCtx = document.getElementById('caChart').getContext('2d');
+        new Chart(caCtx, {
+            type: 'line',
+            data: {
+                labels: ['Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'],
+                datasets: [{
+                    label: 'Chiffre d\'Affaires',
+                    data: [28000000, 32000000, 35000000, 40000000, 42000000, 45200000],
+                    borderColor: '#2563EB',
+                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    pointRadius: 5,
+                    pointBackgroundColor: '#2563EB'
+                }, {
+                    label: 'Objectif',
+                    data: [30000000, 33000000, 36000000, 38000000, 41000000, 43000000],
+                    borderColor: '#DC2626',
+                    borderDash: [5, 5],
+                    tension: 0.4,
+                    fill: false,
+                    pointRadius: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: true, position: 'bottom' }
+                },
+                scales: {
+                    y: { beginAtZero: false, ticks: { callback: v => (v/1000000) + 'M' } }
+                }
+            }
+        });
+
+        // Graphique Marges
+        const margesCtx = document.getElementById('margesChart').getContext('2d');
+        new Chart(margesCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'],
+                datasets: [{
+                    label: 'Revenus',
+                    data: [28, 32, 35, 40, 42, 45],
+                    backgroundColor: '#10B981'
+                }, {
+                    label: 'Coûts',
+                    data: [20, 22, 25, 28, 30, 32],
+                    backgroundColor: '#DC2626'
+                }, {
+                    label: 'Bénéfice',
+                    data: [8, 10, 10, 12, 12, 13],
+                    backgroundColor: '#2563EB'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

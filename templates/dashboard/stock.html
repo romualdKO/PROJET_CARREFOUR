@@ -1,0 +1,120 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion Stock - SuperMarché Plus</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <div class="dashboard-layout">
+        <aside class="sidebar">
+            <div style="text-align: center; padding: 0 1.5rem; margin-bottom: 2rem;">
+                <div style="width: 60px; height: 60px; background: var(--orange); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin: 0 auto; color: white; font-size: 2rem;">📦</div>
+                <h3 style="margin-top: 1rem;">Gestion des Stocks</h3>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="{% url 'dashboard_stock' %}" class="active"><span class="icon">📊</span> Tableau de Bord</a></li>
+                <li><a href="{% url 'stock_add_product' %}"><span class="icon">➕</span> Ajouter Produit</a></li>
+                <li><a href="{% url 'dashboard' %}"><span class="icon">🏠</span> Retour</a></li>
+            </ul>
+            <div style="padding: 1.5rem; margin-top: auto;">
+                <a href="{% url 'logout' %}" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: var(--bg-gray); border-radius: 8px; text-decoration: none; color: var(--text-dark);"><span>🚪</span><span>Déconnexion</span></a>
+            </div>
+        </aside>
+        <main class="main-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <div class="page-header">
+                    <h1>Gestion des Stocks</h1>
+                    <p>Suivi en temps réel de votre inventaire</p>
+                </div>
+                <a href="{% url 'stock_add_product' %}" class="btn btn-primary" style="text-decoration: none;">
+                    <span style="margin-right: 0.5rem;">➕</span> Ajouter un Produit
+                </a>
+                <button class="btn btn-primary">+ Ajouter Produit</button>
+            </div>
+            <div class="cards-grid" style="grid-template-columns: repeat(4, 1fr);">
+                <div class="kpi-card">
+                    <div class="kpi-icon blue">📦</div>
+                    <div class="kpi-content">
+                        <h3>{{ total_produits }}</h3>
+                        <p>Total Produits</p>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon red">⚠️</div>
+                    <div class="kpi-content">
+                        <h3>{{ stock_critique }}</h3>
+                        <p>Stock Critique</p>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon green">💰</div>
+                    <div class="kpi-content">
+                        <h3>{{ valeur_stock|floatformat:0 }}</h3>
+                        <p>Valeur Stock (FCFA)</p>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon orange">📦</div>
+                    <div class="kpi-content">
+                        <h3>{{ commandes_en_cours }}</h3>
+                        <p>Commandes En Cours</p>
+                    </div>
+                </div>
+            </div>
+            <div class="alert alert-danger" style="margin: 2rem 0;">
+                <strong>⚠️ Alertes Stock Critique</strong>
+                <div style="margin-top: 0.75rem; display: flex; gap: 2rem;">
+                    {% for produit in produits_critiques %}
+                    <div style="padding: 0.75rem; background: white; border-radius: 6px; flex: 1;">
+                        <strong>{{ produit.nom }}</strong>
+                        <div style="color: var(--red); margin-top: 0.25rem;">Stock: {{ produit.stock_actuel }} unités</div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="table-container">
+                <div style="padding: 1.5rem; border-bottom: 1px solid var(--border-gray);">
+                    <h3>Inventaire des Produits</h3>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>PRODUIT</th>
+                            <th>CATÉGORIE</th>
+                            <th>STOCK</th>
+                            <th>PRIX UNITAIRE</th>
+                            <th>FOURNISSEUR</th>
+                            <th>STATUT</th>
+                            <th>ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for produit in produits %}
+                        <tr>
+                            <td><strong>{{ produit.nom }}</strong><br><small>REF: {{ produit.reference }}</small></td>
+                            <td>{{ produit.get_categorie_display }}</td>
+                            <td><strong>{{ produit.stock_actuel }}</strong> unités</td>
+                            <td>{{ produit.prix_unitaire }} FCFA</td>
+                            <td>{{ produit.fournisseur }}</td>
+                            <td>
+                                {% if produit.statut == 'EN_STOCK' %}
+                                <span class="badge badge-success">En stock</span>
+                                {% elif produit.statut == 'CRITIQUE' %}
+                                <span class="badge badge-warning">Stock critique</span>
+                                {% else %}
+                                <span class="badge badge-danger">Rupture</span>
+                                {% endif %}
+                            </td>
+                            <td><button style="border: none; background: var(--primary-blue); color: white; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer;">✏️</button></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

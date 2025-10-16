@@ -1,0 +1,108 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supprimer Employé - RH</title>
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">🛒</div>
+                <h2>SuperMarché Plus</h2>
+                <p>Module Ressources Humaines</p>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="{% url 'dashboard_rh' %}" class="nav-item">
+                    <span class="icon">📊</span>
+                    <span>Tableau de Bord</span>
+                </a>
+                <a href="{% url 'rh_employees_list' %}" class="nav-item active">
+                    <span class="icon">👥</span>
+                    <span>Employés</span>
+                </a>
+                <a href="{% url 'rh_create_employee' %}" class="nav-item">
+                    <span class="icon">➕</span>
+                    <span>Nouvel Employé</span>
+                </a>
+                <a href="{% url 'rh_planifications' %}" class="nav-item">
+                    <span class="icon">📅</span>
+                    <span>Planifications</span>
+                </a>
+                <a href="{% url 'rh_presences' %}" class="nav-item">
+                    <span class="icon">✅</span>
+                    <span>Présences</span>
+                </a>
+                <a href="{% url 'rh_conges' %}" class="nav-item">
+                    <span class="icon">🏖️</span>
+                    <span>Congés</span>
+                </a>
+                <a href="{% url 'rh_formations' %}" class="nav-item">
+                    <span class="icon">🎓</span>
+                    <span>Formations</span>
+                </a>
+                <a href="{% url 'logout' %}" class="nav-item logout">
+                    <span class="icon">🚪</span>
+                    <span>Déconnexion</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="content-header">
+                <h1>Supprimer Employé</h1>
+                <div class="user-info">
+                    <span>👤 {{ user.get_full_name }}</span>
+                </div>
+            </header>
+
+            <!-- Confirmation de suppression -->
+            <div class="card" style="max-width: 600px; margin: 40px auto;">
+                <div class="card-header" style="background: linear-gradient(135deg, #DC2626, #B91C1C); color: white;">
+                    <h2>⚠️ Confirmation de Suppression</h2>
+                </div>
+                <div class="card-body" style="text-align: center; padding: 40px;">
+                    <p style="font-size: 1.1em; margin-bottom: 20px; color: #374151;">
+                        Êtes-vous sûr de vouloir supprimer cet employé ?
+                    </p>
+                    
+                    <div style="background: #FEE2E2; border: 2px solid #DC2626; border-radius: 12px; padding: 20px; margin: 20px 0;">
+                        <p style="font-weight: 700; font-size: 1.2em; color: #991B1B; margin-bottom: 10px;">
+                            {{ employe.get_full_name }}
+                        </p>
+                        <p style="color: #6B7280; margin: 5px 0;">
+                            <strong>ID:</strong> {{ employe.employee_id }}
+                        </p>
+                        <p style="color: #6B7280; margin: 5px 0;">
+                            <strong>Poste:</strong> {{ employe.get_role_display }}
+                        </p>
+                        <p style="color: #6B7280; margin: 5px 0;">
+                            <strong>Département:</strong> {{ employe.get_departement_display }}
+                        </p>
+                    </div>
+                    
+                    <p style="color: #DC2626; font-weight: 600; margin: 20px 0;">
+                        ⚠️ Cette action est irréversible !
+                    </p>
+                    
+                    <form method="POST" style="display: flex; gap: 10px; justify-content: center; margin-top: 30px;">
+                        {% csrf_token %}
+                        <button type="submit" style="background: linear-gradient(135deg, #DC2626, #B91C1C); color: white; padding: 12px 32px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                            🗑️ Confirmer la Suppression
+                        </button>
+                        <a href="{% url 'rh_employees_list' %}" style="background: #6B7280; color: white; padding: 12px 32px; border-radius: 8px; font-weight: 600; text-decoration: none; display: inline-block;">
+                            ❌ Annuler
+                        </a>
+                    </form>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

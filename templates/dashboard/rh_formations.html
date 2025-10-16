@@ -1,0 +1,86 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Formations - RH</title>
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">🛒</div>
+                <h2>SuperMarché Plus</h2>
+                <p>Module Ressources Humaines</p>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="{% url 'dashboard_rh' %}" class="nav-item"><span class="icon">📊</span><span>Tableau de Bord</span></a>
+                <a href="{% url 'rh_employees_list' %}" class="nav-item"><span class="icon">👥</span><span>Employés</span></a>
+                <a href="{% url 'rh_create_employee' %}" class="nav-item"><span class="icon">➕</span><span>Nouvel Employé</span></a>
+                <a href="{% url 'rh_planifications' %}" class="nav-item"><span class="icon">📅</span><span>Planifications</span></a>
+                <a href="{% url 'rh_presences' %}" class="nav-item"><span class="icon">✅</span><span>Présences</span></a>
+                <a href="{% url 'rh_conges' %}" class="nav-item"><span class="icon">🏖️</span><span>Congés</span></a>
+                <a href="{% url 'rh_formations' %}" class="nav-item active"><span class="icon">🎓</span><span>Formations</span></a>
+                <a href="{% url 'logout' %}" class="nav-item logout"><span class="icon">🚪</span><span>Déconnexion</span></a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="content-header">
+                <h1>Gestion des Formations</h1>
+                <div class="user-info"><span>👤 {{ user.get_full_name }}</span></div>
+            </header>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="card">
+                <div class="card-header">
+                    <h2>🎓 Liste des Formations</h2>
+                </div>
+                <div class="card-body">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: linear-gradient(135deg, #E0E7FF, #DBEAFE); border-bottom: 2px solid #2563EB;">
+                                <th style="padding: 12px; text-align: left;">Titre</th>
+                                <th style="padding: 12px; text-align: left;">Type</th>
+                                <th style="padding: 12px; text-align: center;">Date Début</th>
+                                <th style="padding: 12px; text-align: center;">Date Fin</th>
+                                <th style="padding: 12px; text-align: center;">Durée</th>
+                                <th style="padding: 12px; text-align: center;">Statut</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for formation in formations %}
+                            <tr style="border-bottom: 1px solid #E5E7EB;">
+                                <td style="padding: 12px; font-weight: 500;">{{ formation.titre }}</td>
+                                <td style="padding: 12px;">{{ formation.get_type_formation_display }}</td>
+                                <td style="padding: 12px; text-align: center;">{{ formation.date_debut|date:"d/m/Y" }}</td>
+                                <td style="padding: 12px; text-align: center;">{{ formation.date_fin|date:"d/m/Y" }}</td>
+                                <td style="padding: 12px; text-align: center;">{{ formation.duree }} h</td>
+                                <td style="padding: 12px; text-align: center;">
+                                    {% if formation.statut == 'PLANIFIEE' %}
+                                        <span style="background: #DBEAFE; color: #1E40AF; padding: 4px 12px; border-radius: 12px; font-size: 0.85em;">📅 Planifiée</span>
+                                    {% elif formation.statut == 'EN_COURS' %}
+                                        <span style="background: #FEF3C7; color: #92400E; padding: 4px 12px; border-radius: 12px; font-size: 0.85em;">⏳ En cours</span>
+                                    {% else %}
+                                        <span style="background: #D1FAE5; color: #065F46; padding: 4px 12px; border-radius: 12px; font-size: 0.85em;">✅ Terminée</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="6" style="padding: 40px; text-align: center; color: #6B7280;">Aucune formation enregistrée</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

@@ -1,0 +1,119 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Point de Vente - SuperMarché Plus</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <div class="dashboard-layout">
+        <aside class="sidebar">
+            <div style="text-align: center; padding: 0 1.5rem; margin-bottom: 2rem;">
+                <div style="width: 60px; height: 60px; background: var(--primary-green); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin: 0 auto; color: white; font-size: 2rem;">💰</div>
+                <h3 style="margin-top: 1rem;">Gestion des Ventes</h3>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="{% url 'dashboard_caisse' %}" class="active"><span class="icon">📊</span> Tableau de Bord</a></li>
+                <li><a href="{% url 'dashboard' %}"><span class="icon">🏠</span> Retour</a></li>
+            </ul>
+            <div style="padding: 1.5rem; margin-top: auto;">
+                <a href="{% url 'logout' %}" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: var(--bg-gray); border-radius: 8px; text-decoration: none; color: var(--text-dark);"><span>🚪</span><span>Déconnexion</span></a>
+            </div>
+        </aside>
+        <main class="main-content">
+            <div class="page-header">
+                <h1>Point de Vente - Caisse #03</h1>
+                <p><span style="display: inline-block; width: 10px; height: 10px; background: var(--primary-green); border-radius: 50%; margin-right: 0.5rem;"></span>Actif</p>
+            </div>
+            <div class="cards-grid" style="grid-template-columns: repeat(4, 1fr);">
+                <div class="kpi-card">
+                    <div class="kpi-icon green">💰</div>
+                    <div class="kpi-content">
+                        <h3>{{ ca_jour|floatformat:0 }} FCFA</h3>
+                        <p>Ventes Aujourd'hui</p>
+                        <div class="kpi-trend up">↑ +12,5%</div>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon blue">📊</div>
+                    <div class="kpi-content">
+                        <h3>{{ nb_transactions }}</h3>
+                        <p>Transactions</p>
+                        <div class="kpi-trend">En cours</div>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon orange">🛒</div>
+                    <div class="kpi-content">
+                        <h3>{{ panier_moyen|floatformat:0 }} FCFA</h3>
+                        <p>Panier Moyen</p>
+                        <div class="kpi-trend up">↑ +3,2%</div>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon purple">💵</div>
+                    <div class="kpi-content">
+                        <h3>{{ caisses_actives }}/{{ total_caisses }}</h3>
+                        <p>Caisses Actives</p>
+                        <div class="kpi-trend">En service</div>
+                    </div>
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 2rem 0;">
+                <div class="chart-container">
+                    <div class="chart-header"><h3>Transactions Récentes</h3></div>
+                    <div style="max-height: 400px; overflow-y: auto;">
+                        {% for transaction in transactions_recentes %}
+                        <div style="padding: 1rem; border-bottom: 1px solid var(--border-gray); display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong>{{ transaction.numero_transaction }}</strong>
+                                <div style="font-size: 0.85rem; color: var(--text-light); margin-top: 0.25rem;">{{ transaction.date_vente|date:"H:i" }} - {{ transaction.get_moyen_paiement_display }}</div>
+                            </div>
+                            <div style="text-align: right;">
+                                <strong style="color: var(--primary-green);">{{ transaction.montant_final|floatformat:0 }} FCFA</strong>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-header"><h3>Moyens de Paiement</h3></div>
+                    <div style="padding: 1rem;">
+                        {% for stat in paiement_stats %}
+                        <div style="margin-bottom: 1rem;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <span>{{ stat.moyen }}</span>
+                                <strong>{{ stat.pourcentage }}%</strong>
+                            </div>
+                            <div style="background: var(--bg-gray); height: 8px; border-radius: 4px; overflow: hidden;">
+                                <div style="background: var(--primary-blue); width: {{ stat.pourcentage }}%; height: 100%;"></div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <div class="quick-actions">
+                <a href="#" class="quick-action-btn" style="background: var(--primary-blue); color: white; border: none;">
+                    <div class="icon" style="color: white;">🔍</div>
+                    <span>Nouveau</span>
+                </a>
+                <a href="#" class="quick-action-btn">
+                    <div class="icon">👤</div>
+                    <span>Client</span>
+                </a>
+                <a href="#" class="quick-action-btn">
+                    <div class="icon">%</div>
+                    <span>Remise</span>
+                </a>
+                <a href="#" class="quick-action-btn">
+                    <div class="icon">🎁</div>
+                    <span>Promo</span>
+                </a>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

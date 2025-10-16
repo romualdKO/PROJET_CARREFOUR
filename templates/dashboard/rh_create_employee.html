@@ -1,0 +1,153 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Créer un Employé - SuperMarché Plus</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <div class="dashboard-layout">
+        <aside class="sidebar">
+            <div style="text-align: center; padding: 0 1.5rem; margin-bottom: 2rem;">
+                <div style="width: 60px; height: 60px; background: var(--primary-blue); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin: 0 auto; color: white; font-size: 2rem;">👥</div>
+                <h3 style="margin-top: 1rem;">Ressources Humaines</h3>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="{% url 'dashboard_rh' %}"><span class="icon">📊</span> Tableau de Bord</a></li>
+                <li><a href="{% url 'rh_create_employee' %}" class="active"><span class="icon">➕</span> Nouvel Employé</a></li>
+                <li><a href="{% url 'dashboard' %}"><span class="icon">🏠</span> Retour</a></li>
+            </ul>
+            <div style="padding: 1.5rem; margin-top: auto;">
+                <a href="{% url 'logout' %}" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: var(--bg-gray); border-radius: 8px; text-decoration: none; color: var(--text-dark);"><span>🚪</span><span>Déconnexion</span></a>
+            </div>
+        </aside>
+        <main class="main-content">
+            <div class="page-header">
+                <h1>Créer un Nouvel Employé</h1>
+                <p>Créer un compte employé avec identifiants de connexion</p>
+            </div>
+
+            {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}" style="padding: 1rem; margin-bottom: 1.5rem; border-radius: 8px; {% if message.tags == 'success' %}background: #d4edda; color: #155724; border: 1px solid #c3e6cb;{% elif message.tags == 'error' %}background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;{% endif %}">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="chart-container">
+                <form method="post" style="padding: 2rem;">
+                    {% csrf_token %}
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                        <div>
+                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Prénom *</label>
+                            <input type="text" name="first_name" required class="form-input" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-gray); border-radius: 8px;">
+                        </div>
+                        
+                        <div>
+                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Nom *</label>
+                            <input type="text" name="last_name" required class="form-input" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-gray); border-radius: 8px;">
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 1.5rem;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Email *</label>
+                        <input type="email" name="email" required class="form-input" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-gray); border-radius: 8px;">
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1.5rem;">
+                        <div>
+                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Nom d'utilisateur *</label>
+                            <input type="text" name="username" required class="form-input" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-gray); border-radius: 8px;">
+                            <small style="color: var(--text-light); font-size: 0.85rem;">Utilisé pour la connexion</small>
+                        </div>
+                        
+                        <div>
+                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Mot de passe *</label>
+                            <input type="text" name="password" required class="form-input" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-gray); border-radius: 8px;">
+                            <small style="color: var(--text-light); font-size: 0.85rem;">Minimum 8 caractères</small>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 1.5rem;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Rôle / Poste *</label>
+                        <select name="role" required class="form-input" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-gray); border-radius: 8px;">
+                            <option value="">-- Sélectionner un rôle --</option>
+                            <option value="STOCK">Gestionnaire de Stock</option>
+                            <option value="CAISSIER">Caissier</option>
+                            <option value="MARKETING">Marketing / Fidélisation</option>
+                            <option value="ANALYSTE">Analyste</option>
+                            <option value="RH">Responsable RH</option>
+                        </select>
+                        <small style="color: var(--text-light); font-size: 0.85rem;">⚠️ Les comptes DG et DAF ne peuvent pas être créés ici</small>
+                    </div>
+
+                    <!-- Horaires de Travail -->
+                    <div style="margin-top: 2rem; padding: 1.5rem; background: #F3F4F6; border-radius: 8px;">
+                        <h3 style="margin: 0 0 1rem 0; color: #1F2937; font-size: 16px;">⏰ Configuration des Horaires de Travail</h3>
+                        <p style="margin: 0 0 1rem 0; color: #6B7280; font-size: 14px;">
+                            ℹ️ Ces horaires permettent l'enregistrement automatique des présences lors de la connexion/déconnexion.
+                        </p>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+                            <div>
+                                <label class="form-label">Heure Début *</label>
+                                <input type="time" name="heure_debut_travail" value="08:00" required class="form-input">
+                                <small style="color: #6B7280; font-size: 12px;">Début de journée</small>
+                            </div>
+                            
+                            <div>
+                                <label class="form-label">Heure Fin *</label>
+                                <input type="time" name="heure_fin_travail" value="17:00" required class="form-input">
+                                <small style="color: #6B7280; font-size: 12px;">Fin de journée</small>
+                            </div>
+                            
+                            <div>
+                                <label class="form-label">Pause (minutes) *</label>
+                                <input type="number" name="duree_pause" value="90" required min="0" max="480" class="form-input">
+                                <small style="color: #6B7280; font-size: 12px;">Durée pause déjeuner</small>
+                            </div>
+                        </div>
+                        
+                        <div style="background: #FEF3C7; padding: 12px; border-radius: 6px; margin-top: 1rem; border-left: 4px solid #F59E0B;">
+                            <p style="margin: 0; color: #92400E; font-size: 13px; line-height: 1.5;">
+                                <strong>📋 Règles de présence automatiques :</strong><br>
+                                • <strong>Présent</strong> : Arrivée ≤ 15min de retard + au moins 60% des heures travaillées<br>
+                                • <strong>Retard</strong> : Arrivée entre 15-60min de retard + au moins 60% des heures travaillées<br>
+                                • <strong>Absent</strong> : Arrivée > 60min de retard OU moins de 60% des heures travaillées
+                            </p>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--border-gray);">
+                        <h3 style="margin-bottom: 1rem;">Accès aux Tableaux de Bord</h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <label style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: var(--bg-gray); border-radius: 8px; cursor: pointer;">
+                                <input type="checkbox" name="acces_dashboard_stock" value="true">
+                                <span>📦 Dashboard Stock</span>
+                            </label>
+                            
+                            <label style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: var(--bg-gray); border-radius: 8px; cursor: pointer;">
+                                <input type="checkbox" name="acces_dashboard_rh" value="true">
+                                <span>👥 Dashboard RH</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                        <button type="submit" class="btn btn-primary" style="flex: 1;">
+                            <span style="margin-right: 0.5rem;">✅</span> Créer l'employé
+                        </button>
+                        <a href="{% url 'dashboard_rh' %}" class="btn btn-secondary" style="flex: 1; text-align: center; text-decoration: none;">
+                            <span style="margin-right: 0.5rem;">❌</span> Annuler
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

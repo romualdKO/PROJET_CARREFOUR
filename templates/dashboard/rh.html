@@ -1,0 +1,180 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module RH - SuperMarché Plus</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <div class="dashboard-layout">
+        <aside class="sidebar">
+            <div style="text-align: center; padding: 0 1.5rem; margin-bottom: 2rem;">
+                <div style="width: 60px; height: 60px; background: var(--primary-blue); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin: 0 auto; color: white; font-size: 2rem;">🛒</div>
+                <h3 style="margin-top: 1rem; font-size: 1.1rem;">SuperMarché Plus</h3>
+                <p style="font-size: 0.85rem; color: var(--text-light);">Module Ressources Humaines</p>
+            </div>
+
+            <ul class="sidebar-menu">
+                <li><a href="{% url 'dashboard_rh' %}" class="active"><span class="icon">📊</span> Tableau de Bord</a></li>
+                <li><a href="{% url 'rh_create_employee' %}"><span class="icon">➕</span> Nouvel Employé</a></li>
+                <li><a href="{% url 'rh_employees_list' %}"><span class="icon">👥</span> Employés</a></li>
+                <li><a href="{% url 'rh_planifications' %}"><span class="icon">📅</span> Planifications</a></li>
+                <li><a href="{% url 'rh_presences' %}"><span class="icon">✅</span> Présences</a></li>
+                <li><a href="{% url 'rh_conges' %}"><span class="icon">🏖️</span> Congés</a></li>
+                <li><a href="{% url 'rh_formations' %}"><span class="icon">🎓</span> Formations</a></li>
+                <li><a href="{% url 'dashboard' %}"><span class="icon">🏠</span> Retour</a></li>
+            </ul>
+
+            <div style="padding: 1.5rem; margin-top: auto;">
+                <a href="{% url 'logout' %}" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: var(--bg-gray); border-radius: 8px; text-decoration: none; color: var(--text-dark);">
+                    <span style="font-size: 1.2rem;">🚪</span>
+                    <span>Déconnexion</span>
+                </a>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <div class="page-header">
+                    <h1>Tableau de Bord RH</h1>
+                    <p>Vue d'ensemble des ressources humaines</p>
+                </div>
+                <button class="btn btn-primary">+ Nouvel Employé</button>
+            </div>
+
+            <!-- KPI Cards -->
+            <div class="cards-grid" style="grid-template-columns: repeat(4, 1fr);">
+                <div class="kpi-card">
+                    <div class="kpi-icon blue">👥</div>
+                    <div class="kpi-content">
+                        <h3>{{ total_employes }}</h3>
+                        <p>Total des employés</p>
+                        <div class="kpi-trend up">↑ +3 ce mois</div>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon green">✅</div>
+                    <div class="kpi-content">
+                        <h3>{{ presences_jour }}</h3>
+                        <p>Présents Aujourd'hui</p>
+                        <div class="kpi-trend">{{ taux_presence|floatformat:0 }}% de présence</div>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon orange">🏖️</div>
+                    <div class="kpi-content">
+                        <h3>{{ conges_en_cours }}</h3>
+                        <p>En Congé</p>
+                        <div class="kpi-trend">3 retours demain</div>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon purple">🎓</div>
+                    <div class="kpi-content">
+                        <h3>{{ formations_actives }}</h3>
+                        <p>Formations Actives</p>
+                        <div class="kpi-trend">2 cette semaine</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Activités Récentes -->
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin: 2rem 0;">
+                <div class="table-container">
+                    <div style="padding: 1.5rem; border-bottom: 1px solid var(--border-gray);">
+                        <h3>Gestion des Employés</h3>
+                        <p style="color: var(--text-light); margin-top: 0.5rem;">Gérer les profils et permissions des employés</p>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Employé</th>
+                                <th>Poste</th>
+                                <th>Département</th>
+                                <th>Statut</th>
+                                <th>Dernière Connexion</th>
+                                <th>Actes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for emp in employes|slice:":5" %}
+                            <tr>
+                                <td>
+                                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                                        <div style="width: 35px; height: 35px; background: var(--light-blue); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--primary-blue); font-weight: bold;">
+                                            {{ emp.first_name.0 }}{{ emp.last_name.0 }}
+                                        </div>
+                                        <div>
+                                            <div style="font-weight: 600;">{{ emp.get_full_name }}</div>
+                                            <div style="font-size: 0.85rem; color: var(--text-light);">ID : {{ emp.employee_id }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>{{ emp.get_role_display }}</td>
+                                <td>{{ emp.get_departement_display }}</td>
+                                <td>
+                                    {% if emp.est_actif %}
+                                    <span class="badge badge-success">Actif</span>
+                                    {% else %}
+                                    <span class="badge badge-danger">Inactif</span>
+                                    {% endif %}
+                                </td>
+                                <td>Il y a {{ emp.derniere_connexion_custom|timesince|default:"jamais" }}</td>
+                                <td>
+                                    <button style="border: none; background: transparent; cursor: pointer; color: var(--primary-blue); font-size: 1.2rem;">✏️</button>
+                                    <button style="border: none; background: transparent; cursor: pointer; color: var(--red); font-size: 1.2rem;">🗑️</button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h3>Activités Récentes</h3>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                        {% for activite in activites %}
+                        <div style="display: flex; gap: 1rem;">
+                            <div style="width: 40px; height: 40px; background: var(--light-blue); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                {% if activite.type == 'employe' %}👤
+                                {% elif activite.type == 'conge' %}🏖️
+                                {% elif activite.type == 'formation' %}🎓
+                                {% endif %}
+                            </div>
+                            <div>
+                                <div style="font-weight: 600; font-size: 0.95rem;">{{ activite.titre }}</div>
+                                <div style="font-size: 0.85rem; color: var(--text-light); margin-top: 0.25rem;">{{ activite.details }}</div>
+                                <div style="font-size: 0.8rem; color: var(--text-light); margin-top: 0.25rem;">{{ activite.temps }}</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="quick-actions">
+                <a href="#" class="quick-action-btn">
+                    <div class="icon">👤</div>
+                    <span>Ajouter Employé</span>
+                </a>
+                <a href="#" class="quick-action-btn">
+                    <div class="icon">📅</div>
+                    <span>Planification</span>
+                </a>
+                <a href="#" class="quick-action-btn">
+                    <div class="icon">⏰</div>
+                    <span>Pointage</span>
+                </a>
+                <a href="#" class="quick-action-btn">
+                    <div class="icon">📊</div>
+                    <span>Rapports</span>
+                </a>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

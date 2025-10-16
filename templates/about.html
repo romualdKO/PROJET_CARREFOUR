@@ -1,0 +1,48 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>À propos - SuperMarché Plus</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="{% url 'home' %}" class="navbar-brand">
+                <div class="icon">🛒</div>
+                <span>SuperMarché Plus</span>
+            </a>
+            <ul class="navbar-menu">
+                <li><a href="{% url 'home' %}">Accueil</a></li>
+                <li><a href="{% url 'about' %}">À propos</a></li>
+                <li><a href="#">Services</a></li>
+                <li><a href="{% url 'contact' %}">Contact</a></li>
+            </ul>
+            <div class="navbar-actions">
+                <a href="{% url 'login' %}" class="btn btn-secondary">Connexion Employé</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container" style="padding: 4rem 0;">
+        <h1 style="font-size: 2.5rem; text-align: center; margin-bottom: 2rem;">À propos de SuperMarché Plus</h1>
+        <div class="card" style="max-width: 800px; margin: 0 auto; padding: 3rem;">
+            <p style="font-size: 1.1rem; line-height: 1.8; margin-bottom: 1.5rem;">
+                SuperMarché Plus est une solution complète de gestion intégrée conçue spécifiquement pour les supermarchés modernes. 
+                Notre plateforme permet de gérer efficacement tous les aspects de votre activité commerciale.
+            </p>
+            <h2 style="font-size: 1.5rem; margin: 2rem 0 1rem;">Notre Mission</h2>
+            <p style="line-height: 1.8;">
+                Simplifier et optimiser la gestion quotidienne des supermarchés en offrant des outils technologiques 
+                innovants, intuitifs et interconnectés qui permettent d'améliorer l'efficacité opérationnelle et 
+                l'expérience client.
+            </p>
+            <div style="margin-top: 2rem; text-align: center;">
+                <a href="{% url 'home' %}" class="btn btn-primary">Retour à l'accueil</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

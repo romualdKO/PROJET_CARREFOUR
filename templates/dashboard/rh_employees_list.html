@@ -1,0 +1,139 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liste des Employés - RH</title>
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">🛒</div>
+                <h2>SuperMarché Plus</h2>
+                <p>Module Ressources Humaines</p>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="{% url 'dashboard_rh' %}" class="nav-item">
+                    <span class="icon">📊</span>
+                    <span>Tableau de Bord</span>
+                </a>
+                <a href="{% url 'rh_employees_list' %}" class="nav-item active">
+                    <span class="icon">👥</span>
+                    <span>Employés</span>
+                </a>
+                <a href="{% url 'rh_create_employee' %}" class="nav-item">
+                    <span class="icon">➕</span>
+                    <span>Nouvel Employé</span>
+                </a>
+                <a href="{% url 'rh_planifications' %}" class="nav-item">
+                    <span class="icon">📅</span>
+                    <span>Planifications</span>
+                </a>
+                <a href="{% url 'rh_presences' %}" class="nav-item">
+                    <span class="icon">✅</span>
+                    <span>Présences</span>
+                </a>
+                <a href="{% url 'rh_conges' %}" class="nav-item">
+                    <span class="icon">🏖️</span>
+                    <span>Congés</span>
+                </a>
+                <a href="{% url 'rh_formations' %}" class="nav-item">
+                    <span class="icon">🎓</span>
+                    <span>Formations</span>
+                </a>
+                <a href="{% url 'logout' %}" class="nav-item logout">
+                    <span class="icon">🚪</span>
+                    <span>Déconnexion</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="content-header">
+                <h1>Liste des Employés</h1>
+                <div class="user-info">
+                    <span>👤 {{ user.get_full_name }}</span>
+                </div>
+            </header>
+
+            <!-- Messages -->
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <!-- Actions -->
+            <div style="margin-bottom: 20px;">
+                <a href="{% url 'rh_create_employee' %}" style="display: inline-block; background: linear-gradient(135deg, #2563EB, #1E40AF); color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+                    ➕ Ajouter un Employé
+                </a>
+            </div>
+
+            <!-- Tableau des employés -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>Tous les Employés ({{ employes.count }})</h2>
+                </div>
+                <div class="card-body">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="background: linear-gradient(135deg, #E0E7FF, #DBEAFE); border-bottom: 2px solid #2563EB;">
+                                <th style="padding: 12px; text-align: left; font-weight: 600;">ID</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600;">Nom Complet</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600;">Poste</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600;">Département</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600;">Email</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600;">Téléphone</th>
+                                <th style="padding: 12px; text-align: left; font-weight: 600;">Statut</th>
+                                <th style="padding: 12px; text-align: center; font-weight: 600;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for employe in employes %}
+                            <tr style="border-bottom: 1px solid #E5E7EB;">
+                                <td style="padding: 12px;">{{ employe.employee_id }}</td>
+                                <td style="padding: 12px; font-weight: 500;">{{ employe.get_full_name }}</td>
+                                <td style="padding: 12px;">{{ employe.get_role_display }}</td>
+                                <td style="padding: 12px;">{{ employe.get_departement_display }}</td>
+                                <td style="padding: 12px;">{{ employe.email|default:"—" }}</td>
+                                <td style="padding: 12px;">{{ employe.telephone|default:"—" }}</td>
+                                <td style="padding: 12px;">
+                                    {% if employe.est_actif %}
+                                        <span style="background: #D1FAE5; color: #065F46; padding: 4px 12px; border-radius: 12px; font-size: 0.85em; font-weight: 600;">Actif</span>
+                                    {% else %}
+                                        <span style="background: #FEE2E2; color: #991B1B; padding: 4px 12px; border-radius: 12px; font-size: 0.85em; font-weight: 600;">Inactif</span>
+                                    {% endif %}
+                                </td>
+                                <td style="padding: 12px; text-align: center;">
+                                    <a href="{% url 'rh_employee_edit' employe.id %}" style="background: linear-gradient(135deg, #2563EB, #1E40AF); color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 0.9em; margin-right: 5px;">
+                                        ✏️ Modifier
+                                    </a>
+                                    <a href="{% url 'rh_employee_delete' employe.id %}" style="background: linear-gradient(135deg, #DC2626, #B91C1C); color: white; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 0.9em;">
+                                        🗑️ Supprimer
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="8" style="padding: 40px; text-align: center; color: #6B7280;">
+                                    Aucun employé enregistré
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

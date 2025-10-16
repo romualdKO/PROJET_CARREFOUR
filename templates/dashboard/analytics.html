@@ -1,0 +1,216 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics - SuperMarché Plus</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="dashboard-layout">
+        <aside class="sidebar">
+            <div style="text-align: center; padding: 0 1.5rem; margin-bottom: 2rem;">
+                <div style="width: 60px; height: 60px; background: linear-gradient(135deg, #667EEA, #764BA2); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin: 0 auto; color: white; font-size: 2rem;">📈</div>
+                <h3 style="margin-top: 1rem;">Analytics</h3>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="{% url 'dashboard_analytics' %}" class="active"><span class="icon">📊</span> Tableau de Bord</a></li>
+                <li><a href="{% url 'dashboard' %}"><span class="icon">🏠</span> Retour</a></li>
+            </ul>
+            <div style="padding: 1.5rem; margin-top: auto;">
+                <a href="{% url 'logout' %}" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: var(--bg-gray); border-radius: 8px; text-decoration: none; color: var(--text-dark);"><span>🚪</span><span>Déconnexion</span></a>
+            </div>
+        </aside>
+        <main class="main-content">
+            <div class="page-header">
+                <h1>Business Intelligence</h1>
+                <p>Analyses avancées et prédictions</p>
+            </div>
+            <div class="cards-grid" style="grid-template-columns: repeat(4, 1fr);">
+                <div class="kpi-card" style="background: linear-gradient(135deg, #667EEA 0%, #764BA2 100%); color: white;">
+                    <div class="kpi-content">
+                        <h3 style="color: white;">{{ ca_mois|floatformat:0 }} M FCFA</h3>
+                        <p style="color: rgba(255,255,255,0.9);">CA Mensuel</p>
+                        <div class="kpi-trend up" style="background: rgba(255,255,255,0.2);">↑ +15,2%</div>
+                    </div>
+                </div>
+                <div class="kpi-card" style="background: linear-gradient(135deg, #F093FB 0%, #F5576C 100%); color: white;">
+                    <div class="kpi-content">
+                        <h3 style="color: white;">{{ nb_transactions }}</h3>
+                        <p style="color: rgba(255,255,255,0.9);">Transactions</p>
+                        <div class="kpi-trend up" style="background: rgba(255,255,255,0.2);">↑ +8,5%</div>
+                    </div>
+                </div>
+                <div class="kpi-card" style="background: linear-gradient(135deg, #4FACFE 0%, #00F2FE 100%); color: white;">
+                    <div class="kpi-content">
+                        <h3 style="color: white;">{{ taux_conversion|floatformat:1 }}%</h3>
+                        <p style="color: rgba(255,255,255,0.9);">Taux Conversion</p>
+                        <div class="kpi-trend up" style="background: rgba(255,255,255,0.2);">↑ +2,3%</div>
+                    </div>
+                </div>
+                <div class="kpi-card" style="background: linear-gradient(135deg, #FA709A 0%, #FEE140 100%); color: white;">
+                    <div class="kpi-content">
+                        <h3 style="color: white;">{{ satisfaction|floatformat:1 }}/5</h3>
+                        <p style="color: rgba(255,255,255,0.9);">Satisfaction</p>
+                        <div class="kpi-trend up" style="background: rgba(255,255,255,0.2);">↑ +0,5</div>
+                    </div>
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin: 2rem 0;">
+                <div class="chart-container">
+                    <div class="chart-header"><h3>Évolution des Ventes (7 derniers jours)</h3></div>
+                    <canvas id="ventesChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-header"><h3>Performance Globale</h3></div>
+                    <div style="padding: 2rem; text-align: center;">
+                        <div style="position: relative; width: 200px; height: 200px; margin: 0 auto;">
+                            <svg viewBox="0 0 200 200" style="transform: rotate(-90deg);">
+                                <circle cx="100" cy="100" r="80" fill="none" stroke="var(--bg-gray)" stroke-width="20"></circle>
+                                <circle cx="100" cy="100" r="80" fill="none" stroke="url(#gradient)" stroke-width="20" stroke-dasharray="502.65" stroke-dashoffset="125.66" stroke-linecap="round"></circle>
+                                <defs>
+                                    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#667EEA;stop-opacity:1" />
+                                        <stop offset="100%" style="stop-color:#764BA2;stop-opacity:1" />
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
+                                <div style="font-size: 2.5rem; font-weight: bold; color: var(--primary-blue);">75%</div>
+                                <div style="font-size: 0.85rem; color: var(--text-light);">Objectif</div>
+                            </div>
+                        </div>
+                        <div style="margin-top: 2rem; padding: 1rem; background: var(--bg-gray); border-radius: 8px;">
+                            <div style="font-size: 0.85rem; color: var(--text-light);">Objectif du mois</div>
+                            <div style="font-size: 1.5rem; font-weight: bold; margin-top: 0.5rem;">45M FCFA</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 2rem 0;">
+                <div class="chart-container">
+                    <div class="chart-header"><h3>Top Produits (CA)</h3></div>
+                    <canvas id="topProduitsChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-header"><h3>Répartition par Catégorie</h3></div>
+                    <canvas id="categoriesChart"></canvas>
+                </div>
+            </div>
+            <div class="table-container">
+                <div class="chart-header"><h3>Analyses Détaillées par Produit</h3></div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Produit</th>
+                            <th>CA</th>
+                            <th>Quantité</th>
+                            <th>Marge</th>
+                            <th>Tendance</th>
+                            <th>Stock</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for produit in top_produits %}
+                        <tr>
+                            <td><strong>{{ produit.produit__nom }}</strong></td>
+                            <td>{{ produit.chiffre_affaires|floatformat:0 }} FCFA</td>
+                            <td>{{ produit.quantite_vendue }}</td>
+                            <td><span class="badge success">{{ produit.marge|floatformat:1 }}%</span></td>
+                            <td>
+                                {% if produit.tendance > 0 %}
+                                <span style="color: var(--primary-green);">↗ +{{ produit.tendance|floatformat:1 }}%</span>
+                                {% else %}
+                                <span style="color: var(--danger-red);">↘ {{ produit.tendance|floatformat:1 }}%</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if produit.stock_actuel < 10 %}
+                                <span class="badge danger">{{ produit.stock_actuel }}</span>
+                                {% else %}
+                                <span class="badge success">{{ produit.stock_actuel }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+    <script>
+        // Graphique Évolution des Ventes
+        const ctxVentes = document.getElementById('ventesChart').getContext('2d');
+        new Chart(ctxVentes, {
+            type: 'line',
+            data: {
+                labels: [{% for item in ventes_evolution %}"{{ item.date|date:'d/m' }}"{% if not forloop.last %},{% endif %}{% endfor %}],
+                datasets: [{
+                    label: 'Ventes (FCFA)',
+                    data: [{% for item in ventes_evolution %}{{ item.total }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                    borderColor: '#667EEA',
+                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+
+        // Graphique Top Produits
+        const ctxProduits = document.getElementById('topProduitsChart').getContext('2d');
+        new Chart(ctxProduits, {
+            type: 'bar',
+            data: {
+                labels: [{% for p in top_produits %}"{{ p.produit__nom|truncatewords:2 }}"{% if not forloop.last %},{% endif %}{% endfor %}],
+                datasets: [{
+                    label: 'CA (FCFA)',
+                    data: [{% for p in top_produits %}{{ p.chiffre_affaires }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                    backgroundColor: ['#667EEA', '#764BA2', '#F093FB', '#4FACFE', '#FA709A']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+
+        // Graphique Catégories
+        const ctxCategories = document.getElementById('categoriesChart').getContext('2d');
+        new Chart(ctxCategories, {
+            type: 'doughnut',
+            data: {
+                labels: [{% for c in categories_data %}"{{ c.categorie }}"{% if not forloop.last %},{% endif %}{% endfor %}],
+                datasets: [{
+                    data: [{% for c in categories_data %}{{ c.total }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                    backgroundColor: ['#667EEA', '#F093FB', '#4FACFE', '#FA709A', '#28A745']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

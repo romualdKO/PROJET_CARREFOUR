@@ -1,0 +1,107 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tableau de Bord - SuperMarché Plus</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <a href="{% url 'home' %}" class="navbar-brand">
+                <div class="icon">🛒</div>
+                <span>SuperMarché Plus</span>
+            </a>
+            <div style="display: flex; align-items: center; gap: 2rem;">
+                <span style="color: white;">🟢 Système en ligne</span>
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <div style="width: 40px; height: 40px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--primary-blue);">
+                            {{ user.first_name.0 }}{{ user.last_name.0 }}
+                        </div>
+                        <div>
+                            <div style="font-weight: 600;">{{ user.get_full_name }}</div>
+                            <div style="font-size: 0.85rem; opacity: 0.8;">{{ user.get_role_display }}</div>
+                        </div>
+                    </div>
+                    <a href="{% url 'logout' %}" class="btn btn-secondary" style="padding: 0.5rem 1rem;">🚪 Déconnexion</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div style="padding: 3rem 0; min-height: calc(100vh - 80px);">
+        <div class="container">
+            <div style="text-align: center; margin-bottom: 3rem;">
+                <h1 style="font-size: 2.5rem; color: var(--text-dark); margin-bottom: 1rem;">Connexion Personnel</h1>
+                <p style="color: var(--text-light); font-size: 1.1rem;">Sélectionnez votre profil pour accéder à votre espace de travail</p>
+            </div>
+
+            <div class="profile-tiles">
+                <!-- Direction Générale -->
+                <a href="{% url 'dashboard_dg' %}" class="profile-tile">
+                    <div class="icon" style="background: #FEE2E2; color: var(--red);">👑</div>
+                    <h3>Direction Générale</h3>
+                    <p>Accès complet à tous les modules et rapports analytiques</p>
+                    <div style="margin-top: 1rem; padding: 0.5rem; background: #FEE2E2; border-radius: 6px; font-size: 0.85rem; color: var(--red); font-weight: 600;">
+                        Administrateur
+                    </div>
+                </a>
+
+                <!-- Responsable RH -->
+                <a href="{% url 'dashboard_rh' %}" class="profile-tile">
+                    <div class="icon" style="background: var(--light-blue); color: var(--primary-blue);">👥</div>
+                    <h3>Responsable RH</h3>
+                    <p>Gestion des employés, plannings et contrôle d'accès</p>
+                    <div style="margin-top: 1rem; padding: 0.5rem; background: var(--light-blue); border-radius: 6px; font-size: 0.85rem; color: var(--primary-blue); font-weight: 600;">
+                        Ressources Humaines
+                    </div>
+                </a>
+
+                <!-- Gestionnaire Stock -->
+                <a href="{% url 'dashboard_stock' %}" class="profile-tile">
+                    <div class="icon" style="background: #FFF7ED; color: var(--orange);">📦</div>
+                    <h3>Gestionnaire Stock</h3>
+                    <p>Inventaire, réapprovisionnement et gestion fournisseurs</p>
+                    <div style="margin-top: 1rem; padding: 0.5rem; background: #FFF7ED; border-radius: 6px; font-size: 0.85rem; color: var(--orange); font-weight: 600;">
+                        Gestion Stocks
+                    </div>
+                </a>
+
+                <!-- Caissier -->
+                <a href="{% url 'dashboard_caisse' %}" class="profile-tile">
+                    <div class="icon" style="background: var(--light-green); color: var(--primary-green);">💰</div>
+                    <h3>Caissier</h3>
+                    <p>Traitement des ventes et gestion des paiements</p>
+                    <div style="margin-top: 1rem; padding: 0.5rem; background: var(--light-green); border-radius: 6px; font-size: 0.85rem; color: var(--primary-green); font-weight: 600;">
+                        Point de Vente
+                    </div>
+                </a>
+
+                <!-- Marketing -->
+                <a href="{% url 'dashboard_marketing' %}" class="profile-tile">
+                    <div class="icon" style="background: #FAF5FF; color: var(--purple);">💝</div>
+                    <h3>Marketing</h3>
+                    <p>Fidélisation client et campagnes promotionnelles</p>
+                    <div style="margin-top: 1rem; padding: 0.5rem; background: #FAF5FF; border-radius: 6px; font-size: 0.85rem; color: var(--purple); font-weight: 600;">
+                        Relation Client
+                    </div>
+                </a>
+
+                <!-- Analyste -->
+                <a href="{% url 'dashboard_analytics' %}" class="profile-tile">
+                    <div class="icon" style="background: #EFF6FF; color: #3B82F6;">📊</div>
+                    <h3>Analyste</h3>
+                    <p>Rapports financiers et analyses business</p>
+                    <div style="margin-top: 1rem; padding: 0.5rem; background: #EFF6FF; border-radius: 6px; font-size: 0.85rem; color: #3B82F6; font-weight: 600;">
+                        Analytics
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

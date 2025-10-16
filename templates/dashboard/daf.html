@@ -1,0 +1,114 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tableau de Bord DAF - SuperMarché Plus</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="dashboard-layout">
+        <aside class="sidebar">
+            <div style="text-align: center; padding: 0 1.5rem; margin-bottom: 2rem;">
+                <div style="width: 60px; height: 60px; background: var(--primary-blue); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin: 0 auto; color: white; font-size: 2rem;">💼</div>
+                <h3 style="margin-top: 1rem; font-size: 1.1rem;">Direction Financière</h3>
+                <p style="font-size: 0.85rem; color: var(--text-light);">Tableau de Bord Exécutif</p>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="{% url 'dashboard_daf' %}" class="active"><span class="icon">📊</span> Tableau de Bord</a></li>
+                <li><a href="{% url 'dashboard' %}"><span class="icon">🏠</span> Retour</a></li>
+            </ul>
+            <div style="padding: 1.5rem; margin-top: auto;">
+                <a href="{% url 'logout' %}" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: var(--bg-gray); border-radius: 8px; text-decoration: none; color: var(--text-dark);">
+                    <span style="font-size: 1.2rem;">🚪</span><span>Déconnexion</span>
+                </a>
+            </div>
+        </aside>
+        <main class="main-content">
+            <div class="page-header">
+                <h1>Tableau de Bord DAF</h1>
+                <p>Vue financière et analyses budgétaires</p>
+            </div>
+            <div class="cards-grid" style="grid-template-columns: repeat(4, 1fr);">
+                <div class="kpi-card" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%); color: white;">
+                    <div style="flex: 1;">
+                        <p style="opacity: 0.9;">CA Mensuel</p>
+                        <h3 style="color: white;">{{ ca_mois|floatformat:0 }} FCFA</h3>
+                        <div style="opacity: 0.9;">↗️ +12,5%</div>
+                    </div>
+                </div>
+                <div class="kpi-card" style="background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%); color: white;">
+                    <div style="flex: 1;">
+                        <p style="opacity: 0.9;">Marge Bénéficiaire</p>
+                        <h3 style="color: white;">{{ marge_beneficiaire }}%</h3>
+                        <div style="opacity: 0.9;">↗️ +2,1% vs objectif</div>
+                    </div>
+                </div>
+                <div class="kpi-card" style="background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); color: white;">
+                    <div style="flex: 1;">
+                        <p style="opacity: 0.9;">Charges Mensuelles</p>
+                        <h3 style="color: white;">{{ charges_mensuelles|floatformat:0 }} FCFA</h3>
+                        <div style="opacity: 0.9;">↓ -5,2% vs budget</div>
+                    </div>
+                </div>
+                <div class="kpi-card" style="background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%); color: white;">
+                    <div style="flex: 1;">
+                        <p style="opacity: 0.9;">Trésorerie</p>
+                        <h3 style="color: white;">{{ tresorerie|floatformat:0 }} FCFA</h3>
+                        <div style="opacity: 0.9;">✅ Situation saine</div>
+                    </div>
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin: 2rem 0;">
+                <div class="chart-container">
+                    <div class="chart-header"><h3>Évolution du Chiffre d'Affaires</h3></div>
+                    <canvas id="caChart" height="80"></canvas>
+                </div>
+                <div class="chart-container">
+                    <div class="chart-header"><h3>Modes de Paiement</h3></div>
+                    <div style="padding: 1rem 0;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 0; border-bottom: 1px solid var(--border-gray);">
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <span>💵</span><span>Espèces</span>
+                            </div>
+                            <strong style="color: var(--primary-green);">45%</strong>
+                        </div>
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 0; border-bottom: 1px solid var(--border-gray);">
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <span>📱</span><span>Mobile Money</span>
+                            </div>
+                            <strong style="color: var(--primary-blue);">35%</strong>
+                        </div>
+                        <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 0;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <span>💳</span><span>Carte bancaire</span>
+                            </div>
+                            <strong style="color: var(--purple);">20%</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script>
+        const ctx = document.getElementById('caChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: {{ ca_evolution|safe }}.map(item => item.mois),
+                datasets: [{
+                    label: 'CA Réel',
+                    data: {{ ca_evolution|safe }}.map(item => item.ca),
+                    borderColor: '#2563EB',
+                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+    </script>
+</body>
+</html>

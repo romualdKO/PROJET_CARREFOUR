@@ -1,0 +1,146 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SuperMarché Plus - Accueil</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <a href="{% url 'home' %}" class="navbar-brand">
+                <div class="icon">🛒</div>
+                <span>SuperMarché Plus</span>
+            </a>
+            <ul class="navbar-menu">
+                <li><a href="{% url 'home' %}">Accueil</a></li>
+                <li><a href="{% url 'about' %}">À propos</a></li>
+                <li><a href="#">Services</a></li>
+                <li><a href="{% url 'contact' %}">Contact</a></li>
+            </ul>
+            <div class="navbar-actions">
+                <a href="{% url 'login' %}" class="btn btn-secondary">Connexion Employé</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-text">
+                    <h1>Révolutionnez <span>Votre Supermarché</span></h1>
+                    <p>Une solution complète pour gérer les stocks, les ventes, les équipes et les clients. Optimisez vos opérations avec notre plateforme tout-en-un.</p>
+                    <div style="display: flex; gap: 1rem;">
+                        <a href="{% url 'login' %}" class="btn btn-primary">Se Connecter</a>
+                        <a href="{% url 'about' %}" class="btn btn-secondary">En Savoir Plus</a>
+                    </div>
+                </div>
+                <div class="hero-image">
+                    <div style="background: rgba(255,255,255,0.1); padding: 3rem; border-radius: 16px; text-align: center;">
+                        <div style="font-size: 8rem;">🏪</div>
+                        <p style="color: white; font-size: 1.2rem; margin-top: 1rem;">Gestion moderne et efficace</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Solutions Section -->
+    <section style="padding: 4rem 0;">
+        <div class="container">
+            <div style="text-align: center; margin-bottom: 3rem;">
+                <h2 style="font-size: 2.5rem; color: var(--text-dark); margin-bottom: 1rem;">Nos Solutions Intégrées</h2>
+                <p style="color: var(--text-light); font-size: 1.1rem;">Découvrez comment notre plateforme transforme la gestion de votre supermarché avec des modules interconnectés et intelligents.</p>
+            </div>
+            
+            <div class="cards-grid">
+                <div class="card">
+                    <div class="kpi-icon orange" style="margin-bottom: 1rem;">📦</div>
+                    <h3 style="font-size: 1.3rem; margin-bottom: 0.75rem;">Gestion des Stocks</h3>
+                    <p style="color: var(--text-light);">Suivez votre inventaire en temps réel, recevez des alertes de réapprovisionnement et gérez vos fournisseurs efficacement.</p>
+                    <ul style="margin-top: 1rem; padding-left: 1.5rem; color: var(--text-light);">
+                        <li>Inventaire automatisé</li>
+                        <li>Alertes de stock critique</li>
+                        <li>Gestion des commandes fournisseurs</li>
+                    </ul>
+                    <a href="{% url 'login' %}" class="btn btn-primary" style="margin-top: 1.5rem; display: inline-block;">Accéder au module</a>
+                </div>
+
+                <div class="card">
+                    <div class="kpi-icon green" style="margin-bottom: 1rem;">💰</div>
+                    <h3 style="font-size: 1.3rem; margin-bottom: 0.75rem;">Gestion des Ventes</h3>
+                    <p style="color: var(--text-light);">Interface de vente intuitive, support multi-paiements et rapports détaillés pour optimiser votre chiffre d'affaires.</p>
+                    <ul style="margin-top: 1rem; padding-left: 1.5rem; color: var(--text-light);">
+                        <li>Point de vente moderne</li>
+                        <li>Historique et statistiques</li>
+                        <li>Synchronisation temps réel</li>
+                    </ul>
+                    <a href="{% url 'login' %}" class="btn btn-primary" style="margin-top: 1.5rem; display: inline-block;">Accéder au module</a>
+                </div>
+
+                <div class="card">
+                    <div class="kpi-icon blue" style="margin-bottom: 1rem;">👥</div>
+                    <h3 style="font-size: 1.3rem; margin-bottom: 0.75rem;">Ressources Humaines</h3>
+                    <p style="color: var(--text-light);">Gérez vos employés, plannings, présences et formations avec un système RH complet et automatisé.</p>
+                    <ul style="margin-top: 1rem; padding-left: 1.5rem; color: var(--text-light);">
+                        <li>Gestion des employés</li>
+                        <li>Plannings et présences</li>
+                        <li>Formations et évaluations</li>
+                    </ul>
+                    <a href="{% url 'login' %}" class="btn btn-primary" style="margin-top: 1.5rem; display: inline-block;">Accéder au module</a>
+                </div>
+
+                <div class="card">
+                    <div class="kpi-icon purple" style="margin-bottom: 1rem;">🎁</div>
+                    <h3 style="font-size: 1.3rem; margin-bottom: 0.75rem;">Fidélisation Client</h3>
+                    <p style="color: var(--text-light);">Programme de fidélité, promotions ciblées et gestion des réclamations pour fidéliser votre clientèle.</p>
+                    <ul style="margin-top: 1rem; padding-left: 1.5rem; color: var(--text-light);">
+                        <li>Cartes de fidélité</li>
+                        <li>Campagnes promotionnelles</li>
+                        <li>Gestion des réclamations</li>
+                    </ul>
+                    <a href="{% url 'login' %}" class="btn btn-primary" style="margin-top: 1.5rem; display: inline-block;">Accéder au module</a>
+                </div>
+
+                <div class="card">
+                    <div class="kpi-icon red" style="margin-bottom: 1rem;">🔒</div>
+                    <h3 style="font-size: 1.3rem; margin-bottom: 0.75rem;">Sécurité et Contrôle</h3>
+                    <p style="color: var(--text-light);">Système de contrôle d'accès robuste avec gestion des permissions et audit complet des opérations.</p>
+                    <ul style="margin-top: 1rem; padding-left: 1.5rem; color: var(--text-light);">
+                        <li>Authentification sécurisée</li>
+                        <li>Gestion des permissions</li>
+                        <li>Historique des actions</li>
+                    </ul>
+                    <a href="{% url 'login' %}" class="btn btn-primary" style="margin-top: 1.5rem; display: inline-block;">Accéder au module</a>
+                </div>
+
+                <div class="card">
+                    <div class="kpi-icon green" style="margin-bottom: 1rem;">📊</div>
+                    <h3 style="font-size: 1.3rem; margin-bottom: 0.75rem;">Analyses et Indicateurs</h3>
+                    <p style="color: var(--text-light);">Tableaux de bord analytiques avec KPIs, graphiques interactifs et rapports automatisés pour piloter votre activité.</p>
+                    <ul style="margin-top: 1rem; padding-left: 1.5rem; color: var(--text-light);">
+                        <li>KPIs en temps réel</li>
+                        <li>Graphiques interactifs</li>
+                        <li>Export PDF/Excel</li>
+                    </ul>
+                    <a href="{% url 'login' %}" class="btn btn-primary" style="margin-top: 1.5rem; display: inline-block;">Accéder au module</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer style="background: var(--text-dark); color: white; padding: 2rem 0; margin-top: 4rem;">
+        <div class="container">
+            <div style="text-align: center;">
+                <p>&copy; 2024 SuperMarché Plus. Tous droits réservés.</p>
+                <p style="margin-top: 0.5rem; opacity: 0.7;">Système de gestion intégré pour supermarchés</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
