@@ -1,6 +1,13 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
+# Expose new stock models from models_stock for backward compatibility
+try:
+    # Importing here to allow Django to discover models when running migrations
+    from .models_stock import Categorie, Produit, Fournisseur, CommandeApprovisionnement, LigneDeCommande, Stock, HistoriqueStock, AlerteStock  # noqa: E402,F401
+except Exception:
+    # If the file or classes are not yet present, skip import; migrations will fail loudly later if needed
+    Categorie = Produit = Fournisseur = CommandeApprovisionnement = LigneDeCommande = Stock = HistoriqueStock = AlerteStock = None
 
 # Modèle Utilisateur personnalisé
 class Employe(AbstractUser):
@@ -67,114 +74,8 @@ class Employe(AbstractUser):
         verbose_name = 'Employé'
         verbose_name_plural = 'Employés'
 
-
-# Modèle Produit
-class Produit(models.Model):
-    CATEGORIES = [
-        ('ALIMENTAIRE', 'Alimentaire'),
-        ('BOISSONS', 'Boissons'),
-        ('HYGIENE', 'Hygiène'),
-        ('VETEMENTS', 'Vêtements'),
-        ('ELECTRONIQUE', 'Électronique'),
-        ('MAISON', 'Maison & Jardin'),
-    ]
-    
-    STATUTS = [
-        ('EN_STOCK', 'En stock'),
-        ('CRITIQUE', 'Stock critique'),
-        ('RUPTURE', 'Rupture'),
-    ]
-    
-    reference = models.CharField(max_length=20, unique=True)
-    nom = models.CharField(max_length=200)
-    categorie = models.CharField(max_length=50, choices=CATEGORIES)
-    prix_unitaire = models.DecimalField(max_digits=10, decimal_places=2)
-    prix_achat = models.DecimalField(max_digits=10, decimal_places=2)
-    stock_actuel = models.IntegerField(default=0)
-    stock_critique = models.IntegerField(default=10)
-    fournisseur = models.CharField(max_length=200)
-    image = models.ImageField(upload_to='produits/', blank=True, null=True)
-    code_barre = models.CharField(max_length=50, blank=True)
-    statut = models.CharField(max_length=20, choices=STATUTS, default='EN_STOCK')
-    date_ajout = models.DateTimeField(auto_now_add=True)
-    date_modification = models.DateTimeField(auto_now=True)
-    
-    def get_statut(self):
-        if self.stock_actuel == 0:
-            return 'RUPTURE'
-        elif self.stock_actuel <= self.stock_critique:
-            return 'CRITIQUE'
-        return 'EN_STOCK'
-    
-    def save(self, *args, **kwargs):
-        self.statut = self.get_statut()
-        super().save(*args, **kwargs)
-    
-    def __str__(self):
-        return f"{self.nom} ({self.reference})"
-    
-    class Meta:
-        verbose_name = 'Produit'
-        verbose_name_plural = 'Produits'
-
-
-# Modèle Vente
-class Vente(models.Model):
-    MOYENS_PAIEMENT = [
-        ('ESPECES', 'Espèces'),
-        ('CARTE', 'Carte bancaire'),
-        ('MOBILE', 'Mobile Money'),
-    ]
-    
-    numero_transaction = models.CharField(max_length=20, unique=True)
-    caissier = models.ForeignKey(Employe, on_delete=models.SET_NULL, null=True, related_name='ventes')
-    client = models.ForeignKey('Client', on_delete=models.SET_NULL, null=True, blank=True)
-    montant_total = models.DecimalField(max_digits=12, decimal_places=2)
-    montant_tva = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    remise = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    montant_final = models.DecimalField(max_digits=12, decimal_places=2)
-    moyen_paiement = models.CharField(max_length=20, choices=MOYENS_PAIEMENT)
-    date_vente = models.DateTimeField(auto_now_add=True)
-    caisse_numero = models.CharField(max_length=10, default='#01')
-    
-    def save(self, *args, **kwargs):
-        if not self.numero_transaction:
-            # Générer numéro de transaction
-            today = timezone.now().strftime('%y%m%d')
-            last_vente = Vente.objects.filter(numero_transaction__startswith=f'T{today}').order_by('id').last()
-            if last_vente:
-                try:
-                    last_num = int(last_vente.numero_transaction[-3:])
-                    self.numero_transaction = f'T{today}{str(last_num + 1).zfill(3)}'
-                except:
-                    self.numero_transaction = f'T{today}001'
-            else:
-                self.numero_transaction = f'T{today}001'
-        super().save(*args, **kwargs)
-    
-    def __str__(self):
-        return f"Vente {self.numero_transaction} - {self.montant_final} FCFA"
-    
-    class Meta:
-        verbose_name = 'Vente'
-        verbose_name_plural = 'Ventes'
-        ordering = ['-date_vente']
-
-
-# Modèle Ligne de Vente
-class LigneVente(models.Model):
-    vente = models.ForeignKey(Vente, on_delete=models.CASCADE, related_name='lignes')
-    produit = models.ForeignKey(Produit, on_delete=models.CASCADE)
-    quantite = models.IntegerField()
-    prix_unitaire = models.DecimalField(max_digits=10, decimal_places=2)
-    montant_ligne = models.DecimalField(max_digits=12, decimal_places=2)
-    
-    def save(self, *args, **kwargs):
-        self.montant_ligne = self.quantite * self.prix_unitaire
-        super().save(*args, **kwargs)
-    
-    def __str__(self):
-        return f"{self.produit.nom} x {self.quantite}"
+# Les modèles Produit, Vente, LigneVente ont été supprimés.
+# Si nécessaire, recréez-les dans un autre fichier ou via une migration séparée.
 
 
 # Modèle Client
@@ -217,23 +118,7 @@ class Client(models.Model):
         verbose_name_plural = 'Clients'
 
 
-# Modèle Promotion
-class Promotion(models.Model):
-    titre = models.CharField(max_length=200)
-    description = models.TextField()
-    reduction = models.DecimalField(max_digits=5, decimal_places=2)  # en pourcentage
-    date_debut = models.DateField()
-    date_fin = models.DateField()
-    est_active = models.BooleanField(default=True)
-    produits = models.ManyToManyField(Produit, related_name='promotions', blank=True)
-    date_creation = models.DateTimeField(auto_now_add=True)
-    
-    def __str__(self):
-        return self.titre
-    
-    class Meta:
-        verbose_name = 'Promotion'
-        verbose_name_plural = 'Promotions'
+# Le modèle Promotion a été supprimé.
 
 
 # Modèle Présence
@@ -451,3 +336,5 @@ class Reclamation(models.Model):
     class Meta:
         verbose_name = 'Réclamation'
         verbose_name_plural = 'Réclamations'
+        
+

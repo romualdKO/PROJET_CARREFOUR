@@ -33,4 +33,5 @@ urlpatterns = [
     path('dashboard/caisse/', views.dashboard_caisse, name='dashboard_caisse'),
     path('dashboard/marketing/', views.dashboard_marketing, name='dashboard_marketing'),
     path('dashboard/analytics/', views.dashboard_analytics, name='dashboard_analytics'),
+    path('dashboard/stock/ajout-product/', views.ajouter_produit, name='add_product'),
 ]

@@ -1,8 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from .models import (
-    Employe, Produit, Vente, LigneVente, Client, 
-    Promotion, Presence, SessionPresence, Conge, Formation, Reclamation
+    Employe, Client, Presence, SessionPresence, Conge, Formation, Reclamation
 )
 
 @admin.register(Employe)
@@ -21,22 +20,9 @@ class EmployeAdmin(UserAdmin):
         }),
     )
 
-@admin.register(Produit)
-class ProduitAdmin(admin.ModelAdmin):
-    list_display = ['reference', 'nom', 'categorie', 'prix_unitaire', 'stock_actuel', 'statut']
-    list_filter = ['categorie', 'statut']
-    search_fields = ['reference', 'nom', 'code_barre']
-
-@admin.register(Vente)
-class VenteAdmin(admin.ModelAdmin):
-    list_display = ['numero_transaction', 'caissier', 'montant_final', 'moyen_paiement', 'date_vente']
-    list_filter = ['moyen_paiement', 'date_vente']
-    search_fields = ['numero_transaction']
-    date_hierarchy = 'date_vente'
-
-@admin.register(LigneVente)
-class LigneVenteAdmin(admin.ModelAdmin):
-    list_display = ['vente', 'produit', 'quantite', 'prix_unitaire', 'montant_ligne']
+# Les enregistrements admin pour Produit, Vente, LigneVente et Promotion
+# ont été retirés car ces modèles ont été déplacés/supprimés. Si vous
+# réintroduisez ces modèles, ajoutez à nouveau leur configuration admin ici.
 
 @admin.register(Client)
 class ClientAdmin(admin.ModelAdmin):
@@ -44,10 +30,7 @@ class ClientAdmin(admin.ModelAdmin):
     list_filter = ['niveau_fidelite']
     search_fields = ['nom', 'prenom', 'telephone']
 
-@admin.register(Promotion)
-class PromotionAdmin(admin.ModelAdmin):
-    list_display = ['titre', 'reduction', 'date_debut', 'date_fin', 'est_active']
-    list_filter = ['est_active', 'date_debut']
+# Promotion admin retiré (modèle supprimé)
 
 @admin.register(Presence)
 class PresenceAdmin(admin.ModelAdmin):

@@ -4,110 +4,286 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ajouter un Produit - SuperMarché Plus</title>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <title>Nouveau Produit - SuperMarché Plus</title>
+    <link rel="stylesheet" href="{% static 'css/add_produit.css' %}">
+    <style>
+        .file-upload-wrapper {
+            position: relative;
+            width: 100%;
+        }
+
+        .file-upload-area {
+            border: 2px dashed #cbd5e1;
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            background: #f8fafc;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .file-upload-area:hover {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+
+        .file-upload-area.dragover {
+            border-color: #3b82f6;
+            background: #dbeafe;
+        }
+
+        .file-upload-input {
+            display: none;
+        }
+
+        .upload-icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 12px;
+            color: #64748b;
+        }
+
+        .upload-text {
+            color: #334155;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .upload-subtext {
+            color: #94a3b8;
+            font-size: 12px;
+        }
+
+        .image-preview {
+            display: none;
+            margin-top: 16px;
+            position: relative;
+        }
+
+        .image-preview img {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .remove-image {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            cursor: pointer;
+            font-size: 18px;
+            line-height: 1;
+            transition: background 0.2s;
+        }
+
+        .remove-image:hover {
+            background: #dc2626;
+        }
+
+        .file-name {
+            margin-top: 12px;
+            color: #64748b;
+            font-size: 13px;
+            text-align: center;
+        }
+    </style>
 </head>
 <body>
-    <div class="dashboard-layout">
-        <aside class="sidebar">
-            <div style="text-align: center; padding: 0 1.5rem; margin-bottom: 2rem;">
-                <div style="width: 60px; height: 60px; background: var(--primary-green); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin: 0 auto; color: white; font-size: 2rem;">📦</div>
-                <h3 style="margin-top: 1rem;">Gestion Stock</h3>
-            </div>
-            <ul class="sidebar-menu">
-                <li><a href="{% url 'dashboard_stock' %}"><span class="icon">📊</span> Tableau de Bord</a></li>
-                <li><a href="{% url 'stock_add_product' %}" class="active"><span class="icon">➕</span> Nouveau Produit</a></li>
-                <li><a href="{% url 'dashboard' %}"><span class="icon">🏠</span> Retour</a></li>
-            </ul>
-            <div style="padding: 1.5rem; margin-top: auto;">
-                <a href="{% url 'logout' %}" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: var(--bg-gray); border-radius: 8px; text-decoration: none; color: var(--text-dark);"><span>🚪</span><span>Déconnexion</span></a>
-            </div>
-        </aside>
-        <main class="main-content">
-            <div class="page-header">
-                <h1>Ajouter un Nouveau Produit</h1>
-                <p>Ajouter un produit au catalogue</p>
-            </div>
-
-            {% if messages %}
-                {% for message in messages %}
-                <div class="alert alert-{{ message.tags }}" style="padding: 1rem; margin-bottom: 1.5rem; border-radius: 8px; {% if message.tags == 'success' %}background: #d4edda; color: #155724; border: 1px solid #c3e6cb;{% elif message.tags == 'error' %}background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;{% endif %}">
-                    {{ message }}
+    <div class="overlay">
+        <div class="modal-container">
+            <!-- Close Button -->
+            <button class="close-btn" onclick="window.history.back()">×</button>
+            
+            <!-- Header -->
+            <div class="modal-header">
+                <div class="icon-container">
+                    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 7h-4V5a3 3 0 0 0-6 0v2H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
+                        <line x1="10" y1="11" x2="10" y2="17"/>
+                        <line x1="14" y1="11" x2="14" y2="17"/>
+                    </svg>
                 </div>
-                {% endfor %}
-            {% endif %}
-
-            <div class="chart-container">
-                <form method="post" style="padding: 2rem;">
-                    {% csrf_token %}
-                    
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-                        <div>
-                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Nom du Produit *</label>
-                            <input type="text" name="nom" required class="form-input" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-gray); border-radius: 8px;" placeholder="Ex: Lait entier 1L">
-                        </div>
-                        
-                        <div>
-                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Référence *</label>
-                            <input type="text" name="reference" required class="form-input" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-gray); border-radius: 8px;" placeholder="Ex: PROD001">
-                        </div>
-                    </div>
-
-                    <div style="margin-top: 1.5rem;">
-                        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Catégorie *</label>
-                        <select name="categorie" required class="form-input" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-gray); border-radius: 8px;">
-                            <option value="">-- Sélectionner une catégorie --</option>
-                            <option value="Alimentaire">Alimentaire</option>
-                            <option value="Boissons">Boissons</option>
-                            <option value="Hygiène">Hygiène</option>
-                            <option value="Entretien">Entretien</option>
-                            <option value="Électronique">Électronique</option>
-                            <option value="Textile">Textile</option>
-                            <option value="Fruits & Légumes">Fruits & Légumes</option>
-                            <option value="Boulangerie">Boulangerie</option>
-                            <option value="Surgelés">Surgelés</option>
-                            <option value="Autres">Autres</option>
-                        </select>
-                    </div>
-
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem; margin-top: 1.5rem;">
-                        <div>
-                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Prix d'Achat (FCFA) *</label>
-                            <input type="number" name="prix_achat" required class="form-input" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-gray); border-radius: 8px;" placeholder="0" step="0.01" min="0">
-                        </div>
-                        
-                        <div>
-                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Prix de Vente (FCFA) *</label>
-                            <input type="number" name="prix_vente" required class="form-input" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-gray); border-radius: 8px;" placeholder="0" step="0.01" min="0">
-                        </div>
-
-                        <div>
-                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Stock Initial *</label>
-                            <input type="number" name="stock" required class="form-input" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-gray); border-radius: 8px;" placeholder="0" min="0">
-                        </div>
-                    </div>
-
-                    <div style="margin-top: 1.5rem;">
-                        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Fournisseur (optionnel)</label>
-                        <input type="text" name="fournisseur" class="form-input" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-gray); border-radius: 8px;" placeholder="Ex: Société ABC">
-                    </div>
-
-                    <div style="margin-top: 1.5rem;">
-                        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Description (optionnel)</label>
-                        <textarea name="description" rows="3" class="form-input" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-gray); border-radius: 8px;" placeholder="Description du produit..."></textarea>
-                    </div>
-
-                    <div style="display: flex; gap: 1rem; margin-top: 2rem;">
-                        <button type="submit" class="btn btn-primary" style="flex: 1;">
-                            <span style="margin-right: 0.5rem;">✅</span> Ajouter le produit
-                        </button>
-                        <a href="{% url 'dashboard_stock' %}" class="btn btn-secondary" style="flex: 1; text-align: center; text-decoration: none;">
-                            <span style="margin-right: 0.5rem;">❌</span> Annuler
-                        </a>
-                    </div>
-                </form>
+                <h2>Nouveau Produit</h2>
+                <p>Ajouter un nouveau produit à l'inventaire</p>
             </div>
-        </main>
+
+            <!-- Form -->
+            <form class="product-form" action="{% url 'add_product' %}" method="POST" enctype="multipart/form-data">
+                 {% csrf_token %}
+                <div class="form-group full-width">
+                    <label for="nom">Nom du Produit *</label>
+                    <input type="text" id="nom" name="nom" placeholder="Nom du produit" required>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="prixAchat">Prix d'Achat (FCFA) *</label>
+                        <input type="number" id="prixAchat" name="prixAchat" placeholder="0.00" step="0.01" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="prixVente">Prix de Vente (FCFA) *</label>
+                        <input type="number" id="prixVente" name="prixVente" placeholder="0.00" step="0.01" min="0" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="quantite">Quantité *</label>
+                        <input type="number" id="quantite" name="quantite" placeholder="0" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="categorie">Catégorie *</label>
+                        <div class="select-wrapper">
+                            <select id="categorie" name="categorie" required>
+                                <option value="">Sélectionner une catégorie</option>
+                                <option value="ALIM">Alimentaire</option>
+                                <option value="HYG">Hygiène</option>
+                                <option value="ELECTRO">Électroménager</option>
+                                <option value="BEAUT">Beauté & Cosmétique</option>
+                                <option value="BOIS">Boissons</option>
+                                <option value="ENTRE">Entretien Maison</option>
+                            </select>
+                            <svg class="dropdown-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group full-width">
+                    <label for="description">Description</label>
+                    <textarea id="description" name="description" placeholder="Description du produit..." rows="4"></textarea>
+                </div>
+
+                <div class="form-group full-width">
+                    <label>Image du Produit</label>
+                    <div class="file-upload-wrapper">
+                        <div class="file-upload-area" id="fileUploadArea">
+                            <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="17 8 12 3 7 8"/>
+                                <line x1="12" y1="3" x2="12" y2="15"/>
+                            </svg>
+                            <p class="upload-text">Cliquez pour choisir une image ou glissez-la ici</p>
+                            <p class="upload-subtext">PNG, JPG ou JPEG (Max. 5MB)</p>
+                        </div>
+                        <input type="file" id="image" name="image" class="file-upload-input" accept="image/png, image/jpeg, image/jpg">
+                        <div class="image-preview" id="imagePreview">
+                            <button type="button" class="remove-image" id="removeImage">×</button>
+                            <img id="previewImg" src="" alt="Aperçu">
+                            <p class="file-name" id="fileName"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 5v14M5 12h14"/>
+                        </svg>
+                        Créer le Produit
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="window.history.back()">
+                        Annuler
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
+
+    <script>
+        // Éléments du DOM
+        const fileInput = document.getElementById('image');
+        const fileUploadArea = document.getElementById('fileUploadArea');
+        const imagePreview = document.getElementById('imagePreview');
+        const previewImg = document.getElementById('previewImg');
+        const fileName = document.getElementById('fileName');
+        const removeImageBtn = document.getElementById('removeImage');
+
+        // Clic sur la zone de téléchargement
+        fileUploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        // Changement de fichier
+        fileInput.addEventListener('change', handleFileSelect);
+
+        // Drag and drop
+        fileUploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            fileUploadArea.classList.add('dragover');
+        });
+
+        fileUploadArea.addEventListener('dragleave', () => {
+            fileUploadArea.classList.remove('dragover');
+        });
+
+        fileUploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileUploadArea.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                handleFileSelect();
+            }
+        });
+
+        // Fonction pour gérer la sélection de fichier
+        function handleFileSelect() {
+            const file = fileInput.files[0];
+            
+            if (file) {
+                // Vérifier le type de fichier
+                if (!file.type.match('image.*')) {
+                    alert('Veuillez sélectionner une image valide (PNG, JPG, JPEG)');
+                    return;
+                }
+
+                // Vérifier la taille (5MB max)
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('L\'image est trop volumineuse. Taille maximale: 5MB');
+                    return;
+                }
+
+                // Afficher l'aperçu
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    previewImg.src = e.target.result;
+                    fileName.textContent = file.name;
+                    fileUploadArea.style.display = 'none';
+                    imagePreview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Supprimer l'image
+        removeImageBtn.addEventListener('click', () => {
+            fileInput.value = '';
+            previewImg.src = '';
+            fileName.textContent = '';
+            fileUploadArea.style.display = 'block';
+            imagePreview.style.display = 'none';
+        });
+
+        // Validation du formulaire
+        document.querySelector('.product-form').addEventListener('submit', function(e) {
+            const prixAchat = parseFloat(document.getElementById('prixAchat').value);
+            const prixVente = parseFloat(document.getElementById('prixVente').value);
+            
+            if (prixVente < prixAchat) {
+                alert('Attention: Le prix de vente est inférieur au prix d\'achat!');
+            }
+        });
+    </script>
 </body>
 </html>

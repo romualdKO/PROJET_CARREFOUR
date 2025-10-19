@@ -6,7 +6,61 @@ from django.db.models import Sum, Count, Avg, Q
 from django.utils import timezone
 from datetime import datetime, timedelta
 from decimal import Decimal
+from django.shortcuts import render, redirect
+from .forms import ProduitForm
 from .models import *
+from .utils import generer_id_produit
+#Ajout produit PrOJET_CARREFOUR/CarrefourApp/views.py
+def ajouter_produit(request):
+    if request.method == 'POST':
+        # On récupère chaque champ manuellement
+        nom = request.POST.get('nom')
+        prixAchat = request.POST.get('prixAchat')
+        prixVente = request.POST.get('prixVente')
+        quantite = request.POST.get('quantite')
+        categorie = Categorie.objects.get(pk=request.POST.get('categorie'))
+        description = request.POST.get('description', '')
+        image = request.FILES.get('image')  # pour le champ image
+
+        # Création du produit
+        produit = Produit(
+            idProduit=generer_id_produit(),
+            nom=nom,
+            prixAchat=prixAchat,
+            prixVente=prixVente,
+            quantite=quantite,
+            categorie=categorie,
+            description=description,
+            image=image
+        )
+        produit.save()
+        return redirect('dashboard_stock')  # ou l'URL de la liste des produits
+
+    # Si c'est un GET, on affiche juste le formulaire
+    return render(request, 'dashboard/stock_add_product.html')
+
+# Certains modèles ont été déplacés/supprimés (Vente, LigneVente, Promotion). Importer en sécurité.
+try:
+    from .models import Vente, LigneVente, Promotion
+except Exception:
+    Vente = LigneVente = Promotion = None
+
+# Helpers pour compatibilité des champs entre anciens et nouveaux modèles
+def _get_prix_unitaire(p):
+    return getattr(p, 'prix_unitaire', getattr(p, 'prixVente', 0))
+
+def _get_prix_achat(p):
+    return getattr(p, 'prix_achat', getattr(p, 'prixAchat', 0))
+
+def _get_reference(p):
+    return getattr(p, 'reference', getattr(p, 'idProduit', ''))
+
+def _get_stock_val(p):
+    # retourne la quantité actuelle, prioriser Stock relation
+    try:
+        return p.stock.quantiteActuelle
+    except Exception:
+        return getattr(p, 'stock_actuel', getattr(p, 'quantite', 0))
 
 # Page d'accueil
 def home(request):
@@ -178,58 +232,82 @@ def dashboard_dg(request):
             'ca': float(ca)
         })
     
-    # Top produits par revenus
+    # Ventes / analytics : si les modèles Vente / LigneVente / Promotion existent
     top_produits = []
-    produits_vendus = LigneVente.objects.filter(
-        vente__date_vente__month=current_month
-    ).values('produit__nom', 'produit__categorie').annotate(
-        revenus=Sum('montant_ligne')
-    ).order_by('-revenus')[:4]
-    
-    for item in produits_vendus:
-        top_produits.append({
-            'nom': item['produit__nom'],
-            'categorie': item['produit__categorie'],
-            'revenus': float(item['revenus'])
-        })
-    
-    # Analyse des marges
     marges_data = []
     mois_labels = []
-    for i in range(5, -1, -1):
-        date = today - timedelta(days=i*30)
-        ventes = Vente.objects.filter(
-            date_vente__month=date.month,
-            date_vente__year=date.year
-        )
-        
-        revenus = 0
-        couts = 0
-        benefices = 0
-        
-        for vente in ventes:
-            revenus += float(vente.montant_final)
-            for ligne in vente.lignes.all():
-                couts += float(ligne.produit.prix_achat * ligne.quantite)
-        
-        benefices = revenus - couts
-        
-        mois_labels.append(date.strftime('%b'))
-        marges_data.append({
-            'revenus': revenus,
-            'couts': couts,
-            'benefices': benefices
-        })
-    
-    # Indicateurs opérationnels RÉELS
-    # Taux de rotation des stocks (nombre de ventes / stock moyen)
-    nb_ventes_mois = Vente.objects.filter(date_vente__month=current_month).count()
-    stock_moyen = Produit.objects.filter(stock_actuel__gt=0).aggregate(avg=Avg('stock_actuel'))['avg'] or 1
-    taux_rotation_stocks = round(nb_ventes_mois / float(stock_moyen), 2) if stock_moyen > 0 else 0
-    
-    # Temps moyen de traitement à la caisse (basé sur le nombre de lignes de vente)
-    lignes_moyennes = LigneVente.objects.filter(vente__date_vente__month=current_month).count() / max(nb_ventes_mois, 1)
-    temps_moyen_caisse = round(lignes_moyennes * 0.5, 1)  # 0.5 min par article
+    ventes_evolution = []
+    try:
+        if Vente is not None and LigneVente is not None:
+            # Top produits par revenus
+            produits_vendus = LigneVente.objects.filter(
+                vente__date_vente__month=current_month
+            ).values('produit__nom', 'produit__categorie').annotate(
+                revenus=Sum('montant_ligne')
+            ).order_by('-revenus')[:4]
+
+            for item in produits_vendus:
+                top_produits.append({
+                    'nom': item.get('produit__nom'),
+                    'categorie': item.get('produit__categorie'),
+                    'revenus': float(item.get('revenus') or 0)
+                })
+
+            # Analyse des marges
+            for i in range(5, -1, -1):
+                date = today - timedelta(days=i*30)
+                ventes = Vente.objects.filter(
+                    date_vente__month=date.month,
+                    date_vente__year=date.year
+                )
+
+                revenus = 0
+                couts = 0
+                for vente in ventes:
+                    revenus += float(getattr(vente, 'montant_final', 0) or 0)
+                    # lignes may not exist on the object; guard
+                    try:
+                        lignes = getattr(vente, 'lignes')
+                        for ligne in lignes.all():
+                            couts += float(getattr(ligne.produit, 'prix_achat', 0) or 0) * float(getattr(ligne, 'quantite', 0) or 0)
+                    except Exception:
+                        pass
+
+                benefices = revenus - couts
+                mois_labels.append(date.strftime('%b'))
+                marges_data.append({
+                    'revenus': revenus,
+                    'couts': couts,
+                    'benefices': benefices
+                })
+
+            # Indicateurs opérationnels RÉELS
+            nb_ventes_mois = Vente.objects.filter(date_vente__month=current_month).count()
+        else:
+            nb_ventes_mois = 0
+
+        # Ajusté : utiliser Stock.quantiteActuelle via annotation si besoin
+        from .models_stock import Stock
+        stock_moyen_qs = Stock.objects.filter(quantiteActuelle__gt=0).aggregate(avg=Avg('quantiteActuelle'))
+        stock_moyen = stock_moyen_qs.get('avg') or 1
+        taux_rotation_stocks = round(nb_ventes_mois / float(stock_moyen), 2) if stock_moyen > 0 else 0
+
+        # Temps moyen de traitement à la caisse (basé sur le nombre de lignes de vente)
+        if LigneVente is not None and Vente is not None:
+            lignes_moyennes = LigneVente.objects.filter(vente__date_vente__month=current_month).count() / max(nb_ventes_mois, 1)
+        else:
+            lignes_moyennes = 0
+        temps_moyen_caisse = round(lignes_moyennes * 0.5, 1)  # 0.5 min par article
+    except Exception:
+        # En cas d'erreur inattendue, fournir des valeurs de repli
+        top_produits = []
+        marges_data = []
+        mois_labels = []
+        nb_ventes_mois = 0
+        stock_moyen = 1
+        taux_rotation_stocks = 0
+        lignes_moyennes = 0
+        temps_moyen_caisse = 0
     
     # Satisfaction client (basé sur les réclamations)
     total_clients = Client.objects.count() or 1
@@ -242,7 +320,8 @@ def dashboard_dg(request):
     
     # Taux de déchets/pertes (produits en rupture ou critique)
     total_produits = Produit.objects.count() or 1
-    produits_critiques = Produit.objects.filter(stock_actuel__lt=10).count()
+    # compte des produits en stock critique via Stock
+    produits_critiques = Stock.objects.filter(quantiteActuelle__lt=10).count()
     taux_dechet = round((produits_critiques / total_produits * 100), 1)
     
     context = {
@@ -447,22 +526,77 @@ def dashboard_stock(request):
         messages.error(request, "Accès refusé. Vous n'avez pas les permissions pour accéder au module Stock.")
         return redirect('dashboard')
     
-    # Statistiques stock RÉELLES
+    # Statistiques stock (avec les nouveaux modèles)
     total_produits = Produit.objects.count()
-    stock_critique = Produit.objects.filter(stock_actuel__lt=10).count()
-    
-    # Valeur RÉELLE du stock (quantité × prix d'achat)
+
+    # Utiliser le modèle Stock pour les quantités réelles
+    from .models_stock import Stock  # importer localement pour sécurité
+
+    # Utiliser la table Stock pour compter les produits en quantité critique
+    try:
+        stock_critique = Stock.objects.filter(quantiteActuelle__lt=10).count()
+    except Exception:
+        # Si Stock n'est pas disponible pour une raison quelconque, fallback sur Produit via attributs calculés
+        stock_critique = 0
+
+    # Valeur du stock (quantité actuelle × prix d'achat du produit)
     valeur_stock = 0
-    for produit in Produit.objects.all():
-        valeur_stock += produit.stock_actuel * float(produit.prix_achat)
-    
-    commandes_en_cours = 0  # À implémenter avec table Commande
-    
-    # Produits en stock critique RÉELS
-    produits_critiques = Produit.objects.filter(stock_actuel__lt=10).order_by('stock_actuel')[:5]
-    
-    # Liste des produits RÉELS
-    produits = Produit.objects.all().order_by('nom')[:50]
+    for s in Stock.objects.select_related('produit').all():
+        try:
+            valeur_stock += s.quantiteActuelle * float(s.produit.prixAchat)
+        except Exception:
+            # fallback si prix absent
+            continue
+
+    commandes_en_cours = 0  # À implémenter avec table CommandeApprovisionnement
+
+    # Produits en stock critique (via Stock)
+    produits_critiques_qs = Stock.objects.filter(quantiteActuelle__lt=10).select_related('produit').order_by('quantiteActuelle')[:5]
+    produits_critiques = []
+    for s in produits_critiques_qs:
+        p = s.produit
+        # tentative de récupérer un fournisseur via une ligne de commande si disponible
+        fournisseur_nom = ''
+        ld = p.lignedecommande_set.select_related('commande__fournisseur').first()
+        if ld and ld.commande and ld.commande.fournisseur:
+            fournisseur_nom = ld.commande.fournisseur.nom
+
+        produits_critiques.append({
+            'nom': p.nom,
+            'reference': getattr(p, 'idProduit', ''),
+            'stock_actuel': s.quantiteActuelle,
+            'prix_unitaire': p.prixVente,
+            'fournisseur': fournisseur_nom,
+            'statut': 'CRITIQUE',
+            'image': (p.image.url if getattr(p, 'image', None) and hasattr(p.image, 'url') else (p.image if getattr(p, 'image', None) else None)),
+            'get_categorie_display': (p.categorie.nom if getattr(p, 'categorie', None) else ''),
+        })
+
+    # Liste des produits — construire des dicts compatibles avec le template existant
+    produits = []
+    for p in Produit.objects.all().order_by('nom')[:50]:
+        # récupérer le stock si présent
+        stock_val = None
+        try:
+            stock_val = p.stock.quantiteActuelle
+        except Exception:
+            stock_val = getattr(p, 'quantite', 0)
+
+        fournisseur_nom = ''
+        ld = p.lignedecommande_set.select_related('commande__fournisseur').first()
+        if ld and ld.commande and ld.commande.fournisseur:
+            fournisseur_nom = ld.commande.fournisseur.nom
+
+        produits.append({
+            'nom': p.nom,
+            'reference': getattr(p, 'idProduit', ''),
+            'stock_actuel': stock_val,
+            'prix_unitaire': p.prixVente,
+            'fournisseur': fournisseur_nom,
+            'statut': ('EN_STOCK' if stock_val and stock_val > 10 else ('CRITIQUE' if stock_val and stock_val > 0 else 'RUPTURE')),
+            'image': (p.image.url if getattr(p, 'image', None) and hasattr(p.image, 'url') else (p.image if getattr(p, 'image', None) else None)),
+            'get_categorie_display': (p.categorie.nom if getattr(p, 'categorie', None) else ''),
+        })
     
     context = {
         'total_produits': total_produits,
@@ -717,12 +851,14 @@ def dashboard_analytics(request):
     for produit_data in top_produits:
         try:
             produit = Produit.objects.get(nom=produit_data['produit__nom'])
-            produit_data['marge'] = round(
-                ((float(produit.prix_unitaire) - float(produit.prix_achat)) / float(produit.prix_unitaire)) * 100,
-                1
-            )
+            pu = _get_prix_unitaire(produit)
+            pa = _get_prix_achat(produit)
+            try:
+                produit_data['marge'] = round(((float(pu) - float(pa)) / float(pu)) * 100, 1) if pu else 0
+            except Exception:
+                produit_data['marge'] = 0
             produit_data['tendance'] = 0  # À calculer avec historique
-            produit_data['stock_actuel'] = produit.stock_actuel
+            produit_data['stock_actuel'] = _get_stock_val(produit)
         except:
             produit_data['marge'] = 0
             produit_data['tendance'] = 0
@@ -759,26 +895,37 @@ def stock_add_product(request):
         fournisseur = request.POST.get('fournisseur', '')
         description = request.POST.get('description', '')
         
-        # Vérifier que la référence n'existe pas déjà
-        if Produit.objects.filter(reference=reference).exists():
+        # Vérifier que la référence n'existe pas déjà (champ `code` dans les nouveaux modèles)
+        if Produit.objects.filter(idProduit=reference).exists():
             messages.error(request, f"La référence '{reference}' existe déjà. Veuillez en choisir une autre.")
             return render(request, 'dashboard/stock_add_product.html')
-        
+
         try:
-            # Créer le produit
+            # Créer le produit (champs alignés sur models_stock)
             produit = Produit.objects.create(
                 nom=nom,
-                reference=reference,
-                categorie=categorie,
-                prix_achat=Decimal(prix_achat),
-                prix_unitaire=Decimal(prix_vente),
-                stock_actuel=int(stock),
-                fournisseur=fournisseur
+                categorie_id=categorie,
+                prixAchat=Decimal(prix_achat),
+                prixVente=Decimal(prix_vente),
+                quantite=int(stock),
+                description=description
             )
-            
+
+            # Créer l'objet Stock associé
+            from .models_stock import Stock
+            Stock.objects.create(
+                idStock=f"STK-{produit.idProduit}",
+                produit=produit,
+                quantiteActuelle=int(stock),
+                quantiteReservee=0,
+                quantiteDisponible=int(stock),
+                statut='EN_STOCK' if int(stock) > 0 else 'RUPTURE'
+            )
+
+            # Message utilisateur — s'assurer de l'indentation correcte
             messages.success(request, f"✅ Produit '{nom}' ajouté avec succès ! Stock initial: {stock} unités")
             return redirect('dashboard_stock')
-            
+
         except Exception as e:
             messages.error(request, f"Erreur lors de la création du produit: {str(e)}")
             return render(request, 'dashboard/stock_add_product.html')

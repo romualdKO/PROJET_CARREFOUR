@@ -4,115 +4,243 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestion Stock - SuperMarché Plus</title>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <title>Gestion des Stocks - SuperMarché Plus</title>
+    <link rel="stylesheet" href="{% static 'css/stock.css' %}">
 </head>
 <body>
-    <div class="dashboard-layout">
+    <div class="dashboard-container">
+        <!-- Sidebar -->
         <aside class="sidebar">
-            <div style="text-align: center; padding: 0 1.5rem; margin-bottom: 2rem;">
-                <div style="width: 60px; height: 60px; background: var(--orange); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin: 0 auto; color: white; font-size: 2rem;">📦</div>
-                <h3 style="margin-top: 1rem;">Gestion des Stocks</h3>
+            <div class="sidebar-header">
+                <div class="logo-container">
+                    <div class="logo-icon">📦</div>
+                </div>
+                <h3>Gestion des Stocks</h3>
             </div>
+            
             <ul class="sidebar-menu">
-                <li><a href="{% url 'dashboard_stock' %}" class="active"><span class="icon">📊</span> Tableau de Bord</a></li>
+                <li><a href="#" class="active"><span class="icon">📊</span> Tableau de Bord</a></li>
                 <li><a href="{% url 'stock_add_product' %}"><span class="icon">➕</span> Ajouter Produit</a></li>
-                <li><a href="{% url 'dashboard' %}"><span class="icon">🏠</span> Retour</a></li>
+                <li><a href="#"><span class="icon">🏠</span> Retour</a></li>
+                <li><a href="#"><span class="icon">🕒</span> Historique</a></li>
+                <li><a href="#"><span class="icon">📥</span> Approvisionnement</a></li>
+                <li><a href="#"><span class="icon">🚚</span> Fournisseurs</a></li>
             </ul>
-            <div style="padding: 1.5rem; margin-top: auto;">
-                <a href="{% url 'logout' %}" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: var(--bg-gray); border-radius: 8px; text-decoration: none; color: var(--text-dark);"><span>🚪</span><span>Déconnexion</span></a>
-            </div>
         </aside>
+
+        <!-- Main Content -->
         <main class="main-content">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-                <div class="page-header">
-                    <h1>Gestion des Stocks</h1>
-                    <p>Suivi en temps réel de votre inventaire</p>
+            <!-- Header -->
+            <header class="page-header">
+                <div class="header-left">
+                    <div class="brand">
+                        <div class="brand-icon">🛒</div>
+                        <div>
+                            <h1>SuperMarché Plus</h1>
+                            <p>Gestion des Stocks</p>
+                        </div>
+                    </div>
                 </div>
-                <a href="{% url 'stock_add_product' %}" class="btn btn-primary" style="text-decoration: none;">
-                    <span style="margin-right: 0.5rem;">➕</span> Ajouter un Produit
-                </a>
-                <button class="btn btn-primary">+ Ajouter Produit</button>
+                <div class="header-right">
+                    <span class="user-info">
+                        <span class="user-icon">👤</span>
+                        Jean Kouassi - Gestionnaire Stock
+                    </span>
+                    <a href="#" class="logout-btn">🚪</a>
+                </div>
+            </header>
+
+            <!-- Page Title -->
+            <div class="page-title">
+                <h2>Gestion des Stocks</h2>
+                <p>Suivi en temps réel de votre inventaire</p>
             </div>
-            <div class="cards-grid" style="grid-template-columns: repeat(4, 1fr);">
-                <div class="kpi-card">
-                    <div class="kpi-icon blue">📦</div>
-                    <div class="kpi-content">
-                        <h3>{{ total_produits }}</h3>
-                        <p>Total Produits</p>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <button class="btn btn-primary">
+                    <span>➕</span> Ajouter Produit
+                </button>
+                <button class="btn btn-success">
+                    <span>⬇</span> Exporter
+                </button>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon blue">📊</div>
+                    <div class="stat-info">
+                        <p class="stat-label">Total Produits</p>
+                        <h3 class="stat-value">1,247</h3>
                     </div>
                 </div>
-                <div class="kpi-card">
-                    <div class="kpi-icon red">⚠️</div>
-                    <div class="kpi-content">
-                        <h3>{{ stock_critique }}</h3>
-                        <p>Stock Critique</p>
+
+                <div class="stat-card">
+                    <div class="stat-icon red">⚠️</div>
+                    <div class="stat-info">
+                        <p class="stat-label">Stock Critique</p>
+                        <h3 class="stat-value warning">12</h3>
                     </div>
                 </div>
-                <div class="kpi-card">
-                    <div class="kpi-icon green">💰</div>
-                    <div class="kpi-content">
-                        <h3>{{ valeur_stock|floatformat:0 }}</h3>
-                        <p>Valeur Stock (FCFA)</p>
+
+                <div class="stat-card">
+                    <div class="stat-icon green">💰</div>
+                    <div class="stat-info">
+                        <p class="stat-label">Valeur Stock</p>
+                        <h3 class="stat-value">24.5M FCFA</h3>
                     </div>
                 </div>
-                <div class="kpi-card">
-                    <div class="kpi-icon orange">📦</div>
-                    <div class="kpi-content">
-                        <h3>{{ commandes_en_cours }}</h3>
-                        <p>Commandes En Cours</p>
+
+                <div class="stat-card">
+                    <div class="stat-icon orange">🚚</div>
+                    <div class="stat-info">
+                        <p class="stat-label">Commandes En Cours</p>
+                        <h3 class="stat-value">8</h3>
                     </div>
                 </div>
             </div>
-            <div class="alert alert-danger" style="margin: 2rem 0;">
-                <strong>⚠️ Alertes Stock Critique</strong>
-                <div style="margin-top: 0.75rem; display: flex; gap: 2rem;">
-                    {% for produit in produits_critiques %}
-                    <div style="padding: 0.75rem; background: white; border-radius: 6px; flex: 1;">
-                        <strong>{{ produit.nom }}</strong>
-                        <div style="color: var(--red); margin-top: 0.25rem;">Stock: {{ produit.stock_actuel }} unités</div>
+
+            <!-- Critical Stock Alerts -->
+            <div class="alert-section">
+                <div class="alert-header">
+                    <h3>⚠️ Alertes Stock Critique</h3>
+                </div>
+                <div class="alert-cards">
+                    <div class="alert-card">
+                        <div class="alert-content">
+                            <h4>Lait Président 1L</h4>
+                            <p>Stock: 5 unités</p>
+                        </div>
+                        <button class="cart-btn">🛒</button>
                     </div>
-                    {% endfor %}
+                    <div class="alert-card">
+                        <div class="alert-content">
+                            <h4>Pain de mie Casino</h4>
+                            <p>Stock: 3 unités</p>
+                        </div>
+                        <button class="cart-btn">🛒</button>
+                    </div>
+                    <div class="alert-card">
+                        <div class="alert-content">
+                            <h4>Huile Végétale 1L</h4>
+                            <p>Stock: 7 unités</p>
+                        </div>
+                        <button class="cart-btn">🛒</button>
+                    </div>
                 </div>
+                <button class="floating-check">✓</button>
             </div>
-            <div class="table-container">
-                <div style="padding: 1.5rem; border-bottom: 1px solid var(--border-gray);">
-                    <h3>Inventaire des Produits</h3>
+
+            <!-- Search and Filters -->
+            <div class="filters-section">
+                <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" placeholder="Rechercher un produit...">
                 </div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>PRODUIT</th>
-                            <th>CATÉGORIE</th>
-                            <th>STOCK</th>
-                            <th>PRIX UNITAIRE</th>
-                            <th>FOURNISSEUR</th>
-                            <th>STATUT</th>
-                            <th>ACTIONS</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for produit in produits %}
-                        <tr>
-                            <td><strong>{{ produit.nom }}</strong><br><small>REF: {{ produit.reference }}</small></td>
-                            <td>{{ produit.get_categorie_display }}</td>
-                            <td><strong>{{ produit.stock_actuel }}</strong> unités</td>
-                            <td>{{ produit.prix_unitaire }} FCFA</td>
-                            <td>{{ produit.fournisseur }}</td>
-                            <td>
-                                {% if produit.statut == 'EN_STOCK' %}
-                                <span class="badge badge-success">En stock</span>
-                                {% elif produit.statut == 'CRITIQUE' %}
-                                <span class="badge badge-warning">Stock critique</span>
-                                {% else %}
-                                <span class="badge badge-danger">Rupture</span>
-                                {% endif %}
-                            </td>
-                            <td><button style="border: none; background: var(--primary-blue); color: white; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer;">✏️</button></td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                <select class="filter-select">
+                    <option>Toutes catégories</option>
+                    <option>Alimentaire</option>
+                    <option>Boissons</option>
+                    <option>Hygiène</option>
+                </select>
+                <select class="filter-select">
+                    <option>Tous les statuts</option>
+                    <option>En stock</option>
+                    <option>Stock critique</option>
+                    <option>Rupture</option>
+                </select>
+            </div>
+
+            <!-- Inventory Table -->
+            <div class="inventory-section">
+                <h3>Inventaire des Produits</h3>
+                <div class="table-container">
+                    <table class="inventory-table">
+                        <thead>
+                            <tr>
+                                <th>PRODUIT</th>
+                                <th>CATÉGORIE</th>
+                                <th>STOCK</th>
+                                <th>PRIX UNITAIRE</th>
+                                <th>FOURNISSEUR</th>
+                                <th>STATUT</th>
+                                <th>ACTIONS</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <div class="product-cell">
+                                        <div class="product-img">📦</div>
+                                        <div>
+                                            <strong>Riz Parfumé 5kg</strong>
+                                            <small>RÉF: RIZ001</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>Alimentaire</td>
+                                <td>145 unités</td>
+                                <td>4,500 FCFA</td>
+                                <td>SACO</td>
+                                <td><span class="badge badge-success">En stock</span></td>
+                                <td>
+                                    <div class="action-btns">
+                                        <button class="btn-icon edit">✏️</button>
+                                        <button class="btn-icon add">➕</button>
+                                        <button class="btn-icon delete">🗑️</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="product-cell">
+                                        <div class="product-img">📦</div>
+                                        <div>
+                                            <strong>Lait Président 1L</strong>
+                                            <small>RÉF: LAI002</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>Boissons</td>
+                                <td>5 unités</td>
+                                <td>850 FCFA</td>
+                                <td>Président</td>
+                                <td><span class="badge badge-warning">Stock critique</span></td>
+                                <td>
+                                    <div class="action-btns">
+                                        <button class="btn-icon edit">✏️</button>
+                                        <button class="btn-icon add">➕</button>
+                                        <button class="btn-icon delete">🗑️</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="product-cell">
+                                        <div class="product-img">📦</div>
+                                        <div>
+                                            <strong>Savon Lux 200g</strong>
+                                            <small>RÉF: SAV003</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>Hygiène</td>
+                                <td>78 unités</td>
+                                <td>650 FCFA</td>
+                                <td>Unilever</td>
+                                <td><span class="badge badge-success">En stock</span></td>
+                                <td>
+                                    <div class="action-btns">
+                                        <button class="btn-icon edit">✏️</button>
+                                        <button class="btn-icon add">➕</button>
+                                        <button class="btn-icon delete">🗑️</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </main>
     </div>

@@ -127,10 +127,10 @@
                                 {% endif %}
                             </td>
                             <td>
-                                {% if produit.stock_actuel < 10 %}
-                                <span class="badge danger">{{ produit.stock_actuel }}</span>
+                                {% if produit.stock_actuel|default:0|int < 10 %}
+                                <span class="badge danger">{{ produit.stock_actuel|default:"0" }}</span>
                                 {% else %}
-                                <span class="badge success">{{ produit.stock_actuel }}</span>
+                                <span class="badge success">{{ produit.stock_actuel|default:"0" }}</span>
                                 {% endif %}
                             </td>
                         </tr>
