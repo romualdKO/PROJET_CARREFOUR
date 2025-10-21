@@ -1,0 +1,173 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nouveau Fournisseur</title>
+    <link rel="stylesheet" href="{% static 'css/form_fournisseur.css' %}">
+</head>
+<body>
+    <!-- Overlay Modal -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-container">
+            <!-- Modal Header -->
+            <div class="modal-header">
+                <div class="header-icon">
+                    <div class="icon-circle">
+                        🚚
+                    </div>
+                </div>
+                <h2 class="modal-title">Nouveau Fournisseur</h2>
+                <p class="modal-subtitle">Ajouter un nouveau fournisseur à l'inventaire</p>
+                <button class="btn-close" id="btnClose">✕</button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="modal-body">
+                <form id="formFournisseur" method="POST" action="{% url 'ajout_fournisseur' %}">
+                   {% csrf_token %} 
+                    <!-- Nom du Fournisseur -->
+                    <div class="form-group">
+                        <label for="nom" class="form-label">
+                            Nom du Fournisseur <span class="required">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            id="nom" 
+                            name="nom" 
+                            class="form-input" 
+                            placeholder="Ex: SACO Distribution"
+                            required
+                        >
+                    </div>
+
+                    <!-- Row: Contact et Email -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="contact" class="form-label">
+                                Personne de Contact
+                            </label>
+                            <input 
+                                type="text" 
+                                id="contact" 
+                                name="contact" 
+                                class="form-input" 
+                                placeholder="Ex: Rémy Djimy"
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="email" class="form-label">
+                                Email <span class="required">*</span>
+                            </label>
+                            <input 
+                                type="email" 
+                                id="email" 
+                                name="email" 
+                                class="form-input" 
+                                placeholder="exemple@email.com"
+                                required
+                            >
+                        </div>
+                    </div>
+
+                    <!-- Row: Téléphone et Délai -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="telephone" class="form-label">
+                                Téléphone <span class="required">*</span>
+                            </label>
+                            <input 
+                                type="tel" 
+                                id="telephone" 
+                                name="telephone" 
+                                class="form-input" 
+                                placeholder="+225 XX XX XX XX XX"
+                                required
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="delaiLivraison" class="form-label">
+                                Délai de Livraison (jours) <span class="required">*</span>
+                            </label>
+                            <input 
+                                type="number" 
+                                id="delaiLivraison" 
+                                name="delaiLivraison" 
+                                class="form-input" 
+                                placeholder="Ex: 5"
+                                min="1"
+                                required
+                            >
+                        </div>
+                    </div>
+
+                    <!-- Adresse -->
+                    <div class="form-group">
+                        <label for="adresse" class="form-label">
+                            Adresse <span class="required">*</span>
+                        </label>
+                        <textarea 
+                            id="adresse" 
+                            name="adresse" 
+                            class="form-textarea" 
+                            rows="3"
+                            placeholder="Adresse complète du fournisseur..."
+                            required
+                        ></textarea>
+                    </div>
+
+                    <!-- Info Box -->
+                    <div class="info-box">
+                        <span class="info-icon">ℹ️</span>
+                        <p class="info-text">
+                            L'évaluation qualité sera initialisée à 0 par défaut. Vous pourrez la noter ultérieurement après vos premières commandes.
+                        </p>
+                    </div>
+
+                    <!-- Modal Footer -->
+                    <div class="modal-footer">
+                        <button type="button" class="btn-secondary" id="btnCancel">
+                            Annuler
+                        </button>
+                        <button type="submit" class="btn-primary">
+                            <span class="btn-icon">✓</span>
+                            Ajouter le fournisseur
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // JavaScript pour gérer la modal
+        const modalOverlay = document.getElementById('modalOverlay');
+        const btnClose = document.getElementById('btnClose');
+        const btnCancel = document.getElementById('btnCancel');
+
+        // Fermer la modal
+        btnClose.addEventListener('click', () => {
+            modalOverlay.style.display = 'none';
+        });
+
+        btnCancel.addEventListener('click', () => {
+            modalOverlay.style.display = 'none';
+        });
+
+        // Fermer si clic en dehors de la modal
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) {
+                modalOverlay.style.display = 'none';
+            }
+        });
+
+        // Afficher la modal au chargement (pour test)
+        window.addEventListener('load', () => {
+            modalOverlay.style.display = 'flex';
+        });
+    </script>
+</body>
+</html>

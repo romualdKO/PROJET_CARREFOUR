@@ -1,0 +1,252 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modifier Fournisseur</title>
+    <link rel="stylesheet" href="{% static 'css/ModifierFournisseur.css' %}">
+</head>
+<body>
+    <!-- Overlay Modal -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-container">
+            <!-- Modal Header -->
+            <div class="modal-header">
+                <div class="header-icon">
+                    <div class="icon-circle">
+                        🚚
+                    </div>
+                </div>
+                <h2 class="modal-title">Modifier Fournisseur</h2>
+                <p class="modal-subtitle">Mettre à jour les informations du fournisseur</p>
+                <button class="btn-close" id="btnClose">✕</button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="modal-body">
+                <form id="formModifierFournisseur" method="POST" action="{% url 'modifier_fournisseur' fournisseur.idFournisseur %}">
+                    {% csrf_token %}
+                    <!-- ID Fournisseur (Read Only) -->
+                    <div class="form-group">
+                        <label for="idFournisseur" class="form-label">
+                            ID Fournisseur
+                        </label>
+                        <input 
+                            type="text" 
+                            id="idFournisseur" 
+                            name="idFournisseur" 
+                            class="form-input input-readonly" 
+                            value="SACO"
+                            readonly
+                        >
+                        <small class="form-help">L'ID du fournisseur ne peut pas être modifié</small>
+                    </div>
+
+                    <!-- Nom du Fournisseur -->
+                    <div class="form-group">
+                        <label for="nom" class="form-label">
+                            Nom du Fournisseur <span class="required">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            id="nom" 
+                            name="nom" 
+                            class="form-input" 
+                            placeholder="Ex: SACO Distribution"
+                            value="{{ fournisseur.nom }}"
+                            required
+                        >
+                    </div>
+
+                    <!-- Row: Contact et Email -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="contact" class="form-label">
+                                Personne de Contact
+                            </label>
+                            <input 
+                                type="text" 
+                                id="contact" 
+                                name="contact" 
+                                class="form-input" 
+                                placeholder="Ex: Rémy Djimy"
+                                value="{{ fournisseur.contact }}"
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="email" class="form-label">
+                                Email <span class="required">*</span>
+                            </label>
+                            <input 
+                                type="email" 
+                                id="email" 
+                                name="email" 
+                                class="form-input" 
+                                placeholder="exemple@email.com"
+                                value="{{ fournisseur.email }}"
+                                required
+                            >
+                        </div>
+                    </div>
+
+                    <!-- Row: Téléphone et Délai -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="telephone" class="form-label">
+                                Téléphone <span class="required">*</span>
+                            </label>
+                            <input 
+                                type="tel" 
+                                id="telephone" 
+                                name="telephone" 
+                                class="form-input" 
+                                placeholder="+225 XX XX XX XX XX"
+                                value="{{ fournisseur.telephone }}"
+                                required
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="delaiLivraison" class="form-label">
+                                Délai de Livraison (jours) <span class="required">*</span>
+                            </label>
+                            <input 
+                                type="number" 
+                                id="delaiLivraison" 
+                                name="delaiLivraison" 
+                                class="form-input" 
+                                placeholder="Ex: 5"
+                                value="{{ fournisseur.delaiLivraison }}"
+                                min="1"
+                                required
+                            >
+                        </div>
+                    </div>
+
+                    <!-- Adresse -->
+                    <div class="form-group">
+                        <label for="adresse" class="form-label">
+                            Adresse <span class="required">*</span>
+                        </label>
+                        <textarea 
+                            id="adresse" 
+                            name="adresse" 
+                            class="form-textarea" 
+                            rows="3"
+                            placeholder="Adresse complète du fournisseur..."
+                            required
+                        >Adidogame</textarea>
+                    </div>
+
+                    <!-- Évaluation Qualité -->
+                    <div class="form-group">
+                        <label for="evaluationQualite" class="form-label">
+                            Évaluation Qualité <span class="required">*</span>
+                        </label>
+                        <div class="rating-input-container">
+                            <input 
+                                type="number" 
+                                id="evaluationQualite" 
+                                name="evaluationQualite" 
+                                class="form-input" 
+                                placeholder="0.0"
+                                value="{{ fournisseur.evaluationQualite }}"
+                                min="0"
+                                max="5"
+                                step="0.1"
+                                required
+                            >
+                            <div class="rating-stars">
+                                <span class="star filled">★</span>
+                                <span class="star filled">★</span>
+                                <span class="star filled">★</span>
+                                <span class="star filled">★</span>
+                                <span class="star half">★</span>
+                            </div>
+                        </div>
+                        <small class="form-help">Note sur 5 étoiles</small>
+                    </div>
+
+                    <!-- Info Box -->
+                    <div class="info-box">
+                        <span class="info-icon">ℹ️</span>
+                        <p class="info-text">
+                            Les modifications seront immédiatement appliquées après enregistrement.
+                        </p>
+                    </div>
+
+                    <!-- Modal Footer -->
+                    <div class="modal-footer">
+                        <a type="button" class="btn-secondary" id="btnCancel">
+                            Annuler
+                        </a>
+                        <button type="submit" class="btn-primary">
+                            <span class="btn-icon">✓</span>
+                            Enregistrer les modifications
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // JavaScript pour gérer la modal
+        const modalOverlay = document.getElementById('modalOverlay');
+        const btnClose = document.getElementById('btnClose');
+        const btnCancel = document.getElementById('btnCancel');
+        const evaluationInput = document.getElementById('evaluationQualite');
+        const stars = document.querySelectorAll('.star');
+
+        // Fermer la modal
+        btnClose.addEventListener('click', () => {
+            modalOverlay.style.display = 'none';
+        });
+
+        btnCancel.addEventListener('click', () => {
+            modalOverlay.style.display = 'none';
+        });
+
+        // Fermer si clic en dehors de la modal
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) {
+                modalOverlay.style.display = 'none';
+            }
+        });
+
+        // Mise à jour des étoiles en fonction de la note
+        function updateStars(rating) {
+            const fullStars = Math.floor(rating);
+            const hasHalfStar = (rating % 1) >= 0.5;
+            
+            stars.forEach((star, index) => {
+                star.classList.remove('filled', 'half', 'empty');
+                
+                if (index < fullStars) {
+                    star.classList.add('filled');
+                } else if (index === fullStars && hasHalfStar) {
+                    star.classList.add('half');
+                } else {
+                    star.classList.add('empty');
+                }
+            });
+        }
+
+        // Écouter les changements de la note
+        evaluationInput.addEventListener('input', (e) => {
+            const value = parseFloat(e.target.value) || 0;
+            updateStars(value);
+        });
+
+        // Initialiser les étoiles
+        updateStars(parseFloat(evaluationInput.value));
+
+        // Afficher la modal au chargement (pour test)
+        window.addEventListener('load', () => {
+            modalOverlay.style.display = 'flex';
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,190 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Fournisseurs</title>
+    <link rel="stylesheet" href="{% static 'css/fournisseur.css' %}">
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="logo">
+            <div class="logo-icon">📦</div>
+            <h2>Gestion des Stocks</h2>
+        </div>
+        <nav class="nav-menu">
+            <a href="{% url 'dashboard_stock' %}" class="nav-item">
+                <span class="nav-icon">📊</span>
+                <span>Tableau de Bord</span>
+            </a>
+            <a href="{% url 'stock_add_product' %}" class="nav-item">
+                <span class="nav-icon">➕</span>
+                <span>Ajouter Produit</span>
+            </a>
+            <a href="#" class="nav-item">
+                <span class="nav-icon">🏠</span>
+                <span>Retour</span>
+            </a>
+            <a href="#" class="nav-item">
+                <span class="nav-icon">🕐</span>
+                <span>Historique</span>
+            </a>
+            <a href="{% url 'page_approvisionnement' %}" class="nav-item">
+                <span class="nav-icon">📋</span>
+                <span>Approvisionnement</span>
+            </a>
+            <a href="{% url 'page_fournisseurs' %}" class="nav-item active">
+                <span class="nav-icon">🚚</span>
+                <span>Fournisseurs</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <div class="app-icon">📦</div>
+                <h1>Gestion des fournisseurs</h1>
+            </div>
+            <div class="header-right">
+                <div class="user-info">
+                    <span class="user-icon">👤</span>
+                    <span>Jean Kouassi - Gestionnaire Stock</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Dashboard Title -->
+        <div class="dashboard-title">
+            <h2>Tableau de Bord</h2>
+        </div>
+
+        <!-- Search and Filter -->
+        <div class="search-section">
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" placeholder="Rechercher un fournisseur...">
+            </div>
+            <select class="filter-select">
+                <option>Tout les états</option>
+                <option>Excellents (≥4.5)</option>
+                <option>Bons (≥3.5)</option>
+                <option>Moyens (<3.5)</option>
+            </select>
+            <a class="btn-primary" href="{% url 'form_fournisseur' %}">
+                <span>➕</span> Ajouter Fournisseur
+            </a>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon blue">📊</div>
+                <div class="stat-info">
+                    <p class="stat-label">Total Fournisseurs</p>
+                    <p class="stat-value"> {{ total }}</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon green">⭐</div>
+                <div class="stat-info">
+                    <p class="stat-label">Note Moyenne</p>
+                    <p class="stat-value">4.2</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon orange">⏱️</div>
+                <div class="stat-info">
+                    <p class="stat-label">Délai Moyen</p>
+                    <p class="stat-value">4.5 jours</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon purple">✅</div>
+                <div class="stat-info">
+                    <p class="stat-label">Fournisseurs Actifs</p>
+                    <p class="stat-value">12</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Suppliers List -->
+        <div class="suppliers-section">
+            <h3>Liste des Fournisseurs</h3>
+            
+            <div class="table-container">
+                <table class="suppliers-table">
+                    <thead>
+                        <tr>
+                            <th>NOM</th>
+                            <th>CONTACT</th>
+                            <th>EMAIL</th>
+                            <th>TÉLÉPHONE</th>
+                            <th>ADRESSE</th>
+                            <th>DÉLAI LIVRAISON</th>
+                            <th>ÉVALUATION</th>
+                            <th>ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for f in fournisseurs %}
+                        <tr>
+                            <td class="supplier-name">{{ f.nom }}</td>
+                            <td>{{ f.contact }}</td>
+                            <td>{{ f.email }}</td>
+                            <td>{{ f.telephone }}</td>
+                            <td>{{ f.adresse }}</td>
+                            <td><span class="delivery-badge">{{ f.delaiLivraison}} jours</span></td>
+                            <td>
+                                <div class="rating-container">
+                                    <div class="stars"></div>
+                                    <span class="rating-value">{{ f.evaluationQualite }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <a class="btn-icon btn-view"  title="Voir">👁️</a>
+                                    <a class="btn-icon btn-edit" title="Modifier" href="{% url 'modifier_fournisseur' f.idFournisseur %}" >✏️</a>
+                                    
+                                    <a href="{% url 'suppression_fournisseur' f.idFournisseur %}" class="btn-icon btn-delete" title="Supprimer" onclick="return confirm('Voulez-vous vraiment supprimer {{ f.nom }} ?');"> 🗑️</a>
+
+                                </div>
+                            </td>
+                        </tr>
+                       {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Rating Modal -->
+    <div id="ratingModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Noter le Fournisseur</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-supplier-name">SACO</p>
+                <div class="rating-input">
+                    <span class="star-input" data-value="1">☆</span>
+                    <span class="star-input" data-value="2">☆</span>
+                    <span class="star-input" data-value="3">☆</span>
+                    <span class="star-input" data-value="4">☆</span>
+                    <span class="star-input" data-value="5">☆</span>
+                </div>
+                <textarea placeholder="Commentaire (optionnel)..." rows="4"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary">Annuler</button>
+                <button class="btn-primary">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

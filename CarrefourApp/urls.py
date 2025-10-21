@@ -33,5 +33,22 @@ urlpatterns = [
     path('dashboard/caisse/', views.dashboard_caisse, name='dashboard_caisse'),
     path('dashboard/marketing/', views.dashboard_marketing, name='dashboard_marketing'),
     path('dashboard/analytics/', views.dashboard_analytics, name='dashboard_analytics'),
+    # New route for adding product
     path('dashboard/stock/ajout-product/', views.ajouter_produit, name='add_product'),
+    #dashboard fournisseur
+    path('dashboard/fournisseurs/', views.fournisseur, name='page_fournisseurs'),
+    #dashboard reaprovisionnement
+    path('dashboard/approvisionnement/', views.reaprovisionnement, name='page_approvisionnement'),
+    # Formulaires fournisseur
+    path('dashboard/fournisseurs/form/', views.formFournisseur, name='form_fournisseur'),
+    # Formulaires commande approvisionnement
+    path('dashboard/approvisionnement/form/', views.formApprovisionnement, name='form_commande'),
+    # Ajout fournisseur
+    path('dashboard/fournisseurs/ajout/', views.AjoutFournisseur, name='ajout_fournisseur'),
+    # suppression fournisseur
+    path('dashboard/fournisseurs/suppression/<str:idFournisseur>/', views.supprimerFournisseur, name='suppression_fournisseur'),
+    #page Modifier fournisseur
+    path('dashboard/fournisseurs/modifier/<str:idFournisseur>/', views.ModifierFournisseur, name='modifier_fournisseur'),
+    #total fournisseurs
+    
 ]

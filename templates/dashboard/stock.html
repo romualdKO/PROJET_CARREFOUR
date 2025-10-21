@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestion des Stocks - SuperMarché Plus</title>
-    <link rel="stylesheet" href="{% static 'css/stock.css' %}">
+    <link href="{% static 'css/stock.css' %}" rel="stylesheet" >
 </head>
 <body>
     <div class="dashboard-container">
@@ -23,8 +23,8 @@
                 <li><a href="{% url 'stock_add_product' %}"><span class="icon">➕</span> Ajouter Produit</a></li>
                 <li><a href="#"><span class="icon">🏠</span> Retour</a></li>
                 <li><a href="#"><span class="icon">🕒</span> Historique</a></li>
-                <li><a href="#"><span class="icon">📥</span> Approvisionnement</a></li>
-                <li><a href="#"><span class="icon">🚚</span> Fournisseurs</a></li>
+                <li><a href="{% url 'page_approvisionnement' %}"><span class="icon">📥</span> Approvisionnement</a></li>
+                <li><a href="{% url 'page_fournisseurs' %}"><span class="icon">🚚</span> Fournisseurs</a></li>
             </ul>
         </aside>
 

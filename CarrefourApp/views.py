@@ -9,7 +9,7 @@ from decimal import Decimal
 from django.shortcuts import render, redirect
 from .forms import ProduitForm
 from .models import *
-from .utils import generer_id_produit
+from .utils import *
 #Ajout produit PrOJET_CARREFOUR/CarrefourApp/views.py
 def ajouter_produit(request):
     if request.method == 'POST':
@@ -44,6 +44,50 @@ try:
     from .models import Vente, LigneVente, Promotion
 except Exception:
     Vente = LigneVente = Promotion = None
+  #ajout  fournisseur PROJET_CARREFOUR/CarrefourApp/views.py
+def AjoutFournisseur(request):
+    if request.method == 'POST':
+        nom = request.POST.get('nom')
+        contact = request.POST.get('contact')
+        email = request.POST.get('email')
+        telephone = request.POST.get('telephone')
+        adresse = request.POST.get('adresse')
+        delaiLivraison = request.POST.get('delaiLivraison')
+
+        # Générer un ID automatiquement
+        idFournisseur = generer_id_fournisseur()
+
+        try:
+            Fournisseur.objects.create(
+                idFournisseur=idFournisseur,
+                nom=nom,
+                contact=contact,
+                email=email,
+                telephone=telephone,
+                adresse=adresse,
+                delaiLivraison=delaiLivraison,
+                evaluationQualite=0.0,  # Valeur par défaut
+            )
+            messages.success(request, "Fournisseur ajouté avec succès ✅")
+            return redirect('/dashboard/fournisseurs/')  # page de liste par ex.
+
+        except Exception as e:
+            messages.error(request, f"Erreur lors de l’ajout du fournisseur : {e}")
+
+    return render(request, 'dashboard/form_fournisseur.html')
+#suppression fournisseur PROJET_CARREFOUR/CarrefourApp/views.py
+def supprimerFournisseur(request, idFournisseur):
+    # Récupérer le fournisseur ou renvoyer une erreur 404 s'il n'existe pas
+    fournisseur = get_object_or_404(Fournisseur, idFournisseur=idFournisseur)
+
+    # Supprimer le fournisseur
+    fournisseur.delete()
+
+    # Message de confirmation
+    messages.success(request, f"Le fournisseur '{fournisseur.nom}' a été supprimé avec succès.")
+
+    # Rediriger vers la page de la liste des fournisseurs
+    return redirect('/dashboard/fournisseurs/')
 
 # Helpers pour compatibilité des champs entre anciens et nouveaux modèles
 def _get_prix_unitaire(p):
@@ -65,14 +109,51 @@ def _get_stock_val(p):
 # Page d'accueil
 def home(request):
     return render(request, 'home.html')
-
+#formulaire de fournisseur
+def formFournisseur(request):
+    return render(request, 'dashboard/form_fournisseur.html')
+#formulaire commande approvisionnement
+def formApprovisionnement(request):
+    return render(request, 'dashboard/form_commande.html')
 # Page À propos
 def about(request):
     return render(request, 'about.html')
+#page Modifier fournisseur
+def ModifierFournisseur(request, idFournisseur):
+    fournisseur = get_object_or_404(Fournisseur, idFournisseur=idFournisseur)
 
+    if request.method == 'POST':
+        fournisseur.nom = request.POST.get('nom')
+        fournisseur.contact = request.POST.get('contact')
+        fournisseur.email = request.POST.get('email')
+        fournisseur.telephone = request.POST.get('telephone')
+        fournisseur.adresse = request.POST.get('adresse')
+        fournisseur.delaiLivraison = request.POST.get('delaiLivraison')
+        fournisseur.evaluationQualite = request.POST.get('evaluationQualite')
+        fournisseur.save()
+
+        messages.success(request, f"Le fournisseur '{fournisseur.nom}' a été modifié avec succès.")
+        return redirect('/dashboard/fournisseurs/')
+
+    # Si GET → afficher le formulaire pré-rempli
+    return render(request, 'dashboard/ModifierFournisseur.html', {'fournisseur': fournisseur})
 # Page Contact
 def contact(request):
     return render(request, 'contact.html')
+#Dashbord fournisseur
+def fournisseur(request):
+    # Récupérer tous les fournisseurs depuis la base de données
+    fournisseurs = Fournisseur.objects.all()
+    total = Fournisseur.objects.count()
+    # Afficher dans la console (utile pour le débogage)
+    print("Liste des fournisseurs :", list(fournisseurs.values()))
+
+    # Envoyer les données au template
+    return render(request, 'dashboard/fournisseurs.html', {'fournisseurs': fournisseurs,'total': total})
+
+#dashborad reaprovisionnement
+def reaprovisionnement(request):
+    return render(request, 'dashboard/approvisionnement.html')
 
 # Page de connexion
 def login_view(request):
@@ -1245,3 +1326,5 @@ def rh_presence_delete(request, presence_id):
     
     context = {'presence': presence}
     return render(request, 'dashboard/rh_presence_delete.html', context)
+
+#total fournisseurs
