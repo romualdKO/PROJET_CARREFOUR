@@ -1,0 +1,222 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alertes de Stock - Gestion Stock</title>
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+    <style>
+        .alerte-card {
+            background: white;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border-left: 4px solid;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: transform 0.2s;
+        }
+        .alerte-card:hover { transform: translateX(4px); }
+        .alerte-rupture { border-color: #DC2626; background: #FEF2F2; }
+        .alerte-critique { border-color: #F59E0B; background: #FFFBEB; }
+        .alerte-surstock { border-color: #3B82F6; background: #EFF6FF; }
+        .alerte-resolue { opacity: 0.6; border-color: #6B7280; background: #F9FAFB; }
+        .badge-rupture { background: #FEE2E2; color: #991B1B; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+        .badge-critique { background: #FEF3C7; color: #92400E; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+        .badge-surstock { background: #DBEAFE; color: #1E40AF; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+        .badge-resolue { background: #D1FAE5; color: #065F46; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">🛒</div>
+                <h2>SuperMarché Plus</h2>
+                <p>Module Gestion Stock</p>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="{% url 'dashboard_stock' %}" class="nav-item">📊 Tableau de Bord</a>
+                <a href="{% url 'stock_add_product' %}" class="nav-item">📦 Nouveau Produit</a>
+                <a href="{% url 'stock_fournisseurs_list' %}" class="nav-item">🏭 Fournisseurs</a>
+                <a href="{% url 'stock_commandes_list' %}" class="nav-item">🧾 Commandes</a>
+                <a href="{% url 'stock_alertes_list' %}" class="nav-item active">🚨 Alertes</a>
+                <a href="{% url 'stock_mouvements_list' %}" class="nav-item">📋 Mouvements</a>
+                <a href="{% url 'logout' %}" class="nav-item logout">🚪 Déconnexion</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="content-header">
+                <h1>🚨 Alertes de Stock</h1>
+                <div class="user-info">👤 {{ user.get_full_name }}</div>
+            </header>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+
+            <!-- Statistiques -->
+            <div class="stats-grid" style="grid-template-columns: repeat(5, 1fr); margin-bottom: 24px;">
+                <div class="stat-card">
+                    <div class="stat-icon">📊</div>
+                    <div class="stat-content">
+                        <div class="stat-value">{{ total_alertes }}</div>
+                        <div class="stat-label">Total Alertes</div>
+                    </div>
+                </div>
+                <div class="stat-card" style="border-left: 3px solid #F59E0B;">
+                    <div class="stat-icon">⚠️</div>
+                    <div class="stat-content">
+                        <div class="stat-value">{{ alertes_actives }}</div>
+                        <div class="stat-label">Alertes Actives</div>
+                    </div>
+                </div>
+                <div class="stat-card" style="border-left: 3px solid #DC2626;">
+                    <div class="stat-icon">🔴</div>
+                    <div class="stat-content">
+                        <div class="stat-value">{{ alertes_rupture }}</div>
+                        <div class="stat-label">Ruptures</div>
+                    </div>
+                </div>
+                <div class="stat-card" style="border-left: 3px solid #F59E0B;">
+                    <div class="stat-icon">⚠️</div>
+                    <div class="stat-content">
+                        <div class="stat-value">{{ alertes_critiques }}</div>
+                        <div class="stat-label">Critiques</div>
+                    </div>
+                </div>
+                <div class="stat-card" style="border-left: 3px solid #3B82F6;">
+                    <div class="stat-icon">📦</div>
+                    <div class="stat-content">
+                        <div class="stat-value">{{ alertes_surstock }}</div>
+                        <div class="stat-label">Surstock</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filtres -->
+            <div style="background: white; padding: 16px; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 12px; align-items: center;">
+                <form method="get" style="display: flex; gap: 12px; align-items: center; flex: 1;">
+                    <select name="type" style="padding: 10px; border: 2px solid #E5E7EB; border-radius: 8px; background: white; cursor: pointer;">
+                        <option value="">Tous les types</option>
+                        <option value="RUPTURE" {% if type_alerte == 'RUPTURE' %}selected{% endif %}>🔴 Rupture</option>
+                        <option value="SEUIL_CRITIQUE" {% if type_alerte == 'SEUIL_CRITIQUE' %}selected{% endif %}>⚠️ Critique</option>
+                        <option value="SURSTOCK" {% if type_alerte == 'SURSTOCK' %}selected{% endif %}>📦 Surstock</option>
+                    </select>
+                    
+                    <select name="statut" style="padding: 10px; border: 2px solid #E5E7EB; border-radius: 8px; background: white; cursor: pointer;">
+                        <option value="">Tous les statuts</option>
+                        <option value="actives" {% if statut == 'actives' %}selected{% endif %}>Actives uniquement</option>
+                        <option value="resolues" {% if statut == 'resolues' %}selected{% endif %}>Résolues uniquement</option>
+                    </select>
+                    
+                    <button type="submit" style="background: linear-gradient(135deg, #6366F1, #4F46E5); color: white; padding: 10px 20px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                        🔍 Filtrer
+                    </button>
+                </form>
+            </div>
+
+            <!-- Liste des alertes -->
+            {% if alertes %}
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    {% for alerte in alertes %}
+                        <div class="alerte-card {% if alerte.type_alerte == 'RUPTURE' %}alerte-rupture{% elif alerte.type_alerte == 'SEUIL_CRITIQUE' %}alerte-critique{% elif alerte.type_alerte == 'SURSTOCK' %}alerte-surstock{% endif %} {% if alerte.est_resolue %}alerte-resolue{% endif %}">
+                            <div style="flex: 1;">
+                                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                                    {% if alerte.type_alerte == 'RUPTURE' %}
+                                        <span style="font-size: 24px;">🔴</span>
+                                    {% elif alerte.type_alerte == 'SEUIL_CRITIQUE' %}
+                                        <span style="font-size: 24px;">⚠️</span>
+                                    {% elif alerte.type_alerte == 'SURSTOCK' %}
+                                        <span style="font-size: 24px;">📦</span>
+                                    {% endif %}
+                                    
+                                    <div>
+                                        <h3 style="margin: 0; font-size: 16px; font-weight: 600; color: #111827;">
+                                            {{ alerte.produit.nom }}
+                                        </h3>
+                                        <p style="margin: 4px 0 0 0; font-size: 13px; color: #6B7280;">
+                                            {{ alerte.produit.categorie.nom }} • Stock actuel: <strong>{{ alerte.produit.stock_actuel }}</strong>
+                                        </p>
+                                    </div>
+                                </div>
+                                
+                                <p style="margin: 8px 0 8px 36px; color: #374151; font-size: 14px;">
+                                    {{ alerte.message }}
+                                </p>
+                                
+                                <div style="display: flex; gap: 8px; align-items: center; margin-left: 36px;">
+                                    {% if alerte.type_alerte == 'RUPTURE' %}
+                                        <span class="badge-rupture">RUPTURE DE STOCK</span>
+                                    {% elif alerte.type_alerte == 'SEUIL_CRITIQUE' %}
+                                        <span class="badge-critique">SEUIL CRITIQUE</span>
+                                    {% elif alerte.type_alerte == 'SURSTOCK' %}
+                                        <span class="badge-surstock">SURSTOCK</span>
+                                    {% endif %}
+                                    
+                                    {% if alerte.est_resolue %}
+                                        <span class="badge-resolue">✅ Résolue</span>
+                                    {% endif %}
+                                    
+                                    <span style="color: #6B7280; font-size: 12px; margin-left: 8px;">
+                                        📅 {{ alerte.date_alerte|date:"d/m/Y à H:i" }}
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div style="display: flex; flex-direction: column; gap: 8px; align-items: flex-end;">
+                                {% if not alerte.est_resolue %}
+                                    <a href="{% url 'stock_alerte_resoudre' alerte.id %}" 
+                                       style="background: linear-gradient(135deg, #10B981, #059669); color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; font-size: 13px; font-weight: 600; white-space: nowrap;">
+                                        ✅ Marquer Résolue
+                                    </a>
+                                {% else %}
+                                    <span style="color: #6B7280; font-size: 12px;">
+                                        Résolue le {{ alerte.date_resolution|date:"d/m/Y" }}
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div style="background: white; border-radius: 12px; padding: 60px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <div style="font-size: 80px; margin-bottom: 20px;">✅</div>
+                    <h3 style="color: #374151; margin-bottom: 10px; font-size: 24px;">Aucune alerte</h3>
+                    <p style="color: #6B7280; font-size: 16px;">
+                        {% if statut or type_alerte %}
+                            Aucune alerte ne correspond aux filtres sélectionnés.
+                        {% else %}
+                            Tout va bien ! Aucune alerte de stock active pour le moment.
+                        {% endif %}
+                    </p>
+                </div>
+            {% endif %}
+
+            <!-- Légende -->
+            <div style="background: #F9FAFB; border: 2px solid #E5E7EB; border-radius: 8px; padding: 16px; margin-top: 24px;">
+                <h4 style="color: #374151; margin-bottom: 12px; font-size: 14px; font-weight: 600;">💡 Légende des Alertes</h4>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; font-size: 13px;">
+                    <div>
+                        <strong style="color: #DC2626;">🔴 RUPTURE DE STOCK</strong>
+                        <p style="color: #6B7280; margin: 4px 0 0 0;">Stock à zéro - Commande urgente requise</p>
+                    </div>
+                    <div>
+                        <strong style="color: #F59E0B;">⚠️ SEUIL CRITIQUE</strong>
+                        <p style="color: #6B7280; margin: 4px 0 0 0;">Stock faible - Réapprovisionnement nécessaire</p>
+                    </div>
+                    <div>
+                        <strong style="color: #3B82F6;">📦 SURSTOCK</strong>
+                        <p style="color: #6B7280; margin: 4px 0 0 0;">Stock excessif - Optimisation recommandée</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

@@ -1,0 +1,282 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modifier {{ produit.nom }} - SuperMarché Plus</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <style>
+        .image-preview-container {
+            margin-top: 1rem;
+            text-align: center;
+        }
+        .image-preview {
+            max-width: 300px;
+            max-height: 300px;
+            border: 2px solid var(--border-gray);
+            border-radius: 8px;
+            margin: 1rem auto;
+            display: block;
+        }
+        .image-preview-label {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background: var(--primary-green);
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .image-preview-label:hover {
+            background: #1ea854;
+            transform: translateY(-2px);
+        }
+        .image-info {
+            margin-top: 0.5rem;
+            color: #666;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-layout">
+        <aside class="sidebar">
+            <div style="text-align: center; padding: 0 1.5rem; margin-bottom: 2rem;">
+                <div style="width: 60px; height: 60px; background: var(--primary-green); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin: 0 auto; color: white; font-size: 2rem;">📦</div>
+                <h3 style="margin-top: 1rem;">Gestion Stock</h3>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="{% url 'dashboard_stock' %}"><span class="icon">📊</span> Tableau de Bord</a></li>
+                <li><a href="{% url 'stock_add_product' %}"><span class="icon">➕</span> Nouveau Produit</a></li>
+            </ul>
+            <div style="padding: 1.5rem; margin-top: auto;">
+                <a href="{% url 'logout' %}" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: var(--bg-gray); border-radius: 8px; text-decoration: none; color: var(--text-dark);"><span>🚪</span><span>Déconnexion</span></a>
+            </div>
+        </aside>
+        <main class="main-content">
+            <div class="page-header">
+                <h1>✏️ Modifier le Produit</h1>
+                <p>Modifier les informations de <strong>{{ produit.nom }}</strong></p>
+            </div>
+
+            {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}" style="padding: 1rem; margin-bottom: 1.5rem; border-radius: 8px; {% if message.tags == 'success' %}background: #d4edda; color: #155724; border: 1px solid #c3e6cb;{% elif message.tags == 'error' %}background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;{% endif %}">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="chart-container">
+                <form method="post" enctype="multipart/form-data" style="padding: 2rem;">
+                    {% csrf_token %}
+                    
+                    <h3 style="margin-bottom: 1.5rem; color: var(--primary-green);">📸 Image du Produit</h3>
+                    
+                    <div class="image-preview-container">
+                        {% if produit.image %}
+                            <img id="imagePreview" src="{{ produit.image.url }}" alt="{{ produit.nom }}" class="image-preview">
+                        {% else %}
+                            <img id="imagePreview" src="{% static 'images/no-image.png' %}" alt="Aucune image" class="image-preview" style="display: none;">
+                        {% endif %}
+                        
+                        <div style="margin-top: 1rem;">
+                            <label for="imageInput" class="image-preview-label">
+                                📷 Choisir une nouvelle image
+                            </label>
+                            <input type="file" id="imageInput" name="image" accept="image/*" style="display: none;">
+                            <div class="image-info" id="imageInfo">
+                                {% if produit.image %}
+                                    Image actuelle: {{ produit.image.name }}
+                                {% else %}
+                                    Aucune image (formats acceptés: JPG, PNG, GIF - max 5MB)
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr style="margin: 2rem 0; border: none; border-top: 1px solid var(--border-gray);">
+
+                    <h3 style="margin-bottom: 1.5rem; color: var(--primary-green);">📝 Informations Générales</h3>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                        <div>
+                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Nom du Produit *</label>
+                            <input type="text" name="nom" required class="form-input" value="{{ produit.nom }}" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-gray); border-radius: 8px;" placeholder="Ex: Lait entier 1L">
+                        </div>
+                        
+                        <div>
+                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Référence *</label>
+                            <input type="text" name="reference" required class="form-input" value="{{ produit.reference }}" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-gray); border-radius: 8px;" placeholder="Ex: PROD001">
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1.5rem;">
+                        <div>
+                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Catégorie *</label>
+                            <select name="categorie" required class="form-input" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-gray); border-radius: 8px;">
+                                <option value="">-- Sélectionner une catégorie --</option>
+                                {% for code, nom in CATEGORIES %}
+                                <option value="{{ code }}" {% if produit.categorie == code %}selected{% endif %}>{{ nom }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Code Barre</label>
+                            <input type="text" name="code_barre" class="form-input" value="{{ produit.code_barre|default:'' }}" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-gray); border-radius: 8px;" placeholder="Ex: 3245678901234">
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 1.5rem;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Description</label>
+                        <textarea name="description" rows="3" class="form-input" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-gray); border-radius: 8px;" placeholder="Description du produit...">{{ produit.description|default:'' }}</textarea>
+                    </div>
+
+                    <hr style="margin: 2rem 0; border: none; border-top: 1px solid var(--border-gray);">
+
+                    <h3 style="margin-bottom: 1.5rem; color: var(--primary-green);">💰 Prix et Fournisseur</h3>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem;">
+                        <div>
+                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Prix d'Achat (FCFA) *</label>
+                            <input type="number" name="prix_achat" required class="form-input" value="{{ produit.prix_achat }}" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-gray); border-radius: 8px;" placeholder="0" step="0.01" min="0">
+                        </div>
+                        
+                        <div>
+                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Prix de Vente (FCFA) *</label>
+                            <input type="number" name="prix_unitaire" required class="form-input" value="{{ produit.prix_unitaire }}" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-gray); border-radius: 8px;" placeholder="0" step="0.01" min="0">
+                        </div>
+
+                        <div>
+                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Fournisseur Principal</label>
+                            <select name="fournisseur" class="form-input" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-gray); border-radius: 8px;">
+                                <option value="">-- Aucun --</option>
+                                {% for fournisseur in fournisseurs %}
+                                <option value="{{ fournisseur.id }}" {% if produit.fournisseur_principal.id == fournisseur.id %}selected{% endif %}>{{ fournisseur.nom }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <hr style="margin: 2rem 0; border: none; border-top: 1px solid var(--border-gray);">
+
+                    <h3 style="margin-bottom: 1.5rem; color: var(--primary-green);">📦 Stock et Seuils</h3>
+
+                    <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 1.5rem;">
+                        <div>
+                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Stock Actuel *</label>
+                            <input type="number" name="stock_actuel" required class="form-input" value="{{ produit.stock_actuel }}" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-gray); border-radius: 8px;" placeholder="0" min="0">
+                            <small style="color: #666; font-size: 0.85rem;">Unités en stock</small>
+                        </div>
+
+                        <div>
+                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Stock Critique *</label>
+                            <input type="number" name="stock_critique" required class="form-input" value="{{ produit.stock_critique }}" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-gray); border-radius: 8px;" placeholder="10" min="0">
+                            <small style="color: #dc3545; font-size: 0.85rem;">Alerte rouge</small>
+                        </div>
+
+                        <div>
+                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Seuil Réappro *</label>
+                            <input type="number" name="seuil_reapprovisionnement" required class="form-input" value="{{ produit.seuil_reapprovisionnement }}" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-gray); border-radius: 8px;" placeholder="20" min="0">
+                            <small style="color: #ffc107; font-size: 0.85rem;">Alerte orange</small>
+                        </div>
+
+                        <div>
+                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Stock Minimum *</label>
+                            <input type="number" name="stock_minimum" required class="form-input" value="{{ produit.stock_minimum }}" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-gray); border-radius: 8px;" placeholder="5" min="0">
+                            <small style="color: #666; font-size: 0.85rem;">Min à garder</small>
+                        </div>
+
+                        <div>
+                            <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Stock Maximum *</label>
+                            <input type="number" name="stock_maximum" required class="form-input" value="{{ produit.stock_maximum }}" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-gray); border-radius: 8px;" placeholder="500" min="0">
+                            <small style="color: #666; font-size: 0.85rem;">Max à stocker</small>
+                        </div>
+                    </div>
+
+                    <div style="background: #e7f5ff; border-left: 4px solid #0288d1; padding: 1rem; border-radius: 8px; margin-top: 1.5rem;">
+                        <p style="margin: 0; color: #01579b;"><strong>ℹ️ Information:</strong> Si vous modifiez le stock actuel, un mouvement de stock sera automatiquement créé pour tracer l'ajustement.</p>
+                    </div>
+
+                    <hr style="margin: 2rem 0; border: none; border-top: 1px solid var(--border-gray);">
+
+                    <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                        <a href="{% url 'dashboard_stock' %}" class="btn btn-secondary" style="padding: 0.75rem 2rem; background: var(--bg-gray); color: var(--text-dark); border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem;">
+                            ❌ Annuler
+                        </a>
+                        <button type="submit" class="btn btn-primary" style="padding: 0.75rem 2rem; background: var(--primary-green); color: white; border: none; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 0.5rem;">
+                            ✅ Enregistrer les modifications
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Prévisualisation de l'image
+        document.getElementById('imageInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                // Vérifier la taille (max 5MB)
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('❌ L\'image est trop volumineuse. Taille maximale: 5MB');
+                    this.value = '';
+                    return;
+                }
+
+                // Vérifier le type
+                if (!file.type.match('image.*')) {
+                    alert('❌ Veuillez sélectionner une image (JPG, PNG, GIF)');
+                    this.value = '';
+                    return;
+                }
+
+                // Afficher la prévisualisation
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('imagePreview');
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                    
+                    document.getElementById('imageInfo').textContent = 
+                        `Nouvelle image sélectionnée: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Validation du formulaire
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const prixAchat = parseFloat(document.querySelector('input[name="prix_achat"]').value);
+            const prixVente = parseFloat(document.querySelector('input[name="prix_unitaire"]').value);
+            
+            if (prixVente <= prixAchat) {
+                if (!confirm('⚠️ Le prix de vente est inférieur ou égal au prix d\'achat. Voulez-vous continuer ?')) {
+                    e.preventDefault();
+                    return false;
+                }
+            }
+
+            const stockCritique = parseInt(document.querySelector('input[name="stock_critique"]').value);
+            const seuilReappro = parseInt(document.querySelector('input[name="seuil_reapprovisionnement"]').value);
+            const stockMin = parseInt(document.querySelector('input[name="stock_minimum"]').value);
+            const stockMax = parseInt(document.querySelector('input[name="stock_maximum"]').value);
+
+            if (seuilReappro <= stockCritique) {
+                alert('⚠️ Le seuil de réapprovisionnement doit être supérieur au stock critique.');
+                e.preventDefault();
+                return false;
+            }
+
+            if (stockMax <= seuilReappro) {
+                alert('⚠️ Le stock maximum doit être supérieur au seuil de réapprovisionnement.');
+                e.preventDefault();
+                return false;
+            }
+        });
+    </script>
+</body>
+</html>

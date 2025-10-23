@@ -1,0 +1,187 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liste des Fournisseurs - Stock</title>
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">🛒</div>
+                <h2>SuperMarché Plus</h2>
+                <p>Module Gestion Stock</p>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="{% url 'dashboard_stock' %}" class="nav-item">
+                    <span class="icon">📊</span>
+                    <span>Tableau de Bord</span>
+                </a>
+                <a href="{% url 'stock_add_product' %}" class="nav-item">
+                    <span class="icon">📦</span>
+                    <span>Nouveau Produit</span>
+                </a>
+                <a href="{% url 'stock_fournisseurs_list' %}" class="nav-item active">
+                    <span class="icon">🏭</span>
+                    <span>Fournisseurs</span>
+                </a>
+                <a href="{% url 'logout' %}" class="nav-item logout">
+                    <span class="icon">🚪</span>
+                    <span>Déconnexion</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="content-header">
+                <h1>Gestion des Fournisseurs</h1>
+                <div class="user-info">
+                    <span>👤 {{ user.get_full_name }}</span>
+                </div>
+            </header>
+
+            <!-- Messages -->
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <!-- Statistiques -->
+            <div class="stats-grid" style="margin-bottom: 30px;">
+                <div class="stat-card">
+                    <div class="stat-icon">🏭</div>
+                    <div class="stat-content">
+                        <div class="stat-value">{{ total_fournisseurs }}</div>
+                        <div class="stat-label">Total Fournisseurs</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-content">
+                        <div class="stat-value">{{ fournisseurs_actifs }}</div>
+                        <div class="stat-label">Actifs</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">❌</div>
+                    <div class="stat-content">
+                        <div class="stat-value">{{ fournisseurs_inactifs }}</div>
+                        <div class="stat-label">Inactifs</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions et Filtres -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 15px;">
+                <a href="{% url 'stock_fournisseur_create' %}" style="display: inline-block; background: linear-gradient(135deg, #10B981, #059669); color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+                    ➕ Nouveau Fournisseur
+                </a>
+
+                <!-- Formulaire de recherche -->
+                <form method="get" style="display: flex; gap: 10px; flex: 1; max-width: 600px;">
+                    <input type="text" name="search" value="{{ search }}" placeholder="🔍 Rechercher un fournisseur..." 
+                           style="flex: 1; padding: 10px 15px; border: 2px solid #E5E7EB; border-radius: 8px; font-size: 14px;">
+                    
+                    <select name="statut" style="padding: 10px 15px; border: 2px solid #E5E7EB; border-radius: 8px; background: white; font-size: 14px; cursor: pointer;">
+                        <option value="">Tous les statuts</option>
+                        <option value="actif" {% if statut == 'actif' %}selected{% endif %}>Actifs</option>
+                        <option value="inactif" {% if statut == 'inactif' %}selected{% endif %}>Inactifs</option>
+                    </select>
+                    
+                    <button type="submit" style="background: linear-gradient(135deg, #6366F1, #4F46E5); color: white; padding: 10px 20px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                        Filtrer
+                    </button>
+                </form>
+            </div>
+
+            <!-- Table des fournisseurs -->
+            {% if fournisseurs %}
+                <div style="background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead style="background: linear-gradient(135deg, #667EEA, #764BA2);">
+                            <tr>
+                                <th style="padding: 15px; text-align: left; color: white; font-weight: 600;">Nom</th>
+                                <th style="padding: 15px; text-align: left; color: white; font-weight: 600;">Contact</th>
+                                <th style="padding: 15px; text-align: left; color: white; font-weight: 600;">Téléphone</th>
+                                <th style="padding: 15px; text-align: left; color: white; font-weight: 600;">Email</th>
+                                <th style="padding: 15px; text-align: center; color: white; font-weight: 600;">Délai Livraison</th>
+                                <th style="padding: 15px; text-align: center; color: white; font-weight: 600;">Statut</th>
+                                <th style="padding: 15px; text-align: center; color: white; font-weight: 600;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for fournisseur in fournisseurs %}
+                                <tr style="border-bottom: 1px solid #E5E7EB;">
+                                    <td style="padding: 15px;">
+                                        <strong>{{ fournisseur.nom }}</strong>
+                                    </td>
+                                    <td style="padding: 15px;">{{ fournisseur.contact }}</td>
+                                    <td style="padding: 15px;">{{ fournisseur.telephone|default:"—" }}</td>
+                                    <td style="padding: 15px;">{{ fournisseur.email|default:"—" }}</td>
+                                    <td style="padding: 15px; text-align: center;">
+                                        <span style="background: #DBEAFE; color: #1E40AF; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;">
+                                            {{ fournisseur.delai_livraison_moyen }} jours
+                                        </span>
+                                    </td>
+                                    <td style="padding: 15px; text-align: center;">
+                                        {% if fournisseur.est_actif %}
+                                            <span style="background: #D1FAE5; color: #065F46; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;">
+                                                ✅ Actif
+                                            </span>
+                                        {% else %}
+                                            <span style="background: #FEE2E2; color: #991B1B; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;">
+                                                ❌ Inactif
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td style="padding: 15px; text-align: center;">
+                                        <div style="display: flex; gap: 8px; justify-content: center;">
+                                            <a href="{% url 'stock_fournisseur_detail' fournisseur.id %}" 
+                                               style="background: #DBEAFE; color: #1E40AF; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 600;">
+                                                👁️ Voir
+                                            </a>
+                                            <a href="{% url 'stock_fournisseur_edit' fournisseur.id %}" 
+                                               style="background: #FEF3C7; color: #92400E; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 600;">
+                                                ✏️ Modifier
+                                            </a>
+                                            <a href="{% url 'stock_fournisseur_delete' fournisseur.id %}" 
+                                               style="background: #FEE2E2; color: #991B1B; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 600;">
+                                                🗑️ Supprimer
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div style="background: white; border-radius: 12px; padding: 40px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <div style="font-size: 64px; margin-bottom: 20px;">📭</div>
+                    <h3 style="color: #374151; margin-bottom: 10px;">Aucun fournisseur trouvé</h3>
+                    <p style="color: #6B7280; margin-bottom: 20px;">
+                        {% if search %}
+                            Aucun résultat pour "{{ search }}"
+                        {% else %}
+                            Commencez par ajouter votre premier fournisseur
+                        {% endif %}
+                    </p>
+                    <a href="{% url 'stock_fournisseur_create' %}" 
+                       style="display: inline-block; background: linear-gradient(135deg, #10B981, #059669); color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+                        ➕ Ajouter un Fournisseur
+                    </a>
+                </div>
+            {% endif %}
+        </main>
+    </div>
+</body>
+</html>

@@ -1,0 +1,1313 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Caisse - Point de Vente{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        overflow: hidden;
+    }
+    .pos-container {
+        height: calc(100vh - 60px);
+        display: flex;
+        gap: 0;
+    }
+    .pos-products {
+        flex: 2;
+        background: #f8f9fa;
+        padding: 20px;
+        overflow-y: auto;
+        border-right: 2px solid #dee2e6;
+    }
+    .pos-cart {
+        flex: 1;
+        background: white;
+        display: flex;
+        flex-direction: column;
+        min-width: 400px;
+    }
+    .pos-header {
+        padding: 15px 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    .search-box {
+        position: relative;
+        margin-bottom: 20px;
+    }
+    .search-box input {
+        width: 100%;
+        padding: 12px 45px 12px 15px;
+        border: 2px solid #dee2e6;
+        border-radius: 8px;
+        font-size: 16px;
+    }
+    .search-box i {
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+    }
+    .category-filters {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+    .category-btn {
+        padding: 8px 16px;
+        border: 2px solid #dee2e6;
+        background: white;
+        border-radius: 20px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    .category-btn:hover, .category-btn.active {
+        background: #667eea;
+        color: white;
+        border-color: #667eea;
+    }
+    .product-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 15px;
+    }
+    .product-card {
+        background: white;
+        border-radius: 12px;
+        padding: 15px;
+        cursor: pointer;
+        transition: all 0.3s;
+        border: 2px solid transparent;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .product-card:hover {
+        transform: translateY(-5px);
+        border-color: #667eea;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+    .product-card.out-of-stock {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    .product-name {
+        font-weight: 600;
+        font-size: 14px;
+        margin-bottom: 8px;
+        min-height: 40px;
+    }
+    .product-price {
+        font-size: 18px;
+        font-weight: bold;
+        color: #667eea;
+        margin-bottom: 5px;
+    }
+    .product-stock {
+        font-size: 12px;
+        color: #6c757d;
+    }
+    .cart-items {
+        flex: 1;
+        overflow-y: auto;
+        padding: 15px;
+        border-bottom: 2px solid #dee2e6;
+    }
+    .cart-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        margin-bottom: 10px;
+    }
+    .cart-item-name {
+        font-weight: 600;
+        font-size: 14px;
+    }
+    .cart-item-qty {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .qty-btn {
+        width: 28px;
+        height: 28px;
+        border: none;
+        background: #667eea;
+        color: white;
+        border-radius: 50%;
+        cursor: pointer;
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .qty-btn:hover {
+        background: #764ba2;
+    }
+    .cart-summary {
+        padding: 20px;
+        background: #f8f9fa;
+    }
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+        font-size: 16px;
+    }
+    .summary-row.total {
+        font-size: 24px;
+        font-weight: bold;
+        color: #667eea;
+        padding-top: 10px;
+        border-top: 2px solid #dee2e6;
+    }
+    .pos-actions {
+        padding: 15px 20px;
+        display: flex;
+        gap: 10px;
+    }
+    .btn-checkout {
+        flex: 1;
+        padding: 15px;
+        font-size: 18px;
+        font-weight: bold;
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        border: none;
+        color: white;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    .btn-checkout:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(56, 239, 125, 0.4);
+    }
+    .btn-checkout:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    .btn-cancel {
+        padding: 15px 20px;
+        background: #dc3545;
+        border: none;
+        color: white;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+    .empty-cart {
+        text-align: center;
+        padding: 40px 20px;
+        color: #6c757d;
+    }
+    .badge-stock {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+    .badge-success {
+        background: #d4edda;
+        color: #155724;
+    }
+    .badge-warning {
+        background: #fff3cd;
+        color: #856404;
+    }
+    .badge-danger {
+        background: #f8d7da;
+        color: #721c24;
+    }
+    
+    /* Section identification client */
+    .client-section {
+        padding: 15px 20px;
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+        border-bottom: 2px solid #dee2e6;
+    }
+    .client-input-group {
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+    }
+    .client-input-group input {
+        flex: 1;
+        padding: 10px;
+        border: 2px solid white;
+        border-radius: 6px;
+        font-size: 14px;
+    }
+    .client-input-group button {
+        padding: 10px 15px;
+        border: none;
+        background: white;
+        color: #f5576c;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+    }
+    .client-input-group button:hover {
+        background: #f8f9fa;
+    }
+    .client-info {
+        margin-top: 10px;
+        padding: 12px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 8px;
+        backdrop-filter: blur(10px);
+    }
+    .client-info-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 5px;
+        font-size: 13px;
+    }
+    .client-info-row strong {
+        font-weight: 600;
+    }
+    .badge-niveau {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 700;
+    }
+    .badge-vip {
+        background: #ffd700;
+        color: #000;
+    }
+    .badge-gold {
+        background: #ff8c00;
+        color: white;
+    }
+    .badge-silver {
+        background: #c0c0c0;
+        color: #000;
+    }
+    .badge-tous {
+        background: #6c757d;
+        color: white;
+    }
+    .btn-remove-client {
+        padding: 5px 10px;
+        background: rgba(220, 53, 69, 0.8);
+        border: none;
+        color: white;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        margin-top: 8px;
+    }
+    .btn-remove-client:hover {
+        background: rgba(220, 53, 69, 1);
+    }
+    .coupons-list {
+        margin-top: 8px;
+        max-height: 100px;
+        overflow-y: auto;
+    }
+    .coupon-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px;
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 6px;
+        margin-bottom: 5px;
+        font-size: 12px;
+    }
+    .coupon-item input[type="checkbox"] {
+        cursor: pointer;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pos-container">
+    <!-- Section Produits -->
+    <div class="pos-products">
+        <div class="search-box">
+            <input type="text" id="searchProduct" placeholder="Rechercher un produit (nom, référence, code-barres)..." autofocus>
+            <i class="fas fa-search"></i>
+        </div>
+
+        <div class="category-filters">
+            <button class="category-btn active" data-category="all">Tous</button>
+            {% for code, label in categories %}
+            <button class="category-btn" data-category="{{ code }}">{{ label }}</button>
+            {% endfor %}
+        </div>
+
+        <div class="product-grid" id="productGrid">
+            {% for produit in produits %}
+            <div class="product-card" 
+                 data-category="{{ produit.categorie }}" 
+                 data-id="{{ produit.id }}" 
+                 data-name="{{ produit.nom }}"
+                 data-price="{{ produit.prix_unitaire }}"
+                 data-stock="{{ produit.stock_actuel }}">
+                <div class="product-name">{{ produit.nom }}</div>
+                <div class="product-price">{{ produit.prix_unitaire|floatformat:0 }} FCFA</div>
+                <div class="product-stock">
+                    {% if produit.stock_actuel > 20 %}
+                        <span class="badge-stock badge-success">Stock: {{ produit.stock_actuel }}</span>
+                    {% elif produit.stock_actuel > 0 %}
+                        <span class="badge-stock badge-warning">Stock: {{ produit.stock_actuel }}</span>
+                    {% else %}
+                        <span class="badge-stock badge-danger">Rupture</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Section Panier -->
+    <div class="pos-cart">
+        <div class="pos-header">
+            <h5 class="mb-0">
+                <i class="fas fa-cash-register"></i> <span style="background: #667eea; color: white; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.9rem;">Caisse #{{ session.numero_caisse }}</span>
+            </h5>
+            <h6 class="mb-0 mt-2">
+                <i class="fas fa-receipt"></i> Ticket: <span id="ticketNumber">{{ transaction.numero_ticket|default:"Nouvelle vente" }}</span>
+            </h6>
+            <small>{{ session.caissier.get_full_name }}</small>
+        </div>
+
+        <!-- Section Identification Client -->
+        <div class="client-section">
+            <h6 class="mb-0"><i class="fas fa-user"></i> Identification Client</h6>
+            
+            <!-- Formulaire de recherche -->
+            <div id="clientSearchForm">
+                <div class="client-input-group">
+                    <input type="tel" id="clientPhone" placeholder="Numéro de téléphone" maxlength="15">
+                    <button type="button" onclick="identifyClient()">
+                        <i class="fas fa-search"></i> Identifier
+                    </button>
+                </div>
+            </div>
+
+            <!-- Informations client identifié -->
+            <div id="clientInfo" style="display: none;">
+                <div class="client-info">
+                    <div class="client-info-row">
+                        <strong><i class="fas fa-id-card"></i> <span id="clientName"></span></strong>
+                        <span id="clientBadge"></span>
+                    </div>
+                    <div class="client-info-row">
+                        <span><i class="fas fa-phone"></i> <span id="clientPhoneDisplay"></span></span>
+                        <span><i class="fas fa-star"></i> <span id="clientPoints"></span> pts</span>
+                    </div>
+                    <div class="client-info-row">
+                        <span><i class="fas fa-shopping-bag"></i> <span id="clientAchats"></span> achats</span>
+                        <span><i class="fas fa-percentage"></i> -<span id="clientRemise"></span>%</span>
+                    </div>
+                    
+                    <!-- Liste des coupons disponibles -->
+                    <div id="clientCoupons" style="display: none;">
+                        <div style="margin-top: 8px; font-size: 12px; font-weight: 600;">
+                            <i class="fas fa-ticket-alt"></i> Coupons disponibles:
+                        </div>
+                        <div class="coupons-list" id="couponsList"></div>
+                    </div>
+                    
+                    <button type="button" class="btn-remove-client" onclick="removeClient()">
+                        <i class="fas fa-times"></i> Retirer client
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="cart-items" id="cartItems">
+            <div class="empty-cart">
+                <i class="fas fa-shopping-basket fa-3x mb-3"></i>
+                <p>Panier vide<br><small>Scannez ou cliquez sur un produit</small></p>
+            </div>
+        </div>
+
+        <div class="cart-summary">
+            <div class="summary-row">
+                <span>Sous-total:</span>
+                <span id="subtotal">0 FCFA</span>
+            </div>
+            <div class="summary-row">
+                <span>Remise:</span>
+                <span id="discount">0 FCFA</span>
+            </div>
+            <div class="summary-row total">
+                <span>TOTAL:</span>
+                <span id="total">0 FCFA</span>
+            </div>
+        </div>
+
+        <div class="pos-actions">
+            <button class="btn-cancel" onclick="cancelTransaction()">
+                <i class="fas fa-times"></i> Annuler
+            </button>
+            <button class="btn-checkout" id="btnCheckout" onclick="showPaymentModal()" disabled>
+                <i class="fas fa-check"></i> Payer
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Paiement -->
+<div class="modal fade" id="paymentModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="fas fa-credit-card"></i> Encaisser le paiement</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-4">
+                    <div class="col-12 text-center">
+                        <h2 class="text-primary">Montant à payer: <span id="modalTotal">0</span> FCFA</h2>
+                    </div>
+                </div>
+
+                <h6>Modes de paiement:</h6>
+                <div class="row" id="paymentTypes">
+                    {% for type_paiement in types_paiement %}
+                    <div class="col-md-4 mb-3">
+                        <div class="card payment-card" 
+                             data-type-id="{{ type_paiement.id }}" 
+                             data-type-code="{{ type_paiement.code }}"
+                             data-type-name="{{ type_paiement.nom }}"
+                             style="cursor: pointer;">
+                            <div class="card-body text-center">
+                                <i class="fas {{ type_paiement.icone }} fa-2x mb-2"></i>
+                                <p class="mb-0">{{ type_paiement.nom }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div id="paymentForm" style="display: none;">
+                    <hr>
+                    <h6 id="paymentFormTitle">Montant reçu:</h6>
+                    <input type="number" step="1" min="0" class="form-control form-control-lg mb-2" id="amountReceived" placeholder="Entrez le montant reçu...">
+                    <small class="text-muted d-block mb-3" id="paymentFormHelp">Saisissez le montant que le client vous donne.</small>
+                    <div id="change" class="alert alert-success" style="display: none;">
+                        <strong><i class="fas fa-coins"></i> Monnaie à rendre:</strong> <span id="changeAmount" style="font-size: 1.5rem; font-weight: bold;">0</span> FCFA
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-success btn-lg" id="btnConfirmPayment" onclick="confirmPayment()" disabled>
+                    <i class="fas fa-check"></i> Valider la vente
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let cart = [];
+let currentPaymentType = null;
+let transactionId = {{ transaction.id|default:"null" }};
+
+// Recherche de produits
+document.getElementById('searchProduct').addEventListener('input', function(e) {
+    const search = e.target.value.toLowerCase();
+    document.querySelectorAll('.product-card').forEach(card => {
+        const name = card.querySelector('.product-name').textContent.toLowerCase();
+        card.style.display = name.includes(search) ? 'block' : 'none';
+    });
+});
+
+// Filtrage par catégorie
+document.querySelectorAll('.category-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        
+        const category = this.dataset.category;
+        document.querySelectorAll('.product-card').forEach(card => {
+            if (category === 'all' || card.dataset.category === category) {
+                card.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    });
+});
+
+// Créer nouvelle transaction
+async function createNewTransaction() {
+    try {
+        const response = await fetch('{% url "pos_nouvelle_transaction" %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        });
+        const data = await response.json();
+        if (data.success) {
+            transactionId = data.transaction_id;
+            document.getElementById('ticketNumber').textContent = data.numero_ticket;
+            console.log('Transaction créée:', transactionId);
+            return true;
+        } else {
+            alert(data.error || 'Erreur création transaction');
+            return false;
+        }
+    } catch (error) {
+        console.error('Erreur createNewTransaction:', error);
+        alert('Erreur de communication avec le serveur');
+        return false;
+    }
+}
+
+// Ajouter au panier
+async function addToCart(productId, productName, price, stock) {
+    console.log('=== addToCart appelé ===');
+    console.log('Product ID:', productId);
+    console.log('Product Name:', productName);
+    console.log('Price:', price);
+    console.log('Stock:', stock, 'Type:', typeof stock);
+    
+    // Convertir stock en nombre
+    const stockNum = parseInt(stock);
+    console.log('Stock converti:', stockNum);
+    
+    if (isNaN(stockNum) || stockNum <= 0) {
+        console.warn('Stock insuffisant ou invalide');
+        alert('Produit en rupture de stock!');
+        return;
+    }
+
+    console.log('Stock OK, création transaction si nécessaire...');
+    
+    // Créer transaction si nécessaire
+    if (!transactionId) {
+        console.log('Pas de transaction, création en cours...');
+        const success = await createNewTransaction();
+        if (!success || !transactionId) {
+            console.error('Échec création transaction');
+            alert('Erreur: Impossible de créer une transaction');
+            return;
+        }
+        console.log('Transaction créée avec succès:', transactionId);
+    }
+
+    console.log('Envoi requête ajout produit...');
+    
+    try {
+        const response = await fetch('{% url "pos_ajouter_produit" %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                produit_id: productId,
+                quantite: 1
+            })
+        });
+
+        console.log('Réponse reçue:', response.status);
+        const data = await response.json();
+        console.log('Data:', data);
+        
+        if (data.success) {
+            console.log('Ajout réussi, mise à jour panier local...');
+            // Ajouter au panier local
+            const existingItem = cart.find(item => item.id === productId);
+            if (existingItem) {
+                existingItem.quantity++;
+                console.log('Quantité augmentée:', existingItem);
+            } else {
+                cart.push({
+                    id: productId,
+                    name: productName,
+                    price: price,
+                    quantity: 1
+                });
+                console.log('Nouvel article ajouté au panier');
+            }
+            console.log('Panier actuel:', cart);
+            updateCartDisplay();
+            console.log('✅ Produit ajouté avec succès!');
+        } else {
+            console.error('Erreur serveur:', data.error);
+            alert(data.error || 'Erreur lors de l\'ajout au panier');
+        }
+    } catch (error) {
+        console.error('❌ Erreur catch:', error);
+        alert('Erreur de communication avec le serveur');
+    }
+}
+
+// Charger le panier depuis le serveur
+async function loadCart() {
+    if (!transactionId) return;
+    
+    try {
+        const response = await fetch('{% url "pos_interface" %}');
+        const html = await response.text();
+        // Parser et extraire les lignes de transaction
+        // Pour l'instant, on garde le panier local
+        updateCartDisplay();
+    } catch (error) {
+        console.error('Erreur chargement panier:', error);
+    }
+}
+
+// Afficher panier
+function updateCartDisplay() {
+    const cartContainer = document.getElementById('cartItems');
+    if (cart.length === 0) {
+        cartContainer.innerHTML = `
+            <div class="empty-cart">
+                <i class="fas fa-shopping-basket fa-3x mb-3"></i>
+                <p>Panier vide<br><small>Scannez ou cliquez sur un produit</small></p>
+            </div>
+        `;
+        document.getElementById('btnCheckout').disabled = true;
+        document.getElementById('subtotal').textContent = '0 FCFA';
+        document.getElementById('discount').textContent = '0 FCFA';
+        document.getElementById('total').textContent = '0 FCFA';
+    } else {
+        let html = '';
+        let subtotal = 0;
+        cart.forEach(item => {
+            const itemTotal = item.price * item.quantity;
+            subtotal += itemTotal;
+            html += `
+                <div class="cart-item">
+                    <div>
+                        <div class="cart-item-name">${item.name}</div>
+                        <small>${item.price.toFixed(0)} FCFA</small>
+                    </div>
+                    <div class="cart-item-qty">
+                        <button class="qty-btn" onclick="updateQuantity(${item.id}, -1)">-</button>
+                        <span>${item.quantity}</span>
+                        <button class="qty-btn" onclick="updateQuantity(${item.id}, 1)">+</button>
+                        <button class="btn btn-sm btn-danger" onclick="removeItem(${item.id})">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+        cartContainer.innerHTML = html;
+        document.getElementById('subtotal').textContent = subtotal.toFixed(0) + ' FCFA';
+        document.getElementById('discount').textContent = '0 FCFA';
+        document.getElementById('total').textContent = subtotal.toFixed(0) + ' FCFA';
+        document.getElementById('btnCheckout').disabled = false;
+    }
+}
+
+// Mettre à jour quantité
+async function updateQuantity(productId, change) {
+    const item = cart.find(i => i.id === productId);
+    if (!item) return;
+    
+    const newQty = item.quantity + change;
+    if (newQty <= 0) {
+        removeItem(productId);
+        return;
+    }
+    
+    item.quantity = newQty;
+    updateCartDisplay();
+    
+    // Synchroniser avec le serveur
+    try {
+        await fetch('{% url "pos_ajouter_produit" %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                produit_id: productId,
+                quantite: change
+            })
+        });
+    } catch (error) {
+        console.error('Erreur maj quantité:', error);
+    }
+}
+
+// Supprimer article
+function removeItem(productId) {
+    cart = cart.filter(item => item.id !== productId);
+    updateCartDisplay();
+}
+
+// Modal paiement
+function showPaymentModal() {
+    const total = document.getElementById('total').textContent;
+    document.getElementById('modalTotal').textContent = total.replace(' FCFA', '');
+    const modal = new bootstrap.Modal(document.getElementById('paymentModal'));
+    modal.show();
+}
+
+// Sélectionner mode de paiement
+let currentPaymentCode = null;
+
+function selectPaymentType(typeId, typeName, typeCode) {
+    currentPaymentType = typeId;
+    currentPaymentCode = typeCode;
+    
+    console.log('Mode de paiement sélectionné:', {typeId, typeName, typeCode});
+    
+    const paymentForm = document.getElementById('paymentForm');
+    const amountInput = document.getElementById('amountReceived');
+    const changeDiv = document.getElementById('change');
+    const btnConfirm = document.getElementById('btnConfirmPayment');
+    const total = parseFloat(document.getElementById('modalTotal').textContent);
+    
+    // Réinitialiser
+    amountInput.value = '';
+    changeDiv.style.display = 'none';
+    btnConfirm.disabled = true;
+    
+    // Highlight selected payment type
+    document.querySelectorAll('#paymentTypes .payment-card').forEach(card => {
+        card.style.border = '1px solid #dee2e6';
+        card.style.background = 'white';
+    });
+    event.target.closest('.payment-card').style.border = '3px solid #667eea';
+    event.target.closest('.payment-card').style.background = '#f0f4ff';
+    
+    // Comportement selon le type de paiement
+    if (typeCode === 'ESPECES') {
+        // ESPÈCES : Client donne plus, on calcule la monnaie
+        paymentForm.style.display = 'block';
+        amountInput.placeholder = 'Montant reçu du client (ex: 10000)';
+        amountInput.min = total;
+        amountInput.focus();
+        
+        document.getElementById('paymentFormTitle').textContent = 'Montant reçu:';
+        document.getElementById('paymentFormHelp').textContent = 
+            `Le client peut donner plus que ${total.toFixed(0)} FCFA. La monnaie sera calculée automatiquement.`;
+        
+    } else if (['ORANGE_MONEY', 'MTN_MONEY', 'MOOV_MONEY', 'CB', 'VIREMENT', 'CHEQUE'].includes(typeCode)) {
+        // MOBILE MONEY / CB / VIREMENT : Montant pré-rempli mais modifiable
+        paymentForm.style.display = 'block';
+        amountInput.value = total;
+        amountInput.placeholder = 'Montant du paiement';
+        amountInput.readOnly = false;  // Permettre la modification
+        amountInput.min = total;
+        btnConfirm.disabled = false;
+        
+        document.getElementById('paymentFormTitle').textContent = 'Montant du paiement:';
+        document.getElementById('paymentFormHelp').innerHTML = 
+            `<i class="fas fa-info-circle"></i> Montant pré-rempli à <strong>${total.toFixed(0)} FCFA</strong>. Vous pouvez ajuster si nécessaire.`;
+        
+        // Focus pour permettre modification immédiate
+        setTimeout(() => {
+            amountInput.focus();
+            amountInput.select();
+        }, 100);
+        
+    } else {
+        // Autres modes (BON_ACHAT, CREDIT, etc.)
+        paymentForm.style.display = 'block';
+        amountInput.value = total;
+        amountInput.placeholder = 'Montant du paiement';
+        btnConfirm.disabled = false;
+        
+        document.getElementById('paymentFormTitle').textContent = 'Montant du paiement:';
+        document.getElementById('paymentFormHelp').textContent = 'Vérifiez le montant avant de valider.';
+    }
+}
+
+// Event listeners pour les cartes de paiement
+document.querySelectorAll('.payment-card').forEach(card => {
+    card.addEventListener('click', function() {
+        const typeId = parseInt(this.dataset.typeId);
+        const typeName = this.dataset.typeName;
+        const typeCode = this.dataset.typeCode;
+        selectPaymentType(typeId, typeName, typeCode);
+    });
+});
+
+// Initialisation au chargement de la page
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('POS Interface chargée');
+    console.log('Transaction ID:', transactionId);
+    
+    // 🔄 RESTAURER LE CLIENT DEPUIS LOCALSTORAGE (après rechargement page)
+    const savedClient = localStorage.getItem('currentClient');
+    if (savedClient) {
+        try {
+            currentClient = JSON.parse(savedClient);
+            displayClientInfo(currentClient);
+            console.log('✅ Client restauré depuis localStorage:', currentClient.nom_complet);
+        } catch (e) {
+            console.error('Erreur restauration client:', e);
+            localStorage.removeItem('currentClient');
+        }
+    }
+    
+    // Si transaction existante, charger le panier
+    if (transactionId) {
+        // Charger les lignes existantes si nécessaire
+        loadCart();
+    }
+    
+    // Event listener pour les cartes produits
+    console.log('Nombre de cartes produits trouvées:', document.querySelectorAll('.product-card').length);
+    
+    document.querySelectorAll('.product-card').forEach((card, index) => {
+        console.log(`Carte ${index + 1}:`, card.dataset);
+        
+        card.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const productId = parseInt(this.dataset.id);
+            const productName = this.dataset.name;
+            const price = parseFloat(this.dataset.price);
+            const stock = parseInt(this.dataset.stock);
+            
+            console.log('🖱️ Carte cliquée:', {productId, productName, price, stock});
+            
+            if (!productId || !productName || !price) {
+                console.error('❌ Données produit invalides!');
+                alert('Erreur: Données produit invalides');
+                return;
+            }
+            
+            addToCart(productId, productName, price, stock);
+        });
+    });
+});
+
+// Calculer monnaie
+document.getElementById('amountReceived')?.addEventListener('input', function() {
+    const total = parseFloat(document.getElementById('modalTotal').textContent);
+    const received = parseFloat(this.value) || 0;
+    
+    if (received >= total) {
+        const change = received - total;
+        document.getElementById('changeAmount').textContent = change.toFixed(0);
+        document.getElementById('change').style.display = 'block';
+        document.getElementById('btnConfirmPayment').disabled = false;
+    } else {
+        document.getElementById('change').style.display = 'none';
+        document.getElementById('btnConfirmPayment').disabled = true;
+    }
+});
+
+// Annuler transaction
+async function cancelTransaction() {
+    if (!confirm('Voulez-vous annuler cette transaction et vider le panier?')) {
+        return;
+    }
+    
+    try {
+        // Appeler le serveur pour annuler la transaction en base
+        const response = await fetch('{% url "pos_annuler_transaction" %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const data = await response.json();
+        console.log('Annulation:', data);
+        
+        if (data.success) {
+            // Vider le panier côté client
+            cart = [];
+            updateCartDisplay();
+            transactionId = null;
+            document.getElementById('ticketNumber').textContent = 'Nouvelle vente';
+            
+            alert('✅ Transaction annulée avec succès!\n\nVous pouvez recommencer une nouvelle vente.');
+            
+            // Recharger la page pour repartir proprement
+            window.location.reload();
+        } else {
+            alert('❌ Erreur: ' + data.error);
+        }
+    } catch (error) {
+        console.error('Erreur annulation:', error);
+        alert('❌ Erreur lors de l\'annulation: ' + error.message);
+    }
+}
+
+// Valider paiement
+async function confirmPayment() {
+    if (!transactionId) {
+        alert('Aucune transaction en cours');
+        return;
+    }
+    
+    if (!currentPaymentType) {
+        alert('Veuillez sélectionner un mode de paiement');
+        return;
+    }
+    
+    const total = parseFloat(document.getElementById('modalTotal').textContent);
+    const amountInput = document.getElementById('amountReceived');
+    const received = parseFloat(amountInput.value) || 0;
+    
+    // ✅ DEBUG: Afficher les valeurs pour diagnostic
+    console.log('🔍 DIAGNOSTIC PAIEMENT:');
+    console.log('  - Montant total (modal):', total);
+    console.log('  - Valeur du champ (brut):', amountInput.value);
+    console.log('  - Montant converti (received):', received);
+    console.log('  - Type de paiement:', currentPaymentCode);
+    console.log('  - Type ID:', currentPaymentType);
+
+    // Validation du montant reçu (tous les modes de paiement)
+    if (received < total) {
+        alert(`❌ Montant insuffisant!\n\nMontant à payer: ${total.toFixed(0)} FCFA\nMontant saisi: ${received.toFixed(0)} FCFA\nManque encore: ${(total - received).toFixed(0)} FCFA`);
+        amountInput.focus();
+        return;
+    }
+    
+    // Information pour les paiements non-espèces avec surplus
+    if (currentPaymentCode !== 'ESPECES' && received > total) {
+        const surplus = received - total;
+        if (!confirm(`⚠️ Attention!\n\nPaiement par ${currentPaymentCode}\nMontant à payer: ${total.toFixed(0)} FCFA\nMontant saisi: ${received.toFixed(0)} FCFA\nExcédent: ${surplus.toFixed(0)} FCFA\n\n✅ Continuer avec ce montant?`)) {
+            amountInput.focus();
+            return;
+        }
+    }
+
+    try {
+        // ✅ DIAGNOSTIC DÉTAILLÉ
+        const paymentData = {
+            paiements: [{
+                type_id: currentPaymentType,
+                montant: received
+            }]
+        };
+        
+        // 🔑 AJOUTER LE CLIENT_ID SI UN CLIENT EST IDENTIFIÉ
+        if (currentClient && currentClient.id) {
+            paymentData.client_id = currentClient.id;
+            const clientNom = currentClient.nom_complet || currentClient.nom || 'Client';
+            console.log('✅ Client identifié:', clientNom, '(ID:', currentClient.id + ')');
+        } else {
+            console.log('⚠️ Aucun client identifié pour cette vente');
+        }
+        
+        console.log('🔍 DONNÉES ENVOYÉES AU SERVEUR:');
+        console.log('  Transaction ID:', transactionId);
+        console.log('  Client ID:', paymentData.client_id || 'NON FOURNI');
+        console.log('  Type paiement ID:', currentPaymentType);
+        console.log('  Code paiement:', currentPaymentCode);
+        console.log('  Montant envoyé:', received);
+        console.log('  Montant requis:', total);
+        console.log('  JSON complet:', JSON.stringify(paymentData));
+        
+        // ⚠️ ALERTE SI MONTANT INSUFFISANT DÉTECTÉ AVANT ENVOI
+        if (received < total) {
+            console.error('❌ ERREUR: Le montant envoyé est inférieur au total!');
+            console.error('   Ceci ne devrait pas arriver car déjà vérifié avant.');
+            alert(`🐛 BUG DÉTECTÉ!\n\nLe système tente d'envoyer ${received} FCFA alors que le total est ${total} FCFA.\n\nVeuillez fermer cette page (Ctrl+F5) et recommencer la vente.`);
+            return;
+        }
+        
+        const response = await fetch('{% url "pos_valider_vente" %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(paymentData)
+        });
+
+        const data = await response.json();
+        console.log('Réponse serveur:', data);
+        
+        // ⚠️ DÉTECTION D'INCOHÉRENCE ENTRE CLIENT ET SERVEUR
+        if (!data.success && data.error && data.error.includes('Montant insuffisant')) {
+            const errorMatch = data.error.match(/Requis: ([\d.]+) FCFA/);
+            if (errorMatch) {
+                const serverTotal = parseFloat(errorMatch[1]);
+                if (Math.abs(serverTotal - total) > 1) {  // Différence > 1 FCFA
+                    const doCleanup = confirm(`🚨 INCOHÉRENCE DÉTECTÉE!\n\n` +
+                          `Le panier affiché (${total.toFixed(0)} FCFA) ne correspond PAS\n` +
+                          `à la transaction en base de données (${serverTotal.toFixed(0)} FCFA).\n\n` +
+                          `✅ CORRECTION AUTOMATIQUE:\n` +
+                          `Cliquez OK pour NETTOYER la transaction bloquée\n` +
+                          `et recommencer avec un panier vide.\n\n` +
+                          `Cliquez Annuler pour fermer cette fenêtre\n` +
+                          `et rafraîchir manuellement (Ctrl+F5).`);
+                    
+                    if (doCleanup) {
+                        // Appeler la fonction d'annulation pour nettoyer
+                        await cancelTransaction();
+                    }
+                    return;
+                }
+            }
+        }
+        
+        if (data.success) {
+            const monnaie = received - total;
+            
+            let message = `✅ Vente validée avec succès!\n\n`;
+            message += `📄 Ticket: ${data.numero_ticket}\n`;
+            message += `💰 Montant: ${total.toFixed(0)} FCFA\n`;
+            message += `💳 Mode: ${currentPaymentCode}\n`;
+            message += `📥 Reçu: ${received.toFixed(0)} FCFA\n`;
+            
+            if (currentPaymentCode === 'ESPECES' && monnaie > 0) {
+                message += `\n💸 MONNAIE À RENDRE: ${monnaie.toFixed(0)} FCFA`;
+            }
+            
+            alert(message);
+            
+            // ✅ METTRE À JOUR LES INFOS CLIENT SI PRÉSENT
+            if (data.client && currentClient) {
+                currentClient = data.client;
+                // Sauvegarder dans localStorage pour persister après reload
+                localStorage.setItem('currentClient', JSON.stringify(data.client));
+                console.log('✅ Client sauvegardé dans localStorage:', data.client.nom_complet);
+            }
+            
+            // Réinitialiser
+            cart = [];
+            transactionId = null;
+            currentPaymentType = null;
+            currentPaymentCode = null;
+            
+            // Recharger la page pour avoir un panier vide
+            window.location.reload();
+        } else {
+            alert('❌ Erreur: ' + (data.error || 'Erreur inconnue'));
+        }
+    } catch (error) {
+        console.error('Erreur confirmPayment:', error);
+        alert('❌ Erreur de communication avec le serveur');
+    }
+}
+
+// ============== IDENTIFICATION CLIENT ==============
+let currentClient = null;
+
+async function identifyClient() {
+    const phone = document.getElementById('clientPhone').value.trim();
+    
+    if (!phone) {
+        alert('Veuillez entrer un numéro de téléphone');
+        return;
+    }
+    
+    try {
+        const response = await fetch('{% url "caisse_identifier_client" %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `telephone=${encodeURIComponent(phone)}&action=identify`
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            if (data.action === 'identified') {
+                // Client trouvé
+                currentClient = data.client;
+                localStorage.setItem('currentClient', JSON.stringify(data.client));  // 💾 Sauvegarder
+                displayClientInfo(data.client);
+                showNotification('success', data.message);
+            }
+        } else {
+            // Client non trouvé
+            if (data.action === 'not_found') {
+                if (confirm(data.message)) {
+                    // L'utilisateur veut créer un nouveau client
+                    showNewClientForm(phone);
+                }
+            } else {
+                alert('Erreur: ' + data.error);
+            }
+        }
+    } catch (error) {
+        console.error('Erreur identification client:', error);
+        alert('Erreur de communication avec le serveur');
+    }
+}
+
+function showNewClientForm(phone) {
+    const nom = prompt('Nom du client:');
+    if (!nom) return;
+    
+    const prenom = prompt('Prénom du client (optionnel):') || '';
+    const email = prompt('Email du client (optionnel):') || '';
+    
+    createNewClient(phone, nom, prenom, email);
+}
+
+async function createNewClient(phone, nom, prenom, email) {
+    try {
+        const response = await fetch('{% url "caisse_identifier_client" %}', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `telephone=${encodeURIComponent(phone)}&action=create&nom=${encodeURIComponent(nom)}&prenom=${encodeURIComponent(prenom)}&email=${encodeURIComponent(email)}`
+        });
+        
+        const data = await response.json();
+        
+        if (data.success && data.action === 'created') {
+            currentClient = data.client;
+            localStorage.setItem('currentClient', JSON.stringify(data.client));  // 💾 Sauvegarder
+            displayClientInfo(data.client);
+            showNotification('success', data.message);
+        } else {
+            alert('Erreur: ' + data.error);
+        }
+    } catch (error) {
+        console.error('Erreur création client:', error);
+        alert('Erreur de communication avec le serveur');
+    }
+}
+
+function displayClientInfo(client) {
+    // Cacher le formulaire de recherche
+    document.getElementById('clientSearchForm').style.display = 'none';
+    
+    // Afficher les informations
+    const infoDiv = document.getElementById('clientInfo');
+    infoDiv.style.display = 'block';
+    
+    document.getElementById('clientName').textContent = client.nom_complet;
+    document.getElementById('clientPhoneDisplay').textContent = client.telephone;
+    document.getElementById('clientPoints').textContent = client.points;
+    document.getElementById('clientAchats').textContent = client.nombre_achats;
+    document.getElementById('clientRemise').textContent = client.remise_fidelite;
+    
+    // Badge niveau
+    const badgeClass = {
+        'VIP': 'badge-vip',
+        'GOLD': 'badge-gold',
+        'SILVER': 'badge-silver',
+        'TOUS': 'badge-tous'
+    }[client.niveau] || 'badge-tous';
+    
+    document.getElementById('clientBadge').innerHTML = 
+        `<span class="badge-niveau ${badgeClass}">${client.niveau_label}</span>`;
+    
+    // Afficher les coupons si disponibles
+    if (client.coupons && client.coupons.length > 0) {
+        const couponsDiv = document.getElementById('clientCoupons');
+        couponsDiv.style.display = 'block';
+        
+        const couponsList = document.getElementById('couponsList');
+        couponsList.innerHTML = '';
+        
+        client.coupons.forEach(coupon => {
+            const couponItem = document.createElement('div');
+            couponItem.className = 'coupon-item';
+            couponItem.innerHTML = `
+                <input type="checkbox" id="coupon_${coupon.id}" value="${coupon.id}" onchange="applyCoupon(this)">
+                <label for="coupon_${coupon.id}" style="margin: 0; cursor: pointer;">
+                    ${coupon.description} (-${coupon.valeur}${coupon.type === 'POURCENTAGE' ? '%' : ' FCFA'})
+                </label>
+            `;
+            couponsList.appendChild(couponItem);
+        });
+    }
+    
+    // Recalculer le total avec la remise fidélité
+    updateCartDisplay();
+}
+
+function removeClient() {
+    if (confirm('Retirer le client de cette vente?')) {
+        currentClient = null;
+        localStorage.removeItem('currentClient');  // 🗑️ Supprimer du stockage
+        
+        // Réinitialiser l'interface
+        document.getElementById('clientSearchForm').style.display = 'block';
+        document.getElementById('clientInfo').style.display = 'none';
+        document.getElementById('clientPhone').value = '';
+        
+        // Recalculer sans remise
+        updateCartDisplay();
+        
+        showNotification('info', 'Client retiré. Vente anonyme.');
+    }
+}
+
+function applyCoupon(checkbox) {
+    // TODO: Gérer l'application des coupons
+    if (checkbox.checked) {
+        console.log('Coupon sélectionné:', checkbox.value);
+        // Appliquer la remise du coupon
+    } else {
+        console.log('Coupon désélectionné:', checkbox.value);
+        // Retirer la remise du coupon
+    }
+    updateCartDisplay();
+}
+
+function showNotification(type, message) {
+    // Type: success, error, info
+    const colors = {
+        'success': '#28a745',
+        'error': '#dc3545',
+        'info': '#17a2b8'
+    };
+    
+    const notif = document.createElement('div');
+    notif.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: ${colors[type] || colors.info};
+        color: white;
+        padding: 15px 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        z-index: 9999;
+        animation: slideIn 0.3s ease-out;
+    `;
+    notif.textContent = message;
+    
+    document.body.appendChild(notif);
+    
+    setTimeout(() => {
+        notif.style.animation = 'slideOut 0.3s ease-out';
+        setTimeout(() => notif.remove(), 300);
+    }, 3000);
+}
+
+// Mettre à jour l'affichage du panier avec la remise fidélité
+const originalUpdateCartDisplay = updateCartDisplay;
+updateCartDisplay = function() {
+    originalUpdateCartDisplay();
+    
+    if (currentClient && cart.length > 0) {
+        // Recalculer avec remise fidélité
+        let subtotal = 0;
+        cart.forEach(item => {
+            subtotal += item.price * item.quantity;
+        });
+        
+        const remiseFidelite = currentClient.remise_fidelite;
+        const montantRemise = subtotal * (remiseFidelite / 100);
+        const total = subtotal - montantRemise;
+        
+        document.getElementById('subtotal').textContent = subtotal.toFixed(0) + ' FCFA';
+        document.getElementById('discount').textContent = montantRemise.toFixed(0) + ' FCFA';
+        document.getElementById('total').textContent = total.toFixed(0) + ' FCFA';
+    }
+};
+</script>
+{% endblock %}

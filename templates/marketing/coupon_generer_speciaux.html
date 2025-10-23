@@ -1,0 +1,102 @@
+{% extends "dashboard/base.html" %}
+{% load static %}
+
+{% block title %}Générer Coupons Spéciaux - Marketing{% endblock %}
+
+{% block content %}
+<div class="container mt-4" style="max-width: 700px;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-magic"></i> Générer Coupons Spéciaux</h2>
+        <a href="{% url 'marketing_coupons_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Retour
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-header bg-warning text-white">
+            <h5 class="mb-0"><i class="fas fa-gift"></i> Récompenser les Clients Fidèles</h5>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-info">
+                <strong><i class="fas fa-info-circle"></i> À propos:</strong><br>
+                Cette fonctionnalité permet de générer automatiquement des coupons spéciaux pour récompenser vos clients fidèles. 
+                Chaque client éligible recevra un coupon unique qu'il pourra utiliser lors de son prochain achat.
+            </div>
+
+            <form method="POST">
+                {% csrf_token %}
+                
+                <!-- Niveau minimum -->
+                <div class="form-group">
+                    <label><i class="fas fa-trophy"></i> Niveau de Fidélité Minimum *</label>
+                    <select name="niveau_minimum" class="form-control" required>
+                        {% for niveau in niveaux %}
+                        <option value="{{ niveau }}">{{ niveau }} et supérieur</option>
+                        {% endfor %}
+                    </select>
+                    <small class="form-text text-muted">
+                        Les clients de ce niveau et supérieur recevront un coupon
+                    </small>
+                </div>
+
+                <!-- Type de remise -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label><i class="fas fa-percent"></i> Type de Remise *</label>
+                            <select name="type_remise" class="form-control" required>
+                                <option value="POURCENTAGE">Pourcentage</option>
+                                <option value="MONTANT">Montant fixe</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label><i class="fas fa-dollar-sign"></i> Valeur *</label>
+                            <input type="number" name="valeur" class="form-control" step="0.01" min="0" required>
+                            <small class="form-text text-muted">% ou FCFA</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div class="form-group">
+                    <label><i class="fas fa-comment"></i> Description du Coupon *</label>
+                    <input type="text" name="description" class="form-control" maxlength="200" required
+                           placeholder="Ex: Merci pour votre fidélité!, Cadeau exclusif pour vous...">
+                </div>
+
+                <!-- Durée de validité -->
+                <div class="form-group">
+                    <label><i class="fas fa-clock"></i> Durée de Validité *</label>
+                    <select name="duree_jours" class="form-control" required>
+                        <option value="7">7 jours</option>
+                        <option value="15">15 jours</option>
+                        <option value="30" selected>30 jours</option>
+                        <option value="60">60 jours</option>
+                        <option value="90">90 jours</option>
+                    </select>
+                    <small class="form-text text-muted">
+                        Les coupons seront valides à partir d'aujourd'hui
+                    </small>
+                </div>
+
+                <hr>
+
+                <div class="alert alert-warning">
+                    <strong><i class="fas fa-exclamation-triangle"></i> Important:</strong><br>
+                    - Les clients ayant déjà un coupon spécial actif ne recevront pas de nouveau coupon<br>
+                    - Chaque coupon est à usage unique<br>
+                    - Les coupons apparaîtront automatiquement lors de l'identification du client en caisse
+                </div>
+
+                <div class="form-group">
+                    <button type="submit" class="btn btn-warning btn-lg btn-block">
+                        <i class="fas fa-magic"></i> Générer les Coupons
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,29 +1,49 @@
+# =====================================================
+# SPRINT 6 - DOCKER COMPOSE PRODUCTION
+# =====================================================
+
+version: '3.9'
 
 services:
-  web:
-    build: .
-    container_name: projet_carrefour_web
-    command: python manage.py runserver 0.0.0.0:8000
-    volumes:
-      - .:/app
-    ports:
-      - "8000:8000"
-    env_file:
-      - .env
-    depends_on:
-      - db
-
   db:
-    image: postgres:15
-    container_name: projet_carrefour_db
+    image: postgres:16-alpine
+    container_name: carrefour_db
     environment:
       POSTGRES_DB: carrefour_db
       POSTGRES_USER: carrefour_user
-      POSTGRES_PASSWORD: carrefour_pass
-    ports:
-      - "5434:5434"
+      POSTGRES_PASSWORD: carrefour_pass_2025
     volumes:
-      - postgres_data:/var/lib/postgresql/data/
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U carrefour_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build: .
+    container_name: carrefour_web
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py collectstatic --noinput &&
+             gunicorn --bind 0.0.0.0:8000 --workers 3 Carrefour.wsgi:application"
+    volumes:
+      - .:/app
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=False
+      - DATABASE_URL=postgresql://carrefour_user:carrefour_pass_2025@db:5432/carrefour_db
+      - SECRET_KEY=change-me-in-production-please-use-strong-key
+    depends_on:
+      db:
+        condition: service_healthy
 
 volumes:
   postgres_data:
+  static_volume:
+  media_volume:

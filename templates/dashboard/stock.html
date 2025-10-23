@@ -17,8 +17,21 @@
             <ul class="sidebar-menu">
                 <li><a href="{% url 'dashboard_stock' %}" class="active"><span class="icon">📊</span> Tableau de Bord</a></li>
                 <li><a href="{% url 'stock_add_product' %}"><span class="icon">➕</span> Ajouter Produit</a></li>
-                <li><a href="{% url 'dashboard' %}"><span class="icon">🏠</span> Retour</a></li>
+                <li><a href="{% url 'stock_fournisseurs_list' %}"><span class="icon">🏭</span> Fournisseurs</a></li>
+                <li><a href="{% url 'stock_commandes_list' %}"><span class="icon">📦</span> Commandes</a></li>
+                <li><a href="{% url 'stock_alertes_list' %}"><span class="icon">⚠️</span> Alertes Stock</a></li>
             </ul>
+
+            <div style="padding: 0 1.5rem; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb;">
+                <p style="font-size: 0.75rem; color: #9ca3af; text-transform: uppercase; margin-bottom: 0.75rem; font-weight: 600;">MON ESPACE</p>
+                <ul class="sidebar-menu">
+                    <li><a href="{% url 'mon_planning' %}"><span class="icon">📅</span> Mon Planning</a></li>
+                    <li><a href="{% url 'demander_conge' %}"><span class="icon">🏖️</span> Demander un Congé</a></li>
+                    <li><a href="{% url 'mes_demandes_conges' %}"><span class="icon">📋</span> Mes Demandes</a></li>
+                    <li><a href="{% url 'changer_mot_de_passe' %}"><span class="icon">🔑</span> Changer Mot de Passe</a></li>
+                </ul>
+            </div>
+
             <div style="padding: 1.5rem; margin-top: auto;">
                 <a href="{% url 'logout' %}" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: var(--bg-gray); border-radius: 8px; text-decoration: none; color: var(--text-dark);"><span>🚪</span><span>Déconnexion</span></a>
             </div>
@@ -29,10 +42,14 @@
                     <h1>Gestion des Stocks</h1>
                     <p>Suivi en temps réel de votre inventaire</p>
                 </div>
-                <a href="{% url 'stock_add_product' %}" class="btn btn-primary" style="text-decoration: none;">
-                    <span style="margin-right: 0.5rem;">➕</span> Ajouter un Produit
-                </a>
-                <button class="btn btn-primary">+ Ajouter Produit</button>
+                <div style="display: flex; gap: 1rem;">
+                    <a href="{% url 'creer_commande_fournisseur' %}" class="btn btn-primary" style="text-decoration: none;">
+                        ➕ Nouvelle Commande Fournisseur
+                    </a>
+                    <a href="{% url 'commandes_fournisseurs' %}" class="btn btn-secondary" style="text-decoration: none;">
+                        📋 Voir Toutes les Commandes
+                    </a>
+                </div>
             </div>
             <div class="cards-grid" style="grid-template-columns: repeat(4, 1fr);">
                 <div class="kpi-card">
@@ -52,7 +69,7 @@
                 <div class="kpi-card">
                     <div class="kpi-icon green">💰</div>
                     <div class="kpi-content">
-                        <h3>{{ valeur_stock|floatformat:0 }}</h3>
+                        <h3>{{ valeur_stock_vente|floatformat:0 }}</h3>
                         <p>Valeur Stock (FCFA)</p>
                     </div>
                 </div>
@@ -86,6 +103,7 @@
                             <th>CATÉGORIE</th>
                             <th>STOCK</th>
                             <th>PRIX UNITAIRE</th>
+                            <th>VALEUR STOCK</th>
                             <th>FOURNISSEUR</th>
                             <th>STATUT</th>
                             <th>ACTIONS</th>
@@ -97,8 +115,9 @@
                             <td><strong>{{ produit.nom }}</strong><br><small>REF: {{ produit.reference }}</small></td>
                             <td>{{ produit.get_categorie_display }}</td>
                             <td><strong>{{ produit.stock_actuel }}</strong> unités</td>
-                            <td>{{ produit.prix_unitaire }} FCFA</td>
-                            <td>{{ produit.fournisseur }}</td>
+                            <td>{{ produit.prix_unitaire|floatformat:0 }} FCFA</td>
+                            <td><strong style="color: var(--primary-green);">{{ produit.valeur_stock|floatformat:0 }} FCFA</strong></td>
+                            <td>{{ produit.fournisseur_principal.nom|default:"Non défini" }}</td>
                             <td>
                                 {% if produit.statut == 'EN_STOCK' %}
                                 <span class="badge badge-success">En stock</span>
@@ -108,7 +127,11 @@
                                 <span class="badge badge-danger">Rupture</span>
                                 {% endif %}
                             </td>
-                            <td><button style="border: none; background: var(--primary-blue); color: white; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer;">✏️</button></td>
+                            <td>
+                                <a href="{% url 'stock_produit_edit' produit.id %}" style="border: none; background: var(--primary-blue); color: white; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; text-decoration: none; display: inline-block;">
+                                    ✏️ Modifier
+                                </a>
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>

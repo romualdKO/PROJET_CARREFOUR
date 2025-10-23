@@ -1,0 +1,268 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mouvements de Stock - Gestion Stock</title>
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+    <style>
+        .timeline {
+            position: relative;
+            padding-left: 40px;
+        }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 20px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(180deg, #E5E7EB 0%, #9CA3AF 50%, #E5E7EB 100%);
+        }
+        .timeline-item {
+            position: relative;
+            background: white;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+        }
+        .timeline-item:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transform: translateX(4px);
+        }
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -28px;
+            top: 24px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 0 0 2px;
+        }
+        .mouvement-entree::before { background: #10B981; box-shadow: 0 0 0 2px #10B981; }
+        .mouvement-sortie::before { background: #EF4444; box-shadow: 0 0 0 2px #EF4444; }
+        .mouvement-ajustement::before { background: #F59E0B; box-shadow: 0 0 0 2px #F59E0B; }
+        .mouvement-retour::before { background: #3B82F6; box-shadow: 0 0 0 2px #3B82F6; }
+        
+        .badge { padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+        .badge-entree { background: #D1FAE5; color: #065F46; }
+        .badge-sortie { background: #FEE2E2; color: #991B1B; }
+        .badge-ajustement { background: #FEF3C7; color: #92400E; }
+        .badge-retour { background: #DBEAFE; color: #1E40AF; }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">🛒</div>
+                <h2>SuperMarché Plus</h2>
+                <p>Module Gestion Stock</p>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="{% url 'dashboard_stock' %}" class="nav-item">📊 Tableau de Bord</a>
+                <a href="{% url 'stock_add_product' %}" class="nav-item">📦 Nouveau Produit</a>
+                <a href="{% url 'stock_fournisseurs_list' %}" class="nav-item">🏭 Fournisseurs</a>
+                <a href="{% url 'stock_commandes_list' %}" class="nav-item">🧾 Commandes</a>
+                <a href="{% url 'stock_alertes_list' %}" class="nav-item">🚨 Alertes</a>
+                <a href="{% url 'stock_mouvements_list' %}" class="nav-item active">📋 Mouvements</a>
+                <a href="{% url 'logout' %}" class="nav-item logout">🚪 Déconnexion</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="content-header">
+                <h1>📋 Historique des Mouvements</h1>
+                <div class="user-info">👤 {{ user.get_full_name }}</div>
+            </header>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+
+            <!-- Statistiques -->
+            <div class="stats-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 24px;">
+                <div class="stat-card">
+                    <div class="stat-icon">📊</div>
+                    <div class="stat-content">
+                        <div class="stat-value">{{ total_mouvements }}</div>
+                        <div class="stat-label">Total Mouvements</div>
+                    </div>
+                </div>
+                <div class="stat-card" style="border-left: 3px solid #10B981;">
+                    <div class="stat-icon">⬆️</div>
+                    <div class="stat-content">
+                        <div class="stat-value">{{ entrees }}</div>
+                        <div class="stat-label">Entrées</div>
+                    </div>
+                </div>
+                <div class="stat-card" style="border-left: 3px solid #EF4444;">
+                    <div class="stat-icon">⬇️</div>
+                    <div class="stat-content">
+                        <div class="stat-value">{{ sorties }}</div>
+                        <div class="stat-label">Sorties</div>
+                    </div>
+                </div>
+                <div class="stat-card" style="border-left: 3px solid #F59E0B;">
+                    <div class="stat-icon">🔄</div>
+                    <div class="stat-content">
+                        <div class="stat-value">{{ ajustements }}</div>
+                        <div class="stat-label">Ajustements</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filtres -->
+            <div style="background: white; padding: 16px; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 12px; align-items: center;">
+                <form method="get" style="display: flex; gap: 12px; align-items: center; flex: 1;">
+                    <select name="type" style="padding: 10px; border: 2px solid #E5E7EB; border-radius: 8px; background: white; cursor: pointer;">
+                        <option value="">Tous les types</option>
+                        <option value="ENTREE" {% if type_mouvement == 'ENTREE' %}selected{% endif %}>⬆️ Entrée</option>
+                        <option value="SORTIE" {% if type_mouvement == 'SORTIE' %}selected{% endif %}>⬇️ Sortie</option>
+                        <option value="AJUSTEMENT" {% if type_mouvement == 'AJUSTEMENT' %}selected{% endif %}>🔄 Ajustement</option>
+                        <option value="RETOUR" {% if type_mouvement == 'RETOUR' %}selected{% endif %}>↩️ Retour</option>
+                    </select>
+                    
+                    <select name="produit" style="padding: 10px; border: 2px solid #E5E7EB; border-radius: 8px; background: white; cursor: pointer; flex: 1;">
+                        <option value="">Tous les produits</option>
+                        {% for p in produits %}
+                            <option value="{{ p.id }}" {% if produit_id|add:'' == p.id|add:'' %}selected{% endif %}>{{ p.nom }}</option>
+                        {% endfor %}
+                    </select>
+                    
+                    <button type="submit" style="background: linear-gradient(135deg, #6366F1, #4F46E5); color: white; padding: 10px 20px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                        🔍 Filtrer
+                    </button>
+                </form>
+            </div>
+
+            <!-- Timeline des mouvements -->
+            {% if mouvements %}
+                <div class="timeline">
+                    {% for mouv in mouvements %}
+                        <div class="timeline-item mouvement-{{ mouv.type_mouvement|lower }}">
+                            <div style="display: flex; justify-content: space-between; align-items: start; gap: 16px;">
+                                <div style="flex: 1;">
+                                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                                        {% if mouv.type_mouvement == 'ENTREE' %}
+                                            <span style="font-size: 24px;">⬆️</span>
+                                        {% elif mouv.type_mouvement == 'SORTIE' %}
+                                            <span style="font-size: 24px;">⬇️</span>
+                                        {% elif mouv.type_mouvement == 'AJUSTEMENT' %}
+                                            <span style="font-size: 24px;">🔄</span>
+                                        {% elif mouv.type_mouvement == 'RETOUR' %}
+                                            <span style="font-size: 24px;">↩️</span>
+                                        {% endif %}
+                                        
+                                        <div>
+                                            <h3 style="margin: 0; font-size: 16px; font-weight: 600; color: #111827;">
+                                                {{ mouv.produit.nom }}
+                                            </h3>
+                                            <p style="margin: 4px 0 0 0; font-size: 13px; color: #6B7280;">
+                                                {{ mouv.produit.categorie.nom }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div style="margin-left: 36px;">
+                                        <p style="margin: 8px 0; color: #374151; font-size: 14px;">
+                                            {{ mouv.raison }}
+                                        </p>
+                                        
+                                        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                                            {% if mouv.type_mouvement == 'ENTREE' %}
+                                                <span class="badge badge-entree">⬆️ ENTRÉE</span>
+                                            {% elif mouv.type_mouvement == 'SORTIE' %}
+                                                <span class="badge badge-sortie">⬇️ SORTIE</span>
+                                            {% elif mouv.type_mouvement == 'AJUSTEMENT' %}
+                                                <span class="badge badge-ajustement">🔄 AJUSTEMENT</span>
+                                            {% elif mouv.type_mouvement == 'RETOUR' %}
+                                                <span class="badge badge-retour">↩️ RETOUR</span>
+                                            {% endif %}
+                                            
+                                            <span style="background: #F3F4F6; color: #374151; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 600;">
+                                                Quantité: <strong>{{ mouv.quantite }}</strong>
+                                            </span>
+                                            
+                                            <span style="color: #6B7280; font-size: 12px;">
+                                                📅 {{ mouv.date_mouvement|date:"d/m/Y à H:i" }}
+                                            </span>
+                                            
+                                            {% if mouv.employe %}
+                                                <span style="color: #6B7280; font-size: 12px;">
+                                                    👤 {{ mouv.employe.user.get_full_name }}
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div style="text-align: right; min-width: 120px;">
+                                    <div style="background: #F9FAFB; border: 2px solid #E5E7EB; border-radius: 8px; padding: 12px;">
+                                        <div style="font-size: 11px; color: #6B7280; margin-bottom: 4px;">Stock</div>
+                                        <div style="display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 600;">
+                                            <span style="color: #9CA3AF;">{{ mouv.stock_avant }}</span>
+                                            <span style="color: #6B7280;">→</span>
+                                            <span style="color: {% if mouv.stock_apres > mouv.stock_avant %}#10B981{% elif mouv.stock_apres < mouv.stock_avant %}#EF4444{% else %}#6B7280{% endif %};">
+                                                {{ mouv.stock_apres }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                <div style="background: #EFF6FF; border: 2px solid #3B82F6; border-radius: 8px; padding: 16px; margin-top: 20px; text-align: center;">
+                    <p style="color: #1E40AF; margin: 0; font-size: 13px;">
+                        💡 Affichage des 100 derniers mouvements. Utilisez les filtres pour une recherche plus précise.
+                    </p>
+                </div>
+            {% else %}
+                <div style="background: white; border-radius: 12px; padding: 60px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <div style="font-size: 80px; margin-bottom: 20px;">📋</div>
+                    <h3 style="color: #374151; margin-bottom: 10px; font-size: 24px;">Aucun mouvement</h3>
+                    <p style="color: #6B7280; font-size: 16px;">
+                        {% if type_mouvement or produit_id %}
+                            Aucun mouvement ne correspond aux filtres sélectionnés.
+                        {% else %}
+                            Aucun mouvement de stock enregistré pour le moment.
+                        {% endif %}
+                    </p>
+                </div>
+            {% endif %}
+
+            <!-- Légende -->
+            <div style="background: #F9FAFB; border: 2px solid #E5E7EB; border-radius: 8px; padding: 16px; margin-top: 24px;">
+                <h4 style="color: #374151; margin-bottom: 12px; font-size: 14px; font-weight: 600;">💡 Légende des Mouvements</h4>
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; font-size: 13px;">
+                    <div>
+                        <strong style="color: #10B981;">⬆️ ENTRÉE</strong>
+                        <p style="color: #6B7280; margin: 4px 0 0 0;">Ajout de stock (livraison, production)</p>
+                    </div>
+                    <div>
+                        <strong style="color: #EF4444;">⬇️ SORTIE</strong>
+                        <p style="color: #6B7280; margin: 4px 0 0 0;">Retrait de stock (vente, consommation)</p>
+                    </div>
+                    <div>
+                        <strong style="color: #F59E0B;">🔄 AJUSTEMENT</strong>
+                        <p style="color: #6B7280; margin: 4px 0 0 0;">Correction manuelle du stock (inventaire)</p>
+                    </div>
+                    <div>
+                        <strong style="color: #3B82F6;">↩️ RETOUR</strong>
+                        <p style="color: #6B7280; margin: 4px 0 0 0;">Retour client ou fournisseur</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

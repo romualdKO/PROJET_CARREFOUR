@@ -1,0 +1,152 @@
+{% extends "dashboard/base.html" %}
+{% load static %}
+
+{% block title %}Analyse Intelligente de Fidélité - Marketing{% endblock %}
+
+{% block content %}
+<div class="container mt-4" style="max-width: 900px;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-brain"></i> Analyse Intelligente de Fidélité</h2>
+        <a href="{% url 'dashboard_marketing' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Retour
+        </a>
+    </div>
+
+    <!-- Explication -->
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0"><i class="fas fa-info-circle"></i> Comment ça fonctionne?</h5>
+        </div>
+        <div class="card-body">
+            <p><strong>L'algorithme analyse automatiquement le comportement d'achat de chaque client</strong> pour déterminer son niveau de fidélité optimal basé sur:</p>
+            
+            <div class="row mt-3">
+                <div class="col-md-3">
+                    <div class="text-center p-3 bg-light rounded">
+                        <i class="fas fa-shopping-cart fa-2x text-primary mb-2"></i>
+                        <h6>Fréquence</h6>
+                        <small>Nombre d'achats par mois</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center p-3 bg-light rounded">
+                        <i class="fas fa-clock fa-2x text-warning mb-2"></i>
+                        <h6>Récence</h6>
+                        <small>Jours depuis dernier achat</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center p-3 bg-light rounded">
+                        <i class="fas fa-chart-line fa-2x text-success mb-2"></i>
+                        <h6>Régularité</h6>
+                        <small>Constance des achats</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center p-3 bg-light rounded">
+                        <i class="fas fa-dollar-sign fa-2x text-danger mb-2"></i>
+                        <h6>Montant</h6>
+                        <small>Total dépensé</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="alert alert-success mt-3 mb-0">
+                <strong><i class="fas fa-trophy"></i> Critères de Niveau:</strong>
+                <ul class="mb-0 mt-2">
+                    <li><strong>VIP</strong>: Score ≥ 75/100 (Très fidèle, achats fréquents et récents)</li>
+                    <li><strong>GOLD</strong>: Score ≥ 50/100 (Fidèle, achats réguliers)</li>
+                    <li><strong>SILVER</strong>: Score ≥ 25/100 (Occasionnel, potentiel de croissance)</li>
+                    <li><strong>TOUS</strong>: Score < 25/100 (Nouveau ou inactif)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistiques actuelles -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="fas fa-chart-pie"></i> Répartition Actuelle</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3 text-center">
+                    <div class="p-3">
+                        <i class="fas fa-users fa-2x text-secondary mb-2"></i>
+                        <h3>{{ stats_avant.tous }}</h3>
+                        <p class="text-muted mb-0">TOUS</p>
+                    </div>
+                </div>
+                <div class="col-md-3 text-center">
+                    <div class="p-3">
+                        <i class="fas fa-award fa-2x text-info mb-2"></i>
+                        <h3>{{ stats_avant.silver }}</h3>
+                        <p class="text-muted mb-0">SILVER</p>
+                    </div>
+                </div>
+                <div class="col-md-3 text-center">
+                    <div class="p-3">
+                        <i class="fas fa-medal fa-2x text-warning mb-2"></i>
+                        <h3>{{ stats_avant.gold }}</h3>
+                        <p class="text-muted mb-0">GOLD</p>
+                    </div>
+                </div>
+                <div class="col-md-3 text-center">
+                    <div class="p-3">
+                        <i class="fas fa-crown fa-2x text-danger mb-2"></i>
+                        <h3>{{ stats_avant.vip }}</h3>
+                        <p class="text-muted mb-0">VIP</p>
+                    </div>
+                </div>
+            </div>
+            <hr>
+            <div class="text-center">
+                <h4>Total: <strong>{{ stats_avant.total }}</strong> clients actifs</h4>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formulaire de lancement -->
+    <div class="card">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0"><i class="fas fa-play"></i> Lancer l'Analyse</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" id="analyseForm">
+                {% csrf_token %}
+                
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" name="generer_coupons" id="genererCoupons">
+                    <label class="form-check-label" for="genererCoupons">
+                        <strong>🎁 Générer automatiquement des coupons spéciaux</strong>
+                        <br>
+                        <small class="text-muted">
+                            Les clients promus à un niveau supérieur recevront un coupon de félicitation
+                            (SILVER: 3%, GOLD: 5%, VIP: 10%)
+                        </small>
+                    </label>
+                </div>
+
+                <div class="alert alert-warning">
+                    <strong><i class="fas fa-exclamation-triangle"></i> Attention:</strong><br>
+                    - L'analyse peut prendre quelques secondes selon le nombre de clients<br>
+                    - Les niveaux de fidélité seront mis à jour automatiquement<br>
+                    - Les clients peuvent être promus ou rétrogradés selon leur comportement<br>
+                    - L'opération est irréversible
+                </div>
+
+                <button type="submit" class="btn btn-success btn-lg btn-block" onclick="return confirm('Êtes-vous sûr de vouloir lancer l\'analyse de fidélité? Cette opération va mettre à jour les niveaux de tous les clients.')">
+                    <i class="fas fa-play"></i> Lancer l'Analyse Maintenant
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lien vers statistiques -->
+    <div class="text-center mt-4">
+        <a href="{% url 'marketing_fidelite_stats' %}" class="btn btn-outline-primary">
+            <i class="fas fa-chart-bar"></i> Voir les Statistiques Détaillées
+        </a>
+    </div>
+</div>
+{% endblock %}

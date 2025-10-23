@@ -1,0 +1,219 @@
+{% extends "dashboard/base.html" %}
+{% load static %}
+
+{% block title %}Résultats de l'Analyse - Marketing{% endblock %}
+
+{% block content %}
+<div class="container mt-4" style="max-width: 1100px;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-check-circle text-success"></i> Analyse Terminée</h2>
+        <div>
+            <a href="{% url 'marketing_fidelite_stats' %}" class="btn btn-primary me-2">
+                <i class="fas fa-chart-bar"></i> Statistiques
+            </a>
+            <a href="{% url 'marketing_analyser_fidelite' %}" class="btn btn-secondary">
+                <i class="fas fa-redo"></i> Nouvelle Analyse
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistiques de l'analyse -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-users fa-3x mb-2"></i>
+                    <h3>{{ total_clients }}</h3>
+                    <p class="mb-0">Clients Analysés</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-arrow-up fa-3x mb-2"></i>
+                    <h3>{{ upgrades }}</h3>
+                    <p class="mb-0">Promotions</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-arrow-down fa-3x mb-2"></i>
+                    <h3>{{ downgrades }}</h3>
+                    <p class="mb-0">Rétrogradations</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-ticket-alt fa-3x mb-2"></i>
+                    <h3>{{ coupons_generes }}</h3>
+                    <p class="mb-0">Coupons Générés</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comparaison avant/après -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="fas fa-exchange-alt"></i> Évolution par Niveau</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered text-center">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Niveau</th>
+                            <th>Avant</th>
+                            <th>Après</th>
+                            <th>Évolution</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><i class="fas fa-crown text-danger"></i> <strong>VIP</strong></td>
+                            <td>{{ stats_avant.vip }}</td>
+                            <td>{{ stats_apres.vip }}</td>
+                            <td>
+                                {% with diff=stats_apres.vip|add:"-"|add:stats_avant.vip|stringformat:"d" %}
+                                    {% if diff > 0 %}
+                                        <span class="badge bg-success">+{{ diff }}</span>
+                                    {% elif diff < 0 %}
+                                        <span class="badge bg-danger">{{ diff }}</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">0</span>
+                                    {% endif %}
+                                {% endwith %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><i class="fas fa-medal text-warning"></i> <strong>GOLD</strong></td>
+                            <td>{{ stats_avant.gold }}</td>
+                            <td>{{ stats_apres.gold }}</td>
+                            <td>
+                                {% with diff=stats_apres.gold|add:"-"|add:stats_avant.gold|stringformat:"d" %}
+                                    {% if diff > 0 %}
+                                        <span class="badge bg-success">+{{ diff }}</span>
+                                    {% elif diff < 0 %}
+                                        <span class="badge bg-danger">{{ diff }}</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">0</span>
+                                    {% endif %}
+                                {% endwith %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><i class="fas fa-award text-info"></i> <strong>SILVER</strong></td>
+                            <td>{{ stats_avant.silver }}</td>
+                            <td>{{ stats_apres.silver }}</td>
+                            <td>
+                                {% with diff=stats_apres.silver|add:"-"|add:stats_avant.silver|stringformat:"d" %}
+                                    {% if diff > 0 %}
+                                        <span class="badge bg-success">+{{ diff }}</span>
+                                    {% elif diff < 0 %}
+                                        <span class="badge bg-danger">{{ diff }}</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">0</span>
+                                    {% endif %}
+                                {% endwith %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><i class="fas fa-users text-secondary"></i> <strong>TOUS</strong></td>
+                            <td>{{ stats_avant.tous }}</td>
+                            <td>{{ stats_apres.tous }}</td>
+                            <td>
+                                {% with diff=stats_apres.tous|add:"-"|add:stats_avant.tous|stringformat:"d" %}
+                                    {% if diff > 0 %}
+                                        <span class="badge bg-success">+{{ diff }}</span>
+                                    {% elif diff < 0 %}
+                                        <span class="badge bg-danger">{{ diff }}</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">0</span>
+                                    {% endif %}
+                                {% endwith %}
+                            </td>
+                        </tr>
+                    </tbody>
+                    <tfoot class="table-light">
+                        <tr>
+                            <th>Total</th>
+                            <th>{{ stats_avant.total }}</th>
+                            <th>{{ stats_apres.total }}</th>
+                            <th>
+                                {% with diff=stats_apres.total|add:"-"|add:stats_avant.total|stringformat:"d" %}
+                                    {% if diff > 0 %}
+                                        <span class="badge bg-success">+{{ diff }}</span>
+                                    {% elif diff < 0 %}
+                                        <span class="badge bg-danger">{{ diff }}</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">0</span>
+                                    {% endif %}
+                                {% endwith %}
+                            </th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Log détaillé -->
+    <div class="card">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0"><i class="fas fa-terminal"></i> Log Détaillé de l'Analyse</h5>
+        </div>
+        <div class="card-body bg-light">
+            <pre style="max-height: 400px; overflow-y: auto; background-color: #1e1e1e; color: #d4d4d4; padding: 15px; border-radius: 5px; font-size: 0.9em;">{{ output }}</pre>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="fas fa-gift fa-3x text-success mb-3"></i>
+                    <h5>Coupons Générés</h5>
+                    <p class="text-muted">{{ coupons_generes }} coupons de félicitation créés</p>
+                    <a href="{% url 'marketing_coupons_list' %}" class="btn btn-success">
+                        <i class="fas fa-list"></i> Voir les Coupons
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="fas fa-users fa-3x text-primary mb-3"></i>
+                    <h5>Clients Promus</h5>
+                    <p class="text-muted">{{ upgrades }} clients ont changé de niveau</p>
+                    <a href="{% url 'marketing_fidelite_stats' %}" class="btn btn-primary">
+                        <i class="fas fa-chart-line"></i> Voir les Détails
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.card-body i.fa-3x {
+    opacity: 0.9;
+}
+
+pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+</style>
+{% endblock %}

@@ -26,8 +26,9 @@ def reset_default_passwords():
         dg.is_superuser = True
         dg.role = 'DG'
         dg.est_actif = True
+        dg.est_compte_systeme = True  # Marquer comme compte système protégé
         dg.save()
-        print("✅ Compte DG mis à jour")
+        print("✅ Compte DG mis à jour (PROTÉGÉ)")
         print(f"   Identifiant: dg")
         print(f"   Mot de passe: DG2025@Admin")
         print(f"   Rôle: {dg.get_role_display()}")
@@ -41,9 +42,10 @@ def reset_default_passwords():
             role='DG',
             is_staff=True,
             is_superuser=True,
-            est_actif=True
+            est_actif=True,
+            est_compte_systeme=True  # Marquer comme compte système protégé
         )
-        print("✅ Compte DG créé")
+        print("✅ Compte DG créé (PROTÉGÉ)")
         print(f"   Identifiant: dg")
         print(f"   Mot de passe: DG2025@Admin")
     
@@ -56,8 +58,9 @@ def reset_default_passwords():
         daf.is_staff = True
         daf.role = 'DAF'
         daf.est_actif = True
+        daf.est_compte_systeme = True  # Marquer comme compte système protégé
         daf.save()
-        print("✅ Compte DAF mis à jour")
+        print("✅ Compte DAF mis à jour (PROTÉGÉ)")
         print(f"   Identifiant: daf")
         print(f"   Mot de passe: DAF2025@Admin")
         print(f"   Rôle: {daf.get_role_display()}")
@@ -70,9 +73,10 @@ def reset_default_passwords():
             last_name='Financier',
             role='DAF',
             is_staff=True,
-            est_actif=True
+            est_actif=True,
+            est_compte_systeme=True  # Marquer comme compte système protégé
         )
-        print("✅ Compte DAF créé")
+        print("✅ Compte DAF créé (PROTÉGÉ)")
         print(f"   Identifiant: daf")
         print(f"   Mot de passe: DAF2025@Admin")
     
@@ -85,8 +89,9 @@ def reset_default_passwords():
         rh.is_staff = True
         rh.role = 'RH'
         rh.est_actif = True
+        rh.est_compte_systeme = True  # Marquer comme compte système protégé
         rh.save()
-        print("✅ Compte RH mis à jour")
+        print("✅ Compte RH mis à jour (PROTÉGÉ)")
         print(f"   Identifiant: rh")
         print(f"   Mot de passe: RH2025@Admin")
         print(f"   Rôle: {rh.get_role_display()}")
@@ -99,9 +104,10 @@ def reset_default_passwords():
             last_name='Ressources Humaines',
             role='RH',
             is_staff=True,
-            est_actif=True
+            est_actif=True,
+            est_compte_systeme=True  # Marquer comme compte système protégé
         )
-        print("✅ Compte RH créé")
+        print("✅ Compte RH créé (PROTÉGÉ)")
         print(f"   Identifiant: rh")
         print(f"   Mot de passe: RH2025@Admin")
     

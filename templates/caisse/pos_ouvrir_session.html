@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Ouverture de Session - Caisse{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-lg">
+                <div class="card-header bg-primary text-white text-center py-4">
+                    <h3><i class="fas fa-cash-register"></i> Ouverture de Session de Caisse</h3>
+                    <p class="mb-0">{{ user.get_full_name }}</p>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Information:</strong> Sélectionnez une caisse disponible et comptez le fonds de caisse initial avant d'ouvrir votre session.
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="numero_caisse" class="form-label">
+                                <i class="fas fa-cash-register"></i> Numéro de Caisse
+                            </label>
+                            <select class="form-select form-select-lg" id="numero_caisse" name="numero_caisse" required>
+                                <option value="">-- Sélectionner une caisse --</option>
+                                {% for numero in caisses_disponibles %}
+                                <option value="{{ numero }}">Caisse #{{ numero }}</option>
+                                {% endfor %}
+                            </select>
+                            <small class="form-text text-muted">
+                                {% if caisses_occupees %}
+                                Caisses occupées: 
+                                {% for num in caisses_occupees %}
+                                    <span class="badge bg-danger">#{{ num }}</span>
+                                {% endfor %}
+                                {% else %}
+                                Toutes les caisses sont disponibles
+                                {% endif %}
+                            </small>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="fonds_ouverture" class="form-label">
+                                <i class="fas fa-money-bill-wave"></i> Fonds d'Ouverture (FCFA)
+                            </label>
+                            <input type="number" 
+                                   class="form-control form-control-lg" 
+                                   id="fonds_ouverture" 
+                                   name="fonds_ouverture" 
+                                   required
+                                   min="0"
+                                   step="100"
+                                   placeholder="Ex: 50000">
+                            <small class="form-text text-muted">
+                                Montant en espèces dans la caisse au début de la journée
+                            </small>
+                        </div>
+
+                        <div class="card bg-light mb-4">
+                            <div class="card-body">
+                                <h6 class="card-title"><i class="fas fa-clipboard-check"></i> Checklist</h6>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="check1" required>
+                                    <label class="form-check-label" for="check1">
+                                        J'ai vérifié le fonds de caisse
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="check2" required>
+                                    <label class="form-check-label" for="check2">
+                                        Le TPE (Terminal de Paiement Électronique) est fonctionnel
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="check3" required>
+                                    <label class="form-check-label" for="check3">
+                                        L'imprimante de tickets est prête
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="fas fa-door-open"></i> Ouvrir la Session
+                            </button>
+                            <a href="{% url 'dashboard_caisse' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left"></i> Retour
+                            </a>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer text-muted text-center">
+                    <small><i class="fas fa-clock"></i> {{ "now"|date:"d/m/Y H:i" }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

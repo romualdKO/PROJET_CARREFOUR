@@ -1,4 +1,5 @@
 {% load static %}
+{% load carrefour_filters %}
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -16,16 +17,45 @@
             </div>
             <ul class="sidebar-menu">
                 <li><a href="{% url 'dashboard_caisse' %}" class="active"><span class="icon">📊</span> Tableau de Bord</a></li>
-                <li><a href="{% url 'dashboard' %}"><span class="icon">🏠</span> Retour</a></li>
+                <li><a href="{% url 'pos_interface' %}"><span class="icon">💳</span> Point de Vente</a></li>
+                <li><a href="{% url 'caisse_rapport_journalier' %}"><span class="icon">📈</span> Rapport Journalier</a></li>
+                <li><a href="{% url 'caissier_mes_ventes' %}"><span class="icon">🛍️</span> Mes Ventes</a></li>
+                <li><a href="#" onclick="window.location.href='#remises-section'; return false;"><span class="icon">🎫</span> Remises & Promotions</a></li>
+                <li><a href="#" onclick="window.location.href='#fidelite-section'; return false;"><span class="icon">⭐</span> Cartes de Fidélité</a></li>
             </ul>
+
+            <div style="padding: 0 1.5rem; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb;">
+                <p style="font-size: 0.75rem; color: #9ca3af; text-transform: uppercase; margin-bottom: 0.75rem; font-weight: 600;">MON ESPACE</p>
+                <ul class="sidebar-menu">
+                    <li><a href="{% url 'mon_planning' %}"><span class="icon">📅</span> Mon Planning</a></li>
+                    <li><a href="{% url 'demander_conge' %}"><span class="icon">🏖️</span> Demander un Congé</a></li>
+                    <li><a href="{% url 'mes_demandes_conges' %}"><span class="icon">📋</span> Mes Demandes</a></li>
+                    <li><a href="{% url 'changer_mot_de_passe' %}"><span class="icon">🔑</span> Changer Mot de Passe</a></li>
+                </ul>
+            </div>
+
             <div style="padding: 1.5rem; margin-top: auto;">
                 <a href="{% url 'logout' %}" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: var(--bg-gray); border-radius: 8px; text-decoration: none; color: var(--text-dark);"><span>🚪</span><span>Déconnexion</span></a>
             </div>
         </aside>
         <main class="main-content">
             <div class="page-header">
-                <h1>Point de Vente - Caisse #03</h1>
-                <p><span style="display: inline-block; width: 10px; height: 10px; background: var(--primary-green); border-radius: 50%; margin-right: 0.5rem;"></span>Actif</p>
+                <h1>Point de Vente {% if session_actuelle %}- Caisse #{{ session_actuelle.numero_caisse }}{% endif %}</h1>
+                <div style="display: flex; gap: 1rem; align-items: center;">
+                    {% if session_actuelle %}
+                    <p><span style="display: inline-block; width: 10px; height: 10px; background: var(--primary-green); border-radius: 50%; margin-right: 0.5rem;"></span>Session Active</p>
+                    {% else %}
+                    <p><span style="display: inline-block; width: 10px; height: 10px; background: #dc3545; border-radius: 50%; margin-right: 0.5rem;"></span>Aucune Session</p>
+                    {% endif %}
+                    <a href="{% url 'pos_ouvrir_session' %}" class="btn btn-primary" style="background: var(--primary-green); color: white; padding: 0.75rem 1.5rem; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 500; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <span style="font-size: 1.2rem;">🛒</span>
+                        <span>Ouvrir une Session Caisse</span>
+                    </a>
+                    <a href="{% url 'pos_interface' %}" class="btn btn-success" style="background: #2563eb; color: white; padding: 0.75rem 1.5rem; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 500; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <span style="font-size: 1.2rem;">💳</span>
+                        <span>Interface de Vente (POS)</span>
+                    </a>
+                </div>
             </div>
             <div class="cards-grid" style="grid-template-columns: repeat(4, 1fr);">
                 <div class="kpi-card">
@@ -61,6 +91,94 @@
                     </div>
                 </div>
             </div>
+            
+            {% if session_actuelle %}
+            <div class="chart-container" style="margin: 2rem 0;">
+                <div class="chart-header">
+                    <h3>📜 Historique Session en Cours</h3>
+                    <span style="background: #10b981; color: white; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.85rem;">
+                        Session Active
+                    </span>
+                </div>
+                <div style="padding: 0;">
+                    {% if transactions_session %}
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead style="background: #f8fafc; border-bottom: 2px solid #e2e8f0;">
+                            <tr>
+                                <th style="padding: 1rem; text-align: left; font-weight: 600; color: #475569;">N° TICKET</th>
+                                <th style="padding: 1rem; text-align: left; font-weight: 600; color: #475569;">HEURE</th>
+                                <th style="padding: 1rem; text-align: right; font-weight: 600; color: #475569;">MONTANT</th>
+                                <th style="padding: 1rem; text-align: center; font-weight: 600; color: #475569;">PAIEMENT</th>
+                                <th style="padding: 1rem; text-align: center; font-weight: 600; color: #475569;">STATUT</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for transaction in transactions_session %}
+                            <tr style="border-bottom: 1px solid #e2e8f0; transition: background 0.2s;" 
+                                onmouseover="this.style.background='#f8fafc'" 
+                                onmouseout="this.style.background='white'">
+                                <td style="padding: 1rem;">
+                                    <strong style="color: #1e40af;">{{ transaction.numero_ticket }}</strong>
+                                </td>
+                                <td style="padding: 1rem; color: #64748b;">
+                                    {{ transaction.date_transaction|date:"H:i:s" }}
+                                </td>
+                                <td style="padding: 1rem; text-align: right;">
+                                    <strong style="color: #059669; font-size: 1.1rem;">{{ transaction.montant_final|floatformat:0 }} FCFA</strong>
+                                </td>
+                                <td style="padding: 1rem; text-align: center;">
+                                    {% if transaction.type_paiement %}
+                                    <span style="background: #dbeafe; color: #1e40af; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.85rem; font-weight: 500;">
+                                        {{ transaction.type_paiement.nom }}
+                                    </span>
+                                    {% else %}
+                                    <span style="color: #94a3b8;">N/A</span>
+                                    {% endif %}
+                                </td>
+                                <td style="padding: 1rem; text-align: center;">
+                                    <span style="background: #d1fae5; color: #065f46; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.85rem; font-weight: 500;">
+                                        ✓ Validée
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot style="background: #f1f5f9; border-top: 2px solid #cbd5e1;">
+                            <tr>
+                                <td colspan="2" style="padding: 1rem; font-weight: 600; color: #1e293b;">
+                                    TOTAL SESSION ({{ transactions_session.count }} transaction{{ transactions_session.count|pluralize }})
+                                </td>
+                                <td colspan="3" style="padding: 1rem; text-align: right;">
+                                    <strong style="color: #059669; font-size: 1.3rem;">
+                                        {{ total_session|floatformat:0 }} FCFA
+                                    </strong>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                    {% else %}
+                    <div style="padding: 3rem; text-align: center; color: #94a3b8;">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">🧾</div>
+                        <p style="font-size: 1.1rem; margin: 0;">Aucune transaction dans cette session pour le moment</p>
+                        <p style="margin-top: 0.5rem; font-size: 0.9rem;">Allez sur l'<a href="{% url 'pos_interface' %}" style="color: #3b82f6; text-decoration: none;">interface POS</a> pour commencer à vendre</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% else %}
+            <div class="chart-container" style="margin: 2rem 0; background: #fef3c7; border-left: 4px solid #f59e0b;">
+                <div style="padding: 2rem; text-align: center;">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
+                    <h3 style="color: #92400e; margin-bottom: 0.5rem;">Aucune Session Active</h3>
+                    <p style="color: #78350f; margin-bottom: 1.5rem;">Vous devez ouvrir une session de caisse avant de pouvoir effectuer des ventes</p>
+                    <a href="{% url 'pos_ouvrir_session' %}" class="btn btn-primary" style="background: #f59e0b; color: white; padding: 0.75rem 2rem; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; font-weight: 500;">
+                        <span>🔓</span>
+                        <span>Ouvrir une Session Maintenant</span>
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+            
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 2rem 0;">
                 <div class="chart-container">
                     <div class="chart-header"><h3>Transactions Récentes</h3></div>
@@ -104,15 +222,192 @@
                     <div class="icon">👤</div>
                     <span>Client</span>
                 </a>
-                <a href="#" class="quick-action-btn">
+                <a href="#" class="quick-action-btn" onclick="document.getElementById('remises-section').scrollIntoView({behavior:'smooth'})">
                     <div class="icon">%</div>
                     <span>Remise</span>
                 </a>
-                <a href="#" class="quick-action-btn">
+                <a href="#" class="quick-action-btn" onclick="document.getElementById('fidelite-section').scrollIntoView({behavior:'smooth'})">
                     <div class="icon">🎁</div>
                     <span>Promo</span>
                 </a>
             </div>
+
+            <!-- SECTION REMISES & PROMOTIONS -->
+            <div id="remises-section" class="chart-container" style="margin: 2rem 0;">
+                <div class="chart-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1.5rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <h3 style="color: white; margin: 0;">🎫 Remises & Promotions</h3>
+                            <p style="margin: 0.5rem 0 0 0; opacity: 0.9; font-size: 0.9rem;">Promotions actives et règles de réduction</p>
+                        </div>
+                        <span style="background: rgba(255,255,255,0.2); padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.85rem;">
+                            En Direct
+                        </span>
+                    </div>
+                </div>
+                <div style="padding: 1.5rem;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                        <!-- Promotions actives -->
+                        <div>
+                            <h4 style="margin-bottom: 1rem; color: #1e293b; display: flex; align-items: center; gap: 0.5rem;">
+                                <span style="background: #8b5cf6; color: white; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">%</span>
+                                Promotions Actives
+                            </h4>
+                            <div style="background: #f8fafc; border-radius: 12px; padding: 1rem; margin-bottom: 1rem; border-left: 4px solid #8b5cf6;">
+                                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+                                    <div>
+                                        <strong style="color: #1e293b; font-size: 1.1rem;">Promotion Gros Achat</strong>
+                                        <p style="color: #64748b; font-size: 0.85rem; margin: 0.25rem 0;">Achat ≥ 40,000 FCFA</p>
+                                    </div>
+                                    <span style="background: #8b5cf6; color: white; padding: 0.25rem 0.75rem; border-radius: 12px; font-weight: 600; font-size: 1.1rem;">-5%</span>
+                                </div>
+                                <div style="font-size: 0.8rem; color: #64748b; margin-top: 0.5rem;">
+                                    ✓ Automatique à la caisse | Validité: Permanente
+                                </div>
+                            </div>
+                            <div style="background: #f0f9ff; border-radius: 12px; padding: 1rem; border-left: 4px solid #3b82f6;">
+                                <div style="text-align: center; color: #1e40af;">
+                                    <p style="margin: 0; font-size: 0.9rem;">💡 <strong>Astuce</strong></p>
+                                    <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem;">Les remises de fidélité et promotionnelles sont <strong>cumulables</strong></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Règles de calcul -->
+                        <div>
+                            <h4 style="margin-bottom: 1rem; color: #1e293b; display: flex; align-items: center; gap: 0.5rem;">
+                                <span style="background: #10b981; color: white; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">📐</span>
+                                Règles de Calcul
+                            </h4>
+                            <div style="background: #f8fafc; border-radius: 12px; padding: 1.5rem;">
+                                <div style="margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid #e2e8f0;">
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                        <span style="color: #64748b;">1. Sous-total produits</span>
+                                        <strong style="color: #1e293b;">XXX FCFA</strong>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                        <span style="color: #64748b;">2. Remise fidélité</span>
+                                        <strong style="color: #8b5cf6;">- X%</strong>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                        <span style="color: #64748b;">3. Remise promotionnelle</span>
+                                        <strong style="color: #8b5cf6;">- 5%</strong>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                        <span style="color: #64748b;">4. TVA (18%)</span>
+                                        <strong style="color: #f59e0b;">+ 18%</strong>
+                                    </div>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; font-size: 1.2rem;">
+                                    <strong style="color: #1e293b;">TOTAL À PAYER</strong>
+                                    <strong style="color: #10b981;">XXX FCFA</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION CARTES DE FIDÉLITÉ -->
+            <div id="fidelite-section" class="chart-container" style="margin: 2rem 0;">
+                <div class="chart-header" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 1.5rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <h3 style="color: white; margin: 0;">⭐ Programme de Fidélité</h3>
+                            <p style="margin: 0.5rem 0 0 0; opacity: 0.9; font-size: 0.9rem;">4 niveaux de récompenses - 1 point = 1000 FCFA d'achat</p>
+                        </div>
+                        <span style="background: rgba(255,255,255,0.2); padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.85rem;">
+                            Actif
+                        </span>
+                    </div>
+                </div>
+                <div style="padding: 1.5rem;">
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem;">
+                        <!-- Niveau TOUS (Bronze) -->
+                        <div style="background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%); border-radius: 16px; padding: 1.5rem; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                            <div style="text-align: center;">
+                                <div style="font-size: 3rem; margin-bottom: 0.5rem;">🥉</div>
+                                <h4 style="margin: 0; font-size: 1.2rem;">TOUS</h4>
+                                <p style="margin: 0.5rem 0; opacity: 0.9; font-size: 0.85rem;">Niveau Standard</p>
+                                <div style="background: rgba(255,255,255,0.2); padding: 1rem; border-radius: 12px; margin-top: 1rem;">
+                                    <div style="font-size: 2rem; font-weight: 700; margin-bottom: 0.25rem;">0%</div>
+                                    <div style="font-size: 0.85rem; opacity: 0.9;">de réduction</div>
+                                </div>
+                                <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.2); font-size: 0.8rem;">
+                                    <div>Points requis: <strong>0</strong></div>
+                                    <div style="margin-top: 0.25rem;">Nouveau client</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Niveau SILVER -->
+                        <div style="background: linear-gradient(135deg, #c0c0c0 0%, #9ca3af 100%); border-radius: 16px; padding: 1.5rem; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                            <div style="text-align: center;">
+                                <div style="font-size: 3rem; margin-bottom: 0.5rem;">🥈</div>
+                                <h4 style="margin: 0; font-size: 1.2rem;">SILVER</h4>
+                                <p style="margin: 0.5rem 0; opacity: 0.9; font-size: 0.85rem;">Niveau Argent</p>
+                                <div style="background: rgba(255,255,255,0.2); padding: 1rem; border-radius: 12px; margin-top: 1rem;">
+                                    <div style="font-size: 2rem; font-weight: 700; margin-bottom: 0.25rem;">3%</div>
+                                    <div style="font-size: 0.85rem; opacity: 0.9;">de réduction</div>
+                                </div>
+                                <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.2); font-size: 0.8rem;">
+                                    <div>Points requis: <strong>500+</strong></div>
+                                    <div style="margin-top: 0.25rem;">500,000 FCFA d'achats</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Niveau GOLD -->
+                        <div style="background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); border-radius: 16px; padding: 1.5rem; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                            <div style="text-align: center;">
+                                <div style="font-size: 3rem; margin-bottom: 0.5rem;">🥇</div>
+                                <h4 style="margin: 0; font-size: 1.2rem;">GOLD</h4>
+                                <p style="margin: 0.5rem 0; opacity: 0.9; font-size: 0.85rem;">Niveau Or</p>
+                                <div style="background: rgba(255,255,255,0.2); padding: 1rem; border-radius: 12px; margin-top: 1rem;">
+                                    <div style="font-size: 2rem; font-weight: 700; margin-bottom: 0.25rem;">5%</div>
+                                    <div style="font-size: 0.85rem; opacity: 0.9;">de réduction</div>
+                                </div>
+                                <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.2); font-size: 0.8rem;">
+                                    <div>Points requis: <strong>1000+</strong></div>
+                                    <div style="margin-top: 0.25rem;">1,000,000 FCFA d'achats</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Niveau VIP -->
+                        <div style="background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); border-radius: 16px; padding: 1.5rem; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                            <div style="text-align: center;">
+                                <div style="font-size: 3rem; margin-bottom: 0.5rem;">👑</div>
+                                <h4 style="margin: 0; font-size: 1.2rem;">VIP</h4>
+                                <p style="margin: 0.5rem 0; opacity: 0.9; font-size: 0.85rem;">Niveau Premium</p>
+                                <div style="background: rgba(255,255,255,0.2); padding: 1rem; border-radius: 12px; margin-top: 1rem;">
+                                    <div style="font-size: 2rem; font-weight: 700; margin-bottom: 0.25rem;">10%</div>
+                                    <div style="font-size: 0.85rem; opacity: 0.9;">de réduction</div>
+                                </div>
+                                <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.2); font-size: 0.8rem;">
+                                    <div>Points requis: <strong>2000+</strong></div>
+                                    <div style="margin-top: 0.25rem;">2,000,000 FCFA d'achats</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Guide d'utilisation -->
+                    <div style="background: #f0fdf4; border-radius: 12px; padding: 1.5rem; margin-top: 1.5rem; border-left: 4px solid #10b981;">
+                        <h4 style="color: #166534; margin: 0 0 1rem 0; display: flex; align-items: center; gap: 0.5rem;">
+                            <span>ℹ️</span> Comment identifier un client fidèle ?
+                        </h4>
+                        <ol style="color: #166534; margin: 0; padding-left: 1.5rem;">
+                            <li style="margin-bottom: 0.5rem;">Demandez le <strong>numéro de téléphone</strong> du client</li>
+                            <li style="margin-bottom: 0.5rem;">Cliquez sur "Identifier Client" dans le POS</li>
+                            <li style="margin-bottom: 0.5rem;">Le système affiche automatiquement le <strong>niveau de fidélité</strong></li>
+                            <li style="margin-bottom: 0.5rem;">La remise est <strong>appliquée automatiquement</strong> au total</li>
+                            <li>Les <strong>points sont cumulés</strong> après chaque achat (1 pt = 1000 FCFA)</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+
         </main>
     </div>
 </body>

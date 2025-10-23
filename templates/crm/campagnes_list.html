@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Campagnes Marketing{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- En-tête -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="fas fa-bullhorn"></i> Campagnes Marketing</h2>
+            <p class="text-muted">Créez et gérez vos campagnes de communication clients</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'clients_list' %}" class="btn btn-outline-primary">
+                <i class="fas fa-users"></i> Clients
+            </a>
+            <a href="{% url 'campagne_create' %}" class="btn btn-success">
+                <i class="fas fa-plus"></i> Nouvelle Campagne
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistiques -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h6 class="text-muted">Total Campagnes</h6>
+                    <h2>{{ stats.total }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-primary">
+                <div class="card-body">
+                    <h6 class="text-muted">En Cours</h6>
+                    <h2 class="text-primary">{{ stats.en_cours }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-warning">
+                <div class="card-body">
+                    <h6 class="text-muted">Programmées</h6>
+                    <h2 class="text-warning">{{ stats.programmees }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-success">
+                <div class="card-body">
+                    <h6 class="text-muted">Terminées</h6>
+                    <h2 class="text-success">{{ stats.terminees }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Liste des campagnes -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Liste des Campagnes</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Titre</th>
+                            <th>Type</th>
+                            <th>Statut</th>
+                            <th>Période</th>
+                            <th>Destinataires</th>
+                            <th>Envoyés</th>
+                            <th>Ouverts</th>
+                            <th>Taux</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for campagne in campagnes %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'campagne_detail' campagne.id %}" class="text-decoration-none">
+                                    <strong>{{ campagne.titre }}</strong>
+                                </a>
+                            </td>
+                            <td>
+                                {% if campagne.type_campagne == 'EMAIL' %}
+                                    <span class="badge bg-info"><i class="fas fa-envelope"></i> Email</span>
+                                {% elif campagne.type_campagne == 'SMS' %}
+                                    <span class="badge bg-primary"><i class="fas fa-sms"></i> SMS</span>
+                                {% elif campagne.type_campagne == 'NOTIFICATION' %}
+                                    <span class="badge bg-warning text-dark"><i class="fas fa-bell"></i> Push</span>
+                                {% elif campagne.type_campagne == 'PROMOTION' %}
+                                    <span class="badge bg-success"><i class="fas fa-tag"></i> Promo</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if campagne.statut == 'BROUILLON' %}
+                                    <span class="badge bg-secondary">Brouillon</span>
+                                {% elif campagne.statut == 'PROGRAMMEE' %}
+                                    <span class="badge bg-warning text-dark">Programmée</span>
+                                {% elif campagne.statut == 'EN_COURS' %}
+                                    <span class="badge bg-primary">En cours</span>
+                                {% elif campagne.statut == 'TERMINEE' %}
+                                    <span class="badge bg-success">Terminée</span>
+                                {% elif campagne.statut == 'ANNULEE' %}
+                                    <span class="badge bg-danger">Annulée</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small>{{ campagne.date_debut|date:"d/m/Y" }} <br> au {{ campagne.date_fin|date:"d/m/Y" }}</small>
+                            </td>
+                            <td>{{ campagne.nb_destinataires }}</td>
+                            <td>{{ campagne.nb_envoyes }}</td>
+                            <td>{{ campagne.nb_ouverts }}</td>
+                            <td>
+                                {% if campagne.nb_envoyes > 0 %}
+                                    {{ campagne.taux_ouverture|floatformat:1 }}%
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'campagne_detail' campagne.id %}" class="btn btn-sm btn-outline-primary" title="Détails">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                {% if campagne.statut == 'PROGRAMMEE' %}
+                                    <a href="{% url 'campagne_send' campagne.id %}" class="btn btn-sm btn-success" title="Lancer">
+                                        <i class="fas fa-paper-plane"></i>
+                                    </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="9" class="text-center text-muted py-4">
+                                Aucune campagne créée. <a href="{% url 'campagne_create' %}">Créer la première campagne</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Guide rapide -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card border-info">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0"><i class="fas fa-info-circle"></i> Guide Rapide</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h6><i class="fas fa-envelope text-info"></i> Campagne Email</h6>
+                            <p class="small">Envoyez des newsletters et offres promotionnelles par email</p>
+                        </div>
+                        <div class="col-md-4">
+                            <h6><i class="fas fa-sms text-primary"></i> Campagne SMS</h6>
+                            <p class="small">Notifications instantanées pour les offres flash</p>
+                        </div>
+                        <div class="col-md-4">
+                            <h6><i class="fas fa-layer-group text-warning"></i> Segments</h6>
+                            <p class="small">Ciblez vos clients par niveau de fidélité ou montant d'achats</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

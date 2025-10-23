@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Gestion des Absences - RH{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>📋 Gestion des Absences</h1>
+        <a href="{% url 'dashboard_rh' %}" class="btn btn-secondary">⬅️ Retour</a>
+    </div>
+
+    <!-- Formulaire d'enregistrement d'absence -->
+    <div class="card mb-4">
+        <div class="card-header bg-danger text-white">
+            <h5 class="mb-0">➕ Enregistrer une Absence</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label for="employe_id" class="form-label">Employé *</label>
+                        <select name="employe_id" id="employe_id" class="form-control" required>
+                            <option value="">-- Sélectionner --</option>
+                            {% for emp in employes %}
+                            <option value="{{ emp.id }}">{{ emp.nom }} {{ emp.prenom }} ({{ emp.poste }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-2 mb-3">
+                        <label for="date" class="form-label">Date *</label>
+                        <input type="date" name="date" id="date" class="form-control" required>
+                    </div>
+
+                    <div class="col-md-2 mb-3">
+                        <label for="type_absence" class="form-label">Type *</label>
+                        <select name="type_absence" id="type_absence" class="form-control" required>
+                            <option value="">-- Type --</option>
+                            {% for code, libelle in types_absences %}
+                            <option value="{{ code }}">{{ libelle }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-2 mb-3">
+                        <label for="justifiee" class="form-label">Justification</label>
+                        <div class="form-check mt-2">
+                            <input type="checkbox" name="justifiee" id="justifiee" class="form-check-input">
+                            <label class="form-check-label" for="justifiee">
+                                Justifiée
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3 mb-3">
+                        <label for="commentaire" class="form-label">Commentaire</label>
+                        <input type="text" name="commentaire" id="commentaire" class="form-control" 
+                            placeholder="Raison, certificat médical...">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-danger">
+                    ✅ Enregistrer l'Absence
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Liste des absences -->
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">📊 Absences Enregistrées (50 dernières)</h5>
+        </div>
+        <div class="card-body">
+            {% if absences %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Employé</th>
+                            <th>Poste</th>
+                            <th>Type d'Absence</th>
+                            <th>Justification</th>
+                            <th>Commentaire</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for absence in absences %}
+                        <tr>
+                            <td>{{ absence.date|date:"d/m/Y" }}</td>
+                            <td><strong>{{ absence.employe.nom }} {{ absence.employe.prenom }}</strong></td>
+                            <td>{{ absence.employe.poste }}</td>
+                            <td>
+                                <span class="badge bg-secondary">{{ absence.get_type_absence_display }}</span>
+                            </td>
+                            <td>
+                                {% if absence.justifiee %}
+                                <span class="badge bg-success">✓ Justifiée</span>
+                                {% else %}
+                                <span class="badge bg-danger">✗ Non justifiée</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if absence.commentaire %}
+                                {{ absence.commentaire }}
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                Aucune absence enregistrée.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+// Définir la date d'aujourd'hui par défaut
+document.getElementById('date').valueAsDate = new Date();
+</script>
+{% endblock %}

@@ -1,0 +1,344 @@
+{% extends "dashboard/base.html" %}
+{% load static %}
+
+{% block title %}Statistiques de Fidélité - Marketing{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-chart-line"></i> Statistiques de Fidélité</h2>
+        <div>
+            <a href="{% url 'marketing_analyser_fidelite' %}" class="btn btn-success me-2">
+                <i class="fas fa-brain"></i> Analyser Fidélité
+            </a>
+            <a href="{% url 'dashboard_marketing' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Retour
+            </a>
+        </div>
+    </div>
+
+    <!-- Vue d'ensemble -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-gradient-primary text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-users fa-3x mb-2"></i>
+                    <h3>{{ stats.total_clients }}</h3>
+                    <p class="mb-0">Total Clients Actifs</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-gradient-success text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-shopping-cart fa-3x mb-2"></i>
+                    <h3>{{ stats.clients_actifs_30j }}</h3>
+                    <p class="mb-0">Actifs (30 jours)</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-gradient-warning text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-chart-line fa-3x mb-2"></i>
+                    <h3>{{ stats.taux_activite|floatformat:1 }}%</h3>
+                    <p class="mb-0">Taux d'Activité</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-gradient-info text-white">
+                <div class="card-body text-center">
+                    <i class="fas fa-dollar-sign fa-3x mb-2"></i>
+                    <h3>{{ stats.ca_total_3mois|floatformat:0 }} CFA</h3>
+                    <p class="mb-0">CA 3 Mois</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Répartition par niveau -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-chart-pie"></i> Répartition par Niveau de Fidélité</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="repartitionChart" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card mb-3">
+                <div class="card-body text-center" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                    <i class="fas fa-crown fa-3x mb-2"></i>
+                    <h3>{{ stats.repartition.VIP }}</h3>
+                    <p class="mb-1"><strong>Clients VIP</strong></p>
+                    <small>{{ stats.pourcentages.VIP|floatformat:1 }}% du total</small>
+                </div>
+            </div>
+            <div class="card mb-3">
+                <div class="card-body text-center" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;">
+                    <i class="fas fa-medal fa-3x mb-2"></i>
+                    <h3>{{ stats.repartition.GOLD }}</h3>
+                    <p class="mb-1"><strong>Clients GOLD</strong></p>
+                    <small>{{ stats.pourcentages.GOLD|floatformat:1 }}% du total</small>
+                </div>
+            </div>
+            <div class="card mb-3">
+                <div class="card-body text-center" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white;">
+                    <i class="fas fa-award fa-3x mb-2"></i>
+                    <h3>{{ stats.repartition.SILVER }}</h3>
+                    <p class="mb-1"><strong>Clients SILVER</strong></p>
+                    <small>{{ stats.pourcentages.SILVER|floatformat:1 }}% du total</small>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-body text-center" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); color: #333;">
+                    <i class="fas fa-users fa-3x mb-2"></i>
+                    <h3>{{ stats.repartition.TOUS }}</h3>
+                    <p class="mb-1"><strong>Clients TOUS</strong></p>
+                    <small>{{ stats.pourcentages.TOUS|floatformat:1 }}% du total</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CA par niveau -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-coins"></i> Chiffre d'Affaires par Niveau (3 derniers mois)</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="caChart" height="60"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top 10 VIP -->
+    <div class="card mb-4">
+        <div class="card-header bg-danger text-white">
+            <h5 class="mb-0"><i class="fas fa-trophy"></i> Top 10 Clients VIP</h5>
+        </div>
+        <div class="card-body">
+            {% if stats.top_vip %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>#</th>
+                                <th>Client</th>
+                                <th>Téléphone</th>
+                                <th>Niveau</th>
+                                <th>Points</th>
+                                <th>Achats (3 mois)</th>
+                                <th>CA Total (3 mois)</th>
+                                <th>Dernière Visite</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for client_info in stats.top_vip %}
+                            <tr>
+                                <td><strong>{{ forloop.counter }}</strong></td>
+                                <td>
+                                    <i class="fas fa-user-circle text-primary"></i>
+                                    <strong>{{ client_info.nom }} {{ client_info.prenoms }}</strong>
+                                </td>
+                                <td>{{ client_info.telephone }}</td>
+                                <td>
+                                    {% if client_info.niveau == 'VIP' %}
+                                        <span class="badge bg-danger"><i class="fas fa-crown"></i> VIP</span>
+                                    {% elif client_info.niveau == 'GOLD' %}
+                                        <span class="badge bg-warning"><i class="fas fa-medal"></i> GOLD</span>
+                                    {% elif client_info.niveau == 'SILVER' %}
+                                        <span class="badge bg-info"><i class="fas fa-award"></i> SILVER</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary"><i class="fas fa-users"></i> TOUS</span>
+                                    {% endif %}
+                                </td>
+                                <td><strong>{{ client_info.points_fidelite }}</strong> pts</td>
+                                <td>{{ client_info.nb_achats }} achats</td>
+                                <td><strong>{{ client_info.ca_total|floatformat:0 }} CFA</strong></td>
+                                <td>{{ client_info.derniere_visite|date:"d/m/Y" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info mb-0">
+                    <i class="fas fa-info-circle"></i> Aucun client VIP pour le moment.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Informations complémentaires -->
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="fas fa-percentage fa-2x text-primary mb-3"></i>
+                    <h5>Taux de Fidélisation</h5>
+                    <h3 class="text-primary">{{ stats.taux_fidelisation|floatformat:1 }}%</h3>
+                    <p class="text-muted mb-0">Clients SILVER+ / Total</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="fas fa-star fa-2x text-warning mb-3"></i>
+                    <h5>CA Moyen VIP</h5>
+                    <h3 class="text-warning">{{ stats.ca_moyen_vip|floatformat:0 }} CFA</h3>
+                    <p class="text-muted mb-0">Par client / 3 mois</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <i class="fas fa-clock fa-2x text-info mb-3"></i>
+                    <h5>Fréquence Moyenne</h5>
+                    <h3 class="text-info">{{ stats.frequence_moyenne|floatformat:1 }}</h3>
+                    <p class="text-muted mb-0">Achats / mois (clients actifs)</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+.bg-gradient-success {
+    background: linear-gradient(135deg, #5ee7df 0%, #b490ca 100%);
+}
+.bg-gradient-warning {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+.bg-gradient-info {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+// Graphique de répartition
+const repartitionCtx = document.getElementById('repartitionChart').getContext('2d');
+const repartitionChart = new Chart(repartitionCtx, {
+    type: 'doughnut',
+    data: {
+        labels: ['VIP', 'GOLD', 'SILVER', 'TOUS'],
+        datasets: [{
+            data: [
+                {{ stats.repartition.VIP }},
+                {{ stats.repartition.GOLD }},
+                {{ stats.repartition.SILVER }},
+                {{ stats.repartition.TOUS }}
+            ],
+            backgroundColor: [
+                'rgba(220, 53, 69, 0.8)',   // VIP - Rouge
+                'rgba(255, 193, 7, 0.8)',   // GOLD - Jaune
+                'rgba(23, 162, 184, 0.8)',  // SILVER - Cyan
+                'rgba(108, 117, 125, 0.8)'  // TOUS - Gris
+            ],
+            borderWidth: 2,
+            borderColor: '#fff'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    font: {
+                        size: 14
+                    },
+                    padding: 15
+                }
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        const label = context.label || '';
+                        const value = context.parsed || 0;
+                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                        const percentage = ((value / total) * 100).toFixed(1);
+                        return label + ': ' + value + ' clients (' + percentage + '%)';
+                    }
+                }
+            }
+        }
+    }
+});
+
+// Graphique CA par niveau
+const caCtx = document.getElementById('caChart').getContext('2d');
+const caChart = new Chart(caCtx, {
+    type: 'bar',
+    data: {
+        labels: ['VIP', 'GOLD', 'SILVER', 'TOUS'],
+        datasets: [{
+            label: 'Chiffre d\'Affaires (CFA)',
+            data: [
+                {{ stats.ca_par_niveau.VIP }},
+                {{ stats.ca_par_niveau.GOLD }},
+                {{ stats.ca_par_niveau.SILVER }},
+                {{ stats.ca_par_niveau.TOUS }}
+            ],
+            backgroundColor: [
+                'rgba(220, 53, 69, 0.7)',
+                'rgba(255, 193, 7, 0.7)',
+                'rgba(23, 162, 184, 0.7)',
+                'rgba(108, 117, 125, 0.7)'
+            ],
+            borderColor: [
+                'rgba(220, 53, 69, 1)',
+                'rgba(255, 193, 7, 1)',
+                'rgba(23, 162, 184, 1)',
+                'rgba(108, 117, 125, 1)'
+            ],
+            borderWidth: 2
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return value.toLocaleString() + ' CFA';
+                    }
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                display: false
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        return 'CA: ' + context.parsed.y.toLocaleString() + ' CFA';
+                    }
+                }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

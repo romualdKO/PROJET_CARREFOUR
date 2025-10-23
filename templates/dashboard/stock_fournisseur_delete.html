@@ -1,0 +1,132 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supprimer {{ fournisseur.nom }} - Stock</title>
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">🛒</div>
+                <h2>SuperMarché Plus</h2>
+                <p>Module Gestion Stock</p>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="{% url 'dashboard_stock' %}" class="nav-item">
+                    <span class="icon">📊</span>
+                    <span>Tableau de Bord</span>
+                </a>
+                <a href="{% url 'stock_add_product' %}" class="nav-item">
+                    <span class="icon">📦</span>
+                    <span>Nouveau Produit</span>
+                </a>
+                <a href="{% url 'stock_fournisseurs_list' %}" class="nav-item active">
+                    <span class="icon">🏭</span>
+                    <span>Fournisseurs</span>
+                </a>
+                <a href="{% url 'logout' %}" class="nav-item logout">
+                    <span class="icon">🚪</span>
+                    <span>Déconnexion</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="content-header">
+                <h1>Supprimer un Fournisseur</h1>
+                <div class="user-info">
+                    <span>👤 {{ user.get_full_name }}</span>
+                </div>
+            </header>
+
+            <!-- Messages -->
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <!-- Confirmation de suppression -->
+            <div style="max-width: 600px; margin: 50px auto;">
+                <div style="background: white; border-radius: 12px; padding: 40px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center;">
+                    <!-- Icône d'avertissement -->
+                    <div style="font-size: 80px; margin-bottom: 20px;">⚠️</div>
+
+                    <h2 style="color: #DC2626; margin-bottom: 20px; font-size: 24px;">
+                        Confirmer la suppression
+                    </h2>
+
+                    <div style="background: #FEE2E2; border-left: 4px solid #DC2626; padding: 20px; border-radius: 8px; margin-bottom: 30px; text-align: left;">
+                        <p style="color: #991B1B; font-weight: 600; margin-bottom: 10px;">
+                            ⚠️ Attention : Cette action est irréversible !
+                        </p>
+                        <p style="color: #7F1D1D;">
+                            Vous êtes sur le point de supprimer le fournisseur <strong>{{ fournisseur.nom }}</strong>.
+                        </p>
+                    </div>
+
+                    <!-- Informations du fournisseur -->
+                    <div style="background: #F9FAFB; border: 2px solid #E5E7EB; border-radius: 8px; padding: 20px; margin-bottom: 30px; text-align: left;">
+                        <h3 style="color: #374151; margin-bottom: 15px; font-size: 16px;">
+                            📝 Informations du fournisseur
+                        </h3>
+                        <div style="display: grid; grid-template-columns: 140px 1fr; gap: 10px; font-size: 14px;">
+                            <span style="font-weight: 600; color: #6B7280;">Nom:</span>
+                            <span style="color: #111827;">{{ fournisseur.nom }}</span>
+
+                            <span style="font-weight: 600; color: #6B7280;">Contact:</span>
+                            <span style="color: #111827;">{{ fournisseur.contact }}</span>
+
+                            <span style="font-weight: 600; color: #6B7280;">Téléphone:</span>
+                            <span style="color: #111827;">{{ fournisseur.telephone|default:"—" }}</span>
+
+                            <span style="font-weight: 600; color: #6B7280;">Email:</span>
+                            <span style="color: #111827;">{{ fournisseur.email|default:"—" }}</span>
+
+                            <span style="font-weight: 600; color: #6B7280;">Produits fournis:</span>
+                            <span style="color: #111827;">{{ fournisseur.nombre_produits }}</span>
+
+                            <span style="font-weight: 600; color: #6B7280;">Commandes:</span>
+                            <span style="color: #111827;">{{ fournisseur.nombre_commandes }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Formulaire de confirmation -->
+                    <form method="post">
+                        {% csrf_token %}
+                        <div style="display: flex; justify-content: center; gap: 15px; margin-top: 30px;">
+                            <a href="{% url 'stock_fournisseur_detail' fournisseur.id %}"
+                               style="display: inline-block; background: #E5E7EB; color: #374151; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">
+                                ← Annuler
+                            </a>
+                            <button type="submit"
+                                    style="background: linear-gradient(135deg, #EF4444, #DC2626); color: white; padding: 12px 30px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px;">
+                                🗑️ Confirmer la Suppression
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Note d'information -->
+                <div style="background: #EFF6FF; border-left: 4px solid #3B82F6; padding: 20px; border-radius: 8px; margin-top: 20px;">
+                    <h4 style="color: #1E40AF; margin-bottom: 10px;">💡 Bon à savoir</h4>
+                    <ul style="color: #1E3A8A; margin-left: 20px; font-size: 14px;">
+                        <li>Un fournisseur avec des produits ou commandes associés ne peut pas être supprimé</li>
+                        <li>Il est recommandé de désactiver le fournisseur plutôt que de le supprimer</li>
+                        <li>Cela permet de conserver l'historique des transactions</li>
+                    </ul>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

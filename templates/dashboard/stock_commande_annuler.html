@@ -1,0 +1,45 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Annuler Commande {{ commande.numero_commande }}</title>
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">🛒</div>
+                <h2>SuperMarché Plus</h2>
+                <p>Module Gestion Stock</p>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="{% url 'dashboard_stock' %}" class="nav-item">📊 Tableau de Bord</a>
+                <a href="{% url 'stock_add_product' %}" class="nav-item">📦 Nouveau Produit</a>
+                <a href="{% url 'stock_fournisseurs_list' %}" class="nav-item">🏭 Fournisseurs</a>
+                <a href="{% url 'stock_commandes_list' %}" class="nav-item active">🧾 Commandes</a>
+                <a href="{% url 'logout' %}" class="nav-item logout">🚪 Déconnexion</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="content-header"><h1>Annuler la Commande</h1><div class="user-info">👤 {{ user.get_full_name }}</div></header>
+
+            {% if messages %}{% for message in messages %}<div class="alert alert-{{ message.tags }}">{{ message }}</div>{% endfor %}{% endif %}
+
+            <div style="background:white; padding:20px; border-radius:8px; text-align:center;">
+                <p>Êtes-vous sûr de vouloir annuler la commande <strong>{{ commande.numero_commande }}</strong> ?</p>
+                <form method="post">
+                    {% csrf_token %}
+                    <div style="display:flex; gap:10px; justify-content:center; margin-top:20px;">
+                        <a href="{% url 'stock_commande_detail' commande.id %}" class="btn">← Non, revenir</a>
+                        <button type="submit" class="btn btn-danger">✅ Oui, annuler</button>
+                    </div>
+                </form>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

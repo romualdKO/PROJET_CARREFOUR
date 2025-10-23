@@ -1,0 +1,145 @@
+{% extends "dashboard/base.html" %}
+{% load static %}
+
+{% block title %}Créer un Coupon - Marketing{% endblock %}
+
+{% block content %}
+<div class="container mt-4" style="max-width: 800px;">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-plus-circle"></i> Créer un Nouveau Coupon</h2>
+        <a href="{% url 'marketing_coupons_list' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Retour
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="fas fa-ticket-alt"></i> Informations du Coupon</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" id="couponForm">
+                {% csrf_token %}
+                
+                <!-- Type de coupon -->
+                <div class="form-group">
+                    <label><i class="fas fa-tag"></i> Type de Coupon *</label>
+                    <select name="type_coupon" class="form-control" required onchange="toggleClientField()">
+                        <option value="GENERIC">Générique (Tous les clients pendant période promo)</option>
+                        <option value="SPECIAL">Spécial (Attribué à un client spécifique)</option>
+                    </select>
+                    <small class="form-text text-muted">
+                        Les coupons génériques s'appliquent automatiquement. Les coupons spéciaux sont pour des clients spécifiques.
+                    </small>
+                </div>
+
+                <!-- Type de remise -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label><i class="fas fa-percent"></i> Type de Remise *</label>
+                            <select name="type_remise" class="form-control" required>
+                                <option value="POURCENTAGE">Pourcentage</option>
+                                <option value="MONTANT">Montant fixe</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label><i class="fas fa-dollar-sign"></i> Valeur *</label>
+                            <input type="number" name="valeur" class="form-control" step="0.01" min="0" required>
+                            <small class="form-text text-muted">% ou montant en FCFA selon le type</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div class="form-group">
+                    <label><i class="fas fa-comment"></i> Description *</label>
+                    <input type="text" name="description" class="form-control" maxlength="200" required
+                           placeholder="Ex: Remise Fidélité Gold, Promo Black Friday...">
+                </div>
+
+                <!-- Dates -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label><i class="fas fa-calendar-alt"></i> Date de Début *</label>
+                            <input type="date" name="date_debut" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label><i class="fas fa-calendar-check"></i> Date de Fin *</label>
+                            <input type="date" name="date_fin" class="form-control" required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Conditions -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label><i class="fas fa-shopping-cart"></i> Montant Minimum d'Achat</label>
+                            <input type="number" name="montant_minimum" class="form-control" step="1" min="0" value="0">
+                            <small class="form-text text-muted">0 = pas de minimum</small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label><i class="fas fa-users"></i> Limite Globale d'Utilisations</label>
+                            <input type="number" name="limite_globale" class="form-control" min="1" placeholder="Illimité">
+                            <small class="form-text text-muted">Vide = illimité</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Niveau de fidélité requis -->
+                <div class="form-group">
+                    <label><i class="fas fa-star"></i> Niveau de Fidélité Requis (optionnel)</label>
+                    <select name="niveau_fidelite_requis" class="form-control">
+                        <option value="">Aucun (Tous les niveaux)</option>
+                        {% for code, label in niveaux_fidelite %}
+                        <option value="{{ code }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                    <small class="form-text text-muted">Le client doit avoir au moins ce niveau de fidélité</small>
+                </div>
+
+                <hr>
+
+                <div class="alert alert-info">
+                    <strong><i class="fas fa-info-circle"></i> Information:</strong><br>
+                    - Le code du coupon sera généré automatiquement<br>
+                    - Les coupons génériques s'appliquent automatiquement aux achats pendant la période définie<br>
+                    - Les coupons spéciaux doivent être attribués à un client via "Générer Coupons Spéciaux"
+                </div>
+
+                <div class="form-group">
+                    <button type="submit" class="btn btn-primary btn-lg btn-block">
+                        <i class="fas fa-save"></i> Créer le Coupon
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleClientField() {
+    const type = document.querySelector('select[name="type_coupon"]').value;
+    // Pour l'instant, pas de champ client spécifique (géré via génération automatique)
+}
+
+// Validation des dates
+document.getElementById('couponForm').addEventListener('submit', function(e) {
+    const dateDebut = new Date(document.querySelector('input[name="date_debut"]').value);
+    const dateFin = new Date(document.querySelector('input[name="date_fin"]').value);
+    
+    if (dateFin <= dateDebut) {
+        e.preventDefault();
+        alert('La date de fin doit être après la date de début!');
+        return false;
+    }
+});
+</script>
+{% endblock %}

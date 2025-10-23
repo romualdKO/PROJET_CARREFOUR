@@ -1,0 +1,451 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Tableau de Bord - Gestion des Stocks{% endblock %}
+
+{% block extra_css %}
+<style>
+    .kpi-card {
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease;
+    }
+    .kpi-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+    }
+    .kpi-card.success {
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    }
+    .kpi-card.warning {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+    .kpi-card.danger {
+        background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    }
+    .kpi-card.info {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    }
+    .kpi-value {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin: 10px 0;
+    }
+    .kpi-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    .kpi-icon {
+        font-size: 3rem;
+        opacity: 0.3;
+        position: absolute;
+        right: 20px;
+        top: 20px;
+    }
+    .chart-container {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        margin-bottom: 25px;
+    }
+    .table-responsive {
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    .badge-custom {
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-weight: 500;
+    }
+    .progress-bar-custom {
+        border-radius: 10px;
+        height: 8px;
+        background: #e9ecef;
+        overflow: hidden;
+    }
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        transition: width 0.5s ease;
+    }
+    .stat-mini {
+        display: inline-block;
+        margin-right: 15px;
+        padding: 8px 15px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        font-size: 0.85rem;
+    }
+    .stat-mini strong {
+        color: #667eea;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- En-tête -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1"><i class="fas fa-warehouse"></i> Tableau de Bord - Gestion des Stocks</h2>
+            <p class="text-muted">Vue d'ensemble complète de vos stocks et opérations</p>
+        </div>
+        <div>
+            <button class="btn btn-primary" onclick="location.reload()">
+                <i class="fas fa-sync-alt"></i> Actualiser
+            </button>
+            <a href="{% url 'stock_produits_list' %}" class="btn btn-outline-primary">
+                <i class="fas fa-boxes"></i> Gérer Produits
+            </a>
+        </div>
+    </div>
+
+    <!-- ========== KPIs PRINCIPAUX ========== -->
+    <div class="row mb-4">
+        <!-- Produits Total -->
+        <div class="col-md-3">
+            <div class="kpi-card info position-relative">
+                <i class="fas fa-box kpi-icon"></i>
+                <div class="kpi-label">Produits Total</div>
+                <div class="kpi-value">{{ nb_produits }}</div>
+                <small>{{ nb_produits_actifs }} actifs</small>
+            </div>
+        </div>
+
+        <!-- Valeur Stock -->
+        <div class="col-md-3">
+            <div class="kpi-card success position-relative">
+                <i class="fas fa-money-bill-wave kpi-icon"></i>
+                <div class="kpi-label">Valeur Stock (Achat)</div>
+                <div class="kpi-value">{{ valeur_stock_achat|floatformat:0 }}</div>
+                <small>FCFA</small>
+            </div>
+        </div>
+
+        <!-- Marge Potentielle -->
+        <div class="col-md-3">
+            <div class="kpi-card warning position-relative">
+                <i class="fas fa-chart-line kpi-icon"></i>
+                <div class="kpi-label">Marge Potentielle</div>
+                <div class="kpi-value">{{ marge_potentielle|floatformat:0 }}</div>
+                <small>Taux: {{ taux_marge|floatformat:1 }}%</small>
+            </div>
+        </div>
+
+        <!-- Alertes Actives -->
+        <div class="col-md-3">
+            <div class="kpi-card danger position-relative">
+                <i class="fas fa-exclamation-triangle kpi-icon"></i>
+                <div class="kpi-label">Alertes Actives</div>
+                <div class="kpi-value">{{ alertes_total }}</div>
+                <small>
+                    <span class="badge bg-danger">{{ alertes_rupture }} rupture</span>
+                    <span class="badge bg-warning text-dark">{{ alertes_seuil }} seuil</span>
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== STATISTIQUES COMMANDES & MOUVEMENTS ========== -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="chart-container">
+                <h5 class="mb-3"><i class="fas fa-shopping-cart text-primary"></i> Commandes Fournisseurs</h5>
+                <div class="stat-mini">
+                    <i class="fas fa-clock text-warning"></i>
+                    <strong>{{ commandes_en_attente }}</strong> En attente
+                </div>
+                <div class="stat-mini">
+                    <i class="fas fa-check text-success"></i>
+                    <strong>{{ commandes_validees }}</strong> Validées
+                </div>
+                <div class="stat-mini">
+                    <i class="fas fa-truck text-info"></i>
+                    <strong>{{ commandes_en_cours }}</strong> En cours
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="chart-container">
+                <h5 class="mb-3"><i class="fas fa-chart-bar text-success"></i> Valeur Stock</h5>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Prix Achat</span>
+                        <strong class="text-primary">{{ valeur_stock_achat|floatformat:0 }} FCFA</strong>
+                    </div>
+                    <div class="progress-bar-custom">
+                        <div class="progress-fill" style="width: 60%;"></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>Prix Vente</span>
+                        <strong class="text-success">{{ valeur_stock_vente|floatformat:0 }} FCFA</strong>
+                    </div>
+                    <div class="progress-bar-custom">
+                        <div class="progress-fill bg-success" style="width: 100%;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="chart-container">
+                <h5 class="mb-3"><i class="fas fa-sync-alt text-info"></i> Taux de Rotation (7j)</h5>
+                <div class="text-center">
+                    <div class="kpi-value text-info">{{ taux_rotation|floatformat:1 }}%</div>
+                    <p class="text-muted mb-0">Produits vendus/Stock moyen</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== TOP PRODUITS À RÉAPPROVISIONNER ========== -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="chart-container">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0"><i class="fas fa-exclamation-circle text-danger"></i> Top 10 Produits à Réapprovisionner</h5>
+                    <a href="{% url 'stock_commande_create' %}" class="btn btn-sm btn-primary">
+                        <i class="fas fa-plus"></i> Nouvelle Commande
+                    </a>
+                </div>
+                
+                {% if produits_a_reappro %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Référence</th>
+                                <th>Produit</th>
+                                <th>Catégorie</th>
+                                <th>Stock Actuel</th>
+                                <th>Seuil Critique</th>
+                                <th>État</th>
+                                <th>Jours Restants</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for produit in produits_a_reappro %}
+                            <tr>
+                                <td><code>{{ produit.reference }}</code></td>
+                                <td><strong>{{ produit.nom }}</strong></td>
+                                <td><span class="badge bg-secondary">{{ produit.get_categorie_display }}</span></td>
+                                <td>
+                                    <span class="badge {% if produit.stock_actuel == 0 %}bg-danger{% elif produit.stock_actuel <= produit.stock_critique %}bg-warning text-dark{% else %}bg-success{% endif %}">
+                                        {{ produit.stock_actuel }}
+                                    </span>
+                                </td>
+                                <td>{{ produit.stock_critique }}</td>
+                                <td>
+                                    {% if produit.stock_actuel == 0 %}
+                                        <span class="badge bg-danger">RUPTURE</span>
+                                    {% elif produit.stock_actuel <= produit.stock_critique %}
+                                        <span class="badge bg-warning text-dark">CRITIQUE</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if produit.jours_stock_restant %}
+                                        <span class="text-{% if produit.jours_stock_restant <= 3 %}danger{% elif produit.jours_stock_restant <= 7 %}warning{% else %}success{% endif %}">
+                                            {{ produit.jours_stock_restant }} jours
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'stock_commande_create' %}?produit={{ produit.id }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-cart-plus"></i> Commander
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i> Aucun produit à réapprovisionner pour le moment. Tous les stocks sont au niveau optimal.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== STATISTIQUES PAR CATÉGORIE ========== -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="chart-container">
+                <h5 class="mb-3"><i class="fas fa-tags text-primary"></i> Top 5 Catégories (par Valeur)</h5>
+                {% if categories_stats %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Catégorie</th>
+                                <th>Produits</th>
+                                <th>Valeur</th>
+                                <th>%</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for cat in categories_stats %}
+                            <tr>
+                                <td><strong>{{ cat.nom }}</strong></td>
+                                <td>{{ cat.nb_produits }}</td>
+                                <td>{{ cat.valeur|floatformat:0 }} FCFA</td>
+                                <td>
+                                    <div class="progress-bar-custom">
+                                        <div class="progress-fill" style="width: {{ cat.pourcentage }}%;"></div>
+                                    </div>
+                                    <small class="text-muted">{{ cat.pourcentage|floatformat:1 }}%</small>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">Aucune donnée disponible</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- ========== PERFORMANCE FOURNISSEURS ========== -->
+        <div class="col-md-6">
+            <div class="chart-container">
+                <h5 class="mb-3"><i class="fas fa-truck text-success"></i> Performance Fournisseurs</h5>
+                {% if performance_fournisseurs %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Fournisseur</th>
+                                <th>Commandes</th>
+                                <th>Montant Total</th>
+                                <th>Taux Ponctualité</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for perf in performance_fournisseurs %}
+                            <tr>
+                                <td><strong>{{ perf.nom }}</strong></td>
+                                <td>{{ perf.nb_commandes }}</td>
+                                <td>{{ perf.montant_total|floatformat:0 }} FCFA</td>
+                                <td>
+                                    <span class="badge {% if perf.taux_ponctualite >= 90 %}bg-success{% elif perf.taux_ponctualite >= 70 %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                                        {{ perf.taux_ponctualite|floatformat:0 }}%
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">Aucune donnée disponible</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== MOUVEMENTS RÉCENTS ========== -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="chart-container">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0"><i class="fas fa-history text-info"></i> Mouvements Récents (10 derniers)</h5>
+                    <a href="{% url 'stock_mouvements_list' %}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-list"></i> Voir Tout
+                    </a>
+                </div>
+
+                {% if mouvements_recents %}
+                <div class="table-responsive">
+                    <table class="table table-hover table-sm">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Date</th>
+                                <th>Produit</th>
+                                <th>Type</th>
+                                <th>Quantité</th>
+                                <th>Stock Avant</th>
+                                <th>Stock Après</th>
+                                <th>Responsable</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for mvt in mouvements_recents %}
+                            <tr>
+                                <td><small>{{ mvt.date_mouvement|date:"d/m/Y H:i" }}</small></td>
+                                <td><strong>{{ mvt.produit.nom }}</strong></td>
+                                <td>
+                                    <span class="badge {% if mvt.type_mouvement == 'ENTREE' %}bg-success{% elif mvt.type_mouvement == 'SORTIE' %}bg-danger{% elif mvt.type_mouvement == 'AJUSTEMENT' %}bg-warning text-dark{% else %}bg-info{% endif %}">
+                                        {{ mvt.get_type_mouvement_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if mvt.type_mouvement == 'ENTREE' %}
+                                        <span class="text-success">+{{ mvt.quantite }}</span>
+                                    {% else %}
+                                        <span class="text-danger">-{{ mvt.quantite }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ mvt.stock_avant }}</td>
+                                <td><strong>{{ mvt.stock_apres }}</strong></td>
+                                <td><small>{{ mvt.employe.get_full_name }}</small></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> Aucun mouvement de stock enregistré.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== ACTIONS RAPIDES ========== -->
+    <div class="row">
+        <div class="col-12">
+            <div class="chart-container">
+                <h5 class="mb-3"><i class="fas fa-bolt text-warning"></i> Actions Rapides</h5>
+                <div class="row">
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'stock_produit_create' %}" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-plus-circle"></i> Ajouter un Produit
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'stock_commande_create' %}" class="btn btn-outline-success w-100">
+                            <i class="fas fa-cart-plus"></i> Nouvelle Commande
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'stock_fournisseurs_list' %}" class="btn btn-outline-info w-100">
+                            <i class="fas fa-truck"></i> Gérer Fournisseurs
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'stock_alertes_list' %}" class="btn btn-outline-danger w-100">
+                            <i class="fas fa-bell"></i> Voir Alertes ({{ alertes_total }})
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

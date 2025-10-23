@@ -1,0 +1,92 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Détails Commande {{ commande.numero_commande }}</title>
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">🛒</div>
+                <h2>SuperMarché Plus</h2>
+                <p>Module Gestion Stock</p>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="{% url 'dashboard_stock' %}" class="nav-item">📊 Tableau de Bord</a>
+                <a href="{% url 'stock_add_product' %}" class="nav-item">📦 Nouveau Produit</a>
+                <a href="{% url 'stock_fournisseurs_list' %}" class="nav-item">🏭 Fournisseurs</a>
+                <a href="{% url 'stock_commandes_list' %}" class="nav-item active">🧾 Commandes</a>
+                <a href="{% url 'logout' %}" class="nav-item logout">🚪 Déconnexion</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="content-header">
+                <h1>Commande {{ commande.numero_commande }}</h1>
+                <div class="user-info">👤 {{ user.get_full_name }}</div>
+            </header>
+
+            {% if messages %}{% for message in messages %}<div class="alert alert-{{ message.tags }}">{{ message }}</div>{% endfor %}{% endif %}
+
+            <div style="background:white; padding:20px; border-radius:8px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                    <div>
+                        <div style="font-weight:600;">Fournisseur</div>
+                        <div>{{ commande.fournisseur.nom }}</div>
+                    </div>
+                    <div>
+                        <div style="font-weight:600;">Statut</div>
+                        <div>{{ commande.statut }}</div>
+                    </div>
+                    <div>
+                        <div style="font-weight:600;">Date commande</div>
+                        <div>{{ commande.date_commande|date:'d/m/Y' }}</div>
+                    </div>
+                    <div>
+                        <div style="font-weight:600;">Montant</div>
+                        <div>{{ commande.montant_total|floatformat:0 }} FCFA</div>
+                    </div>
+                </div>
+
+                <h3>Lignes de commande</h3>
+                <table style="width:100%; border-collapse:collapse;">
+                    <thead style="background:#F9FAFB;">
+                        <tr>
+                            <th style="padding:10px; text-align:left;">Produit</th>
+                            <th style="padding:10px; text-align:center;">Quantité commandée</th>
+                            <th style="padding:10px; text-align:center;">Quantité reçue</th>
+                            <th style="padding:10px; text-align:right;">Prix Unitaire</th>
+                            <th style="padding:10px; text-align:right;">Montant</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for l in lignes %}
+                            <tr style="border-bottom:1px solid #E5E7EB;">
+                                <td style="padding:10px;">{{ l.produit.nom }}</td>
+                                <td style="padding:10px; text-align:center;">{{ l.quantite_commandee }}</td>
+                                <td style="padding:10px; text-align:center;">{{ l.quantite_recue }}</td>
+                                <td style="padding:10px; text-align:right;">{{ l.prix_unitaire|floatformat:0 }} FCFA</td>
+                                <td style="padding:10px; text-align:right; font-weight:600;">{{ l.montant_ligne|floatformat:0 }} FCFA</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:12px;">
+                    <a href="{% url 'stock_commandes_list' %}" class="btn">← Retour</a>
+                    {% if commande.statut == 'EN_ATTENTE' %}
+                        <a href="{% url 'stock_commande_valider' commande.id %}" class="btn btn-warning">Valider</a>
+                        <a href="{% url 'stock_commande_annuler' commande.id %}" class="btn btn-danger">Annuler</a>
+                    {% elif commande.statut == 'VALIDEE' %}
+                        <a href="{% url 'stock_commande_recevoir' commande.id %}" class="btn btn-primary">Recevoir</a>
+                    {% endif %}
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

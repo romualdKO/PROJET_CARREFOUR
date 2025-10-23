@@ -1,0 +1,517 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historique des Présences - RH</title>
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+    <style>
+        .period-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            background: white;
+            color: #6B7280;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, #2563EB, #1E40AF);
+            color: white;
+        }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-box {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .stat-box-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #1F2937;
+            margin-bottom: 10px;
+        }
+
+        .stat-box-label {
+            color: #6B7280;
+            font-size: 0.9em;
+        }
+
+        .presence-table {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .presence-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .presence-table thead {
+            background: linear-gradient(135deg, #E0E7FF, #DBEAFE);
+        }
+
+        .presence-table th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #1F2937;
+        }
+
+        .presence-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #E5E7EB;
+        }
+
+        .presence-table tbody tr:hover {
+            background: #F9FAFB;
+        }
+
+        .badge-present {
+            background: #D1FAE5;
+            color: #065F46;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .badge-absent {
+            background: #FEE2E2;
+            color: #991B1B;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .badge-retard {
+            background: #FEF3C7;
+            color: #92400E;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .badge-conge {
+            background: #E0E7FF;
+            color: #3730A3;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .calendar-view {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .calendar-header h3 {
+            margin: 0;
+            color: #1F2937;
+        }
+
+        .calendar-nav {
+            display: flex;
+            gap: 10px;
+        }
+
+        .calendar-nav button {
+            padding: 8px 16px;
+            border: 1px solid #D1D5DB;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            font-size: 0.9em;
+        }
+
+        .calendar-day-header {
+            font-weight: 600;
+            color: #6B7280;
+            background: #F3F4F6;
+            border: none;
+        }
+
+        .calendar-day.present {
+            background: #D1FAE5;
+            border-color: #059669;
+        }
+
+        .calendar-day.absent {
+            background: #FEE2E2;
+            border-color: #DC2626;
+        }
+
+        .calendar-day.retard {
+            background: #FEF3C7;
+            border-color: #F59E0B;
+        }
+
+        .filter-bar {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .filter-bar-content {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .filter-bar select,
+        .filter-bar input {
+            padding: 10px;
+            border: 1px solid #D1D5DB;
+            border-radius: 6px;
+            font-size: 0.9em;
+        }
+
+        .chart-container {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+
+        .employee-avatar-small {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #E5E7EB;
+        }
+
+        .employee-avatar-small.default {
+            background: linear-gradient(135deg, #3B82F6, #2563EB);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .time-badge {
+            background: #F3F4F6;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.85em;
+            color: #4B5563;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">🛒</div>
+                <h2>SuperMarché Plus</h2>
+                <p>Module Ressources Humaines</p>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="{% url 'dashboard_rh' %}" class="nav-item">
+                    <span class="icon">📊</span>
+                    <span>Tableau de Bord</span>
+                </a>
+                <a href="{% url 'rh_employees_list' %}" class="nav-item">
+                    <span class="icon">👥</span>
+                    <span>Employés</span>
+                </a>
+                <a href="{% url 'rh_create_employee' %}" class="nav-item">
+                    <span class="icon">➕</span>
+                    <span>Nouvel Employé</span>
+                </a>
+                <a href="{% url 'rh_planifications' %}" class="nav-item">
+                    <span class="icon">📅</span>
+                    <span>Planifications</span>
+                </a>
+                <a href="{% url 'rh_presences' %}" class="nav-item">
+                    <span class="icon">✅</span>
+                    <span>Présences</span>
+                </a>
+                <a href="{% url 'rh_conges' %}" class="nav-item">
+                    <span class="icon">🏖️</span>
+                    <span>Congés</span>
+                </a>
+                <a href="{% url 'rh_formations' %}" class="nav-item">
+                    <span class="icon">🎓</span>
+                    <span>Formations</span>
+                </a>
+                <a href="{% url 'rh_historique_presences' %}" class="nav-item active">
+                    <span class="icon">📈</span>
+                    <span>Historique Présences</span>
+                </a>
+                <a href="{% url 'logout' %}" class="nav-item logout">
+                    <span class="icon">🚪</span>
+                    <span>Déconnexion</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="content-header">
+                <h1>📈 Historique des Présences</h1>
+                <div class="user-info">
+                    <span>👤 {{ user.get_full_name }}</span>
+                </div>
+            </header>
+
+            <!-- Period Tabs -->
+            <div class="period-tabs">
+                <button class="tab-btn {% if periode == 'jour' %}active{% endif %}" onclick="location.href='?periode=jour'">
+                    📅 Aujourd'hui
+                </button>
+                <button class="tab-btn {% if periode == 'semaine' or not periode %}active{% endif %}" onclick="location.href='?periode=semaine'">
+                    📆 Cette Semaine
+                </button>
+                <button class="tab-btn {% if periode == 'mois' %}active{% endif %}" onclick="location.href='?periode=mois'">
+                    📊 Ce Mois
+                </button>
+                <button class="tab-btn {% if periode == 'annee' %}active{% endif %}" onclick="location.href='?periode=annee'">
+                    📈 Cette Année
+                </button>
+            </div>
+
+            <!-- Statistics -->
+            <div class="stats-row">
+                <div class="stat-box">
+                    <div class="stat-box-value" style="color: #059669;">{{ stats.presents }}</div>
+                    <div class="stat-box-label">✅ Présents</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-box-value" style="color: #DC2626;">{{ stats.absents }}</div>
+                    <div class="stat-box-label">❌ Absents</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-box-value" style="color: #F59E0B;">{{ stats.retards }}</div>
+                    <div class="stat-box-label">⏰ Retards</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-box-value" style="color: #3B82F6;">{{ stats.taux_presence }}%</div>
+                    <div class="stat-box-label">📊 Taux de Présence</div>
+                </div>
+            </div>
+
+            <!-- Filter Bar -->
+            <div class="filter-bar">
+                <form method="get" id="filterForm">
+                    <input type="hidden" name="periode" value="{{ periode|default:'semaine' }}">
+                    <div class="filter-bar-content">
+                        <label style="font-weight: 600; color: #1F2937;">Filtrer par:</label>
+                        <select name="employe" onchange="document.getElementById('filterForm').submit()">
+                            <option value="">Tous les employés</option>
+                            {% for emp in employes_list %}
+                                <option value="{{ emp.id }}" {% if employe_filtre == emp.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ emp.get_full_name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <select name="departement" onchange="document.getElementById('filterForm').submit()">
+                            <option value="">Tous les départements</option>
+                            {% for dept_code, dept_name in departements %}
+                                <option value="{{ dept_code }}" {% if departement_filtre == dept_code %}selected{% endif %}>
+                                    {{ dept_name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <input type="date" name="date_debut" value="{{ date_debut }}" onchange="document.getElementById('filterForm').submit()">
+                        <span>→</span>
+                        <input type="date" name="date_fin" value="{{ date_fin }}" onchange="document.getElementById('filterForm').submit()">
+                        <button type="submit" style="padding: 10px 20px; background: linear-gradient(135deg, #2563EB, #1E40AF); color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">
+                            🔍 Rechercher
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Presence Table -->
+            <div class="presence-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Employé</th>
+                            <th>Département</th>
+                            <th>Date</th>
+                            <th>Heure Arrivée</th>
+                            <th>Heure Départ</th>
+                            <th>Temps Travaillé</th>
+                            <th>Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for presence in presences %}
+                        <tr>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <div class="employee-avatar-small {% if not presence.employe.photo %}default{% endif %}">
+                                        {% if presence.employe.photo %}
+                                            <img src="{{ presence.employe.photo.url }}" alt="{{ presence.employe.get_full_name }}" class="employee-avatar-small">
+                                        {% else %}
+                                            {{ presence.employe.first_name.0|upper }}{{ presence.employe.last_name.0|upper }}
+                                        {% endif %}
+                                    </div>
+                                    <div>
+                                        <div style="font-weight: 500;">{{ presence.employe.get_full_name }}</div>
+                                        <div style="font-size: 0.85em; color: #6B7280;">{{ presence.employe.employee_id }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ presence.employe.get_departement_display }}</td>
+                            <td>{{ presence.date|date:"d/m/Y" }}</td>
+                            <td>
+                                {% if presence.heure_arrivee %}
+                                    <span class="time-badge">{{ presence.heure_arrivee|time:"H:i" }}</span>
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if presence.heure_depart %}
+                                    <span class="time-badge">{{ presence.heure_depart|time:"H:i" }}</span>
+                                {% else %}
+                                    <span style="color: #6B7280; font-size: 0.85em;">En cours...</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if presence.temps_travaille_total %}
+                                    <strong>{{ presence.temps_travaille_total }}</strong> heures
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if presence.statut == 'PRESENT' %}
+                                    <span class="badge-present">✅ Présent</span>
+                                {% elif presence.statut == 'RETARD' %}
+                                    <span class="badge-retard">⏰ Retard</span>
+                                {% elif presence.statut == 'ABSENT' %}
+                                    <span class="badge-absent">❌ Absent</span>
+                                {% elif presence.statut == 'CONGE' %}
+                                    <span class="badge-conge">🏖️ Congé</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" style="text-align: center; padding: 40px; color: #6B7280;">
+                                Aucune présence enregistrée pour cette période
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Calendar View (for month view) -->
+            {% if periode == 'mois' %}
+            <div class="calendar-view">
+                <div class="calendar-header">
+                    <h3>📅 Vue Calendrier - {{ mois_nom }} {{ annee }}</h3>
+                    <div class="calendar-nav">
+                        <button onclick="location.href='?periode=mois&mois={{ mois_precedent }}'">⬅ Mois Précédent</button>
+                        <button onclick="location.href='?periode=mois&mois={{ mois_actuel }}'">Aujourd'hui</button>
+                        <button onclick="location.href='?periode=mois&mois={{ mois_suivant }}'">Mois Suivant ➡</button>
+                    </div>
+                </div>
+                <div class="calendar-grid">
+                    <div class="calendar-day calendar-day-header">Lun</div>
+                    <div class="calendar-day calendar-day-header">Mar</div>
+                    <div class="calendar-day calendar-day-header">Mer</div>
+                    <div class="calendar-day calendar-day-header">Jeu</div>
+                    <div class="calendar-day calendar-day-header">Ven</div>
+                    <div class="calendar-day calendar-day-header">Sam</div>
+                    <div class="calendar-day calendar-day-header">Dim</div>
+                    
+                    {% for jour in calendrier %}
+                    <div class="calendar-day {{ jour.statut }}">
+                        <div style="font-weight: 600; margin-bottom: 5px;">{{ jour.numero }}</div>
+                        {% if jour.presents %}
+                            <div style="font-size: 0.75em; color: #059669;">{{ jour.presents }} ✓</div>
+                        {% endif %}
+                        {% if jour.absents %}
+                            <div style="font-size: 0.75em; color: #DC2626;">{{ jour.absents }} ✗</div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Export Button -->
+            <div style="margin-top: 30px; text-align: right;">
+                <button onclick="window.print()" style="padding: 12px 24px; background: #059669; color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                    📄 Exporter en PDF
+                </button>
+                <a href="?export=excel&periode={{ periode }}" style="display: inline-block; padding: 12px 24px; background: #059669; color: white; border-radius: 8px; text-decoration: none; font-weight: 600; margin-left: 10px;">
+                    📊 Exporter en Excel
+                </a>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Mise à jour automatique toutes les 60 secondes pour la vue "Aujourd'hui"
+        {% if periode == 'jour' %}
+        setInterval(function() {
+            location.reload();
+        }, 60000);
+        {% endif %}
+    </script>
+</body>
+</html>

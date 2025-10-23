@@ -1,0 +1,107 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liste des Commandes Fournisseurs</title>
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">🛒</div>
+                <h2>SuperMarché Plus</h2>
+                <p>Module Gestion Stock</p>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="{% url 'dashboard_stock' %}" class="nav-item">📊 Tableau de Bord</a>
+                <a href="{% url 'stock_add_product' %}" class="nav-item">📦 Nouveau Produit</a>
+                <a href="{% url 'stock_fournisseurs_list' %}" class="nav-item">🏭 Fournisseurs</a>
+                <a href="{% url 'stock_commandes_list' %}" class="nav-item active">🧾 Commandes</a>
+                <a href="{% url 'logout' %}" class="nav-item logout">🚪 Déconnexion</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <header class="content-header">
+                <h1>Commandes Fournisseurs</h1>
+                <div class="user-info">👤 {{ user.get_full_name }}</div>
+            </header>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:20px;">
+                <a href="{% url 'stock_commande_create' %}" class="btn btn-primary">➕ Nouvelle Commande</a>
+                <form method="get" style="display:flex; gap:8px; align-items:center;">
+                    <input type="text" name="search" placeholder="N° commande ou fournisseur" value="{{ search }}" />
+                    <select name="statut">
+                        <option value="">Tous statuts</option>
+                        <option value="EN_ATTENTE" {% if statut=='EN_ATTENTE' %}selected{% endif %}>En attente</option>
+                        <option value="VALIDEE" {% if statut=='VALIDEE' %}selected{% endif %}>Validée</option>
+                        <option value="LIVREE" {% if statut=='LIVREE' %}selected{% endif %}>Livrée</option>
+                        <option value="ANNULEE" {% if statut=='ANNULEE' %}selected{% endif %}>Annulée</option>
+                    </select>
+                    <select name="fournisseur">
+                        <option value="">Tous fournisseurs</option>
+                        {% for f in fournisseurs %}
+                            <option value="{{ f.id }}" {% if fournisseur_id|add:'' == f.id|add:'' %}selected{% endif %}>{{ f.nom }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="btn">Filtrer</button>
+                </form>
+            </div>
+
+            <div class="stats-grid" style="margin-bottom:20px;">
+                <div class="stat-card">Total: <strong>{{ total_commandes }}</strong></div>
+                <div class="stat-card">En attente: <strong>{{ commandes_en_attente }}</strong></div>
+                <div class="stat-card">Validées: <strong>{{ commandes_validees }}</strong></div>
+                <div class="stat-card">Livrées: <strong>{{ commandes_livrees }}</strong></div>
+                <div class="stat-card">Montant total: <strong>{{ montant_total|floatformat:0 }} FCFA</strong></div>
+            </div>
+
+            {% if commandes %}
+                <table style="width:100%; border-collapse:collapse; background:white; border-radius:8px; overflow:hidden;">
+                    <thead style="background:#F3F4F6;">
+                        <tr>
+                            <th style="padding:12px; text-align:left;">N° Commande</th>
+                            <th style="padding:12px; text-align:left;">Fournisseur</th>
+                            <th style="padding:12px; text-align:left;">Date</th>
+                            <th style="padding:12px; text-align:center;">Statut</th>
+                            <th style="padding:12px; text-align:right;">Montant</th>
+                            <th style="padding:12px; text-align:center;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in commandes %}
+                            <tr style="border-bottom:1px solid #E5E7EB;">
+                                <td style="padding:12px; font-weight:600;">{{ c.numero_commande }}</td>
+                                <td style="padding:12px;">{{ c.fournisseur.nom }}</td>
+                                <td style="padding:12px;">{{ c.date_commande|date:'d/m/Y' }}</td>
+                                <td style="padding:12px; text-align:center;">{{ c.statut }}</td>
+                                <td style="padding:12px; text-align:right; font-weight:600; color:#10B981;">{{ c.montant_total|floatformat:0 }} FCFA</td>
+                                <td style="padding:12px; text-align:center;">
+                                    <a href="{% url 'stock_commande_detail' c.id %}" class="btn">Voir</a>
+                                    {% if c.statut == 'EN_ATTENTE' %}
+                                        <a href="{% url 'stock_commande_valider' c.id %}" class="btn btn-warning">Valider</a>
+                                        <a href="{% url 'stock_commande_annuler' c.id %}" class="btn btn-danger">Annuler</a>
+                                    {% elif c.statut == 'VALIDEE' %}
+                                        <a href="{% url 'stock_commande_recevoir' c.id %}" class="btn btn-primary">Recevoir</a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div style="background:white; padding:30px; border-radius:8px; text-align:center;">Aucune commande trouvée.</div>
+            {% endif %}
+        </main>
+    </div>
+</body>
+</html>

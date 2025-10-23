@@ -1,0 +1,391 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Caisse - Scénario 8.1.2{% endblock %}
+
+{% block content %}
+<div class="caisse-container">
+    <div class="caisse-header">
+        <div class="caisse-info">
+            <h1>🛒 CAISSE {{ caisse_numero }}</h1>
+            <p>Caissier: {% if request.user.employe %}{{ request.user.employe.nom }} {{ request.user.employe.prenom }}{% else %}{{ request.user.username }}{% endif %}</p>
+        </div>
+        <div class="caisse-actions">
+            <a href="{% url 'caisse_rapport_journalier' %}" class="btn btn-info">
+                📊 Rapport du Jour
+            </a>
+            <a href="{% url 'dashboard' %}" class="btn btn-secondary">
+                ⬅️ Retour Dashboard
+            </a>
+        </div>
+    </div>
+
+    <div class="caisse-main">
+        <!-- Section gauche: Scanner & Client -->
+        <div class="caisse-left">
+            <!-- Scanner produit -->
+            <div class="card mb-3">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">🔍 Ajouter Produit</h5>
+                </div>
+                <div class="card-body">
+                    <form id="ajouterProduitForm" method="POST" action="{% url 'caisse_ajouter_produit' %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="produit_id" class="form-label">Produit:</label>
+                            <select name="produit_id" id="produit_id" class="form-control" required>
+                                <option value="">-- Sélectionner un produit --</option>
+                                {% for p in produits %}
+                                <option value="{{ p.id }}" data-prix="{{ p.prix_unitaire }}" data-stock="{{ p.stock_disponible }}">
+                                    {{ p.nom }} ({{ p.prix_unitaire|floatformat:0 }} FCFA) - Stock: {{ p.stock_disponible }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="quantite" class="form-label">Quantité:</label>
+                            <input type="number" name="quantite" id="quantite" class="form-control" value="1" min="1" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            ➕ Ajouter au Panier
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Identification client -->
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">👤 Client Fidélité</h5>
+                </div>
+                <div class="card-body">
+                    {% if client %}
+                        <div class="alert alert-success">
+                            <h6><strong>{{ client.nom }} {{ client.prenom }}</strong></h6>
+                            <p class="mb-1">Niveau: <span class="badge bg-warning text-dark">{{ client.niveau_fidelite }}</span></p>
+                            <p class="mb-1">Points: <strong>{{ client.points_fidelite }}</strong></p>
+                            <p class="mb-0">Remise: <strong>{{ pourcentage_fidelite }}%</strong></p>
+                            <a href="{% url 'caisse_vider_panier' %}" class="btn btn-sm btn-danger mt-2">
+                                ❌ Retirer Client
+                            </a>
+                        </div>
+                    {% else %}
+                        <form method="POST" action="{% url 'caisse_identifier_client' %}" id="identifierClientForm">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="telephone" class="form-label">Téléphone client:</label>
+                                <input type="tel" name="telephone" id="telephone" class="form-control" placeholder="Ex: 0701234567">
+                            </div>
+                            <button type="submit" class="btn btn-success w-100">
+                                🔍 Identifier Client
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- ✅ NOUVEAU : Affichage des coupons disponibles -->
+            {% if coupons_disponibles %}
+            <div class="card mt-3">
+                <div class="card-header bg-warning text-dark">
+                    <h6 class="mb-0">🎫 Coupons Disponibles</h6>
+                </div>
+                <div class="card-body p-2">
+                    {% for item in coupons_disponibles %}
+                    <div class="alert alert-{% if item.est_applique %}success{% else %}info{% endif %} mb-2 p-2">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <strong>{{ item.coupon.code }}</strong>
+                                {% if item.est_applique %}
+                                <span class="badge bg-success ms-1">✓ APPLIQUÉ</span>
+                                {% endif %}
+                                <br>
+                                <small>{{ item.coupon.description }}</small>
+                                <br>
+                                <small class="text-muted">
+                                    {% if item.coupon.type_remise == 'POURCENTAGE' %}
+                                    -{{ item.coupon.valeur }}%
+                                    {% else %}
+                                    -{{ item.coupon.valeur|floatformat:0 }} FCFA
+                                    {% endif %}
+                                </small>
+                            </div>
+                            <div class="text-end">
+                                <strong class="text-success">-{{ item.remise|floatformat:0 }} FCFA</strong>
+                                {% if not item.est_applique and item.coupon.type_coupon == 'SPECIAL' %}
+                                <br>
+                                <small class="badge bg-info">Personnel</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Section centrale: Panier -->
+        <div class="caisse-center">{
+            <div class="card">
+                <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">🛍️ PANIER ({{ nb_articles }} article{{ nb_articles|pluralize }})</h5>
+                    {% if panier %}
+                    <a href="{% url 'caisse_vider_panier' %}" class="btn btn-sm btn-danger" 
+                       onclick="return confirm('Vider tout le panier?')">
+                        🗑️ Vider
+                    </a>
+                    {% endif %}
+                </div>
+                <div class="card-body panier-liste">
+                    {% if panier %}
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>PRODUIT</th>
+                                    <th class="text-center">QTÉ</th>
+                                    <th class="text-end">PRIX UNIT.</th>
+                                    <th class="text-end">TOTAL</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in panier %}
+                                <tr>
+                                    <td><strong>{{ item.nom }}</strong></td>
+                                    <td class="text-center">{{ item.quantite }}</td>
+                                    <td class="text-end">{{ item.prix_unitaire|floatformat:0 }} FCFA</td>
+                                    <td class="text-end"><strong>{{ item.montant_ligne|floatformat:0 }} FCFA</strong></td>
+                                    <td>
+                                        <a href="{% url 'caisse_retirer_produit' item.produit_id %}" 
+                                           class="btn btn-sm btn-danger"
+                                           onclick="return confirm('Retirer cet article?')">
+                                            ❌
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <div class="text-center text-muted py-5">
+                            <i class="fas fa-shopping-cart fa-3x mb-3"></i>
+                            <p>Panier vide</p>
+                            <p class="small">Scannez des produits pour commencer</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Section droite: Totaux & Paiement -->
+        <div class="caisse-right">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">💰 TOTAUX</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless totaux-table">
+                        <tr>
+                            <td>Sous-total:</td>
+                            <td class="text-end"><strong>{{ sous_total|floatformat:0 }} FCFA</strong></td>
+                        </tr>
+                        {% if remise_fidelite > 0 %}
+                        <tr class="text-success">
+                            <td>Remise Client ({{ pourcentage_fidelite }}%):</td>
+                            <td class="text-end">-{{ remise_fidelite|floatformat:0 }} FCFA</td>
+                        </tr>
+                        {% endif %}
+                        {% if remise_promotionnelle > 0 %}
+                        <tr class="text-success">
+                            <td>Remise Promo (5%):</td>
+                            <td class="text-end">-{{ remise_promotionnelle|floatformat:0 }} FCFA</td>
+                        </tr>
+                        {% endif %}
+                        
+                        <!-- ✅ NOUVEAU : Affichage des coupons -->
+                        {% if remise_coupon > 0 %}
+                        <tr class="text-warning fw-bold">
+                            <td>
+                                🎫 Coupon: {{ coupon_applique.code }}
+                                <br><small class="text-muted">{{ coupon_applique.description }}</small>
+                            </td>
+                            <td class="text-end">-{{ remise_coupon|floatformat:0 }} FCFA</td>
+                        </tr>
+                        {% endif %}
+                        
+                        {% if total_remises > 0 %}
+                        <tr class="table-success">
+                            <td><strong>Total Remises:</strong></td>
+                            <td class="text-end"><strong>-{{ total_remises|floatformat:0 }} FCFA</strong></td>
+                        </tr>
+                        {% endif %}
+                        <tr>
+                            <td>TVA (18%):</td>
+                            <td class="text-end">{{ tva|floatformat:0 }} FCFA</td>
+                        </tr>
+                        <tr class="table-primary">
+                            <td><h5 class="mb-0">MONTANT FINAL:</h5></td>
+                            <td class="text-end"><h5 class="mb-0 text-primary">{{ montant_final|floatformat:0 }} FCFA</h5></td>
+                        </tr>
+                    </table>
+
+                    {% if client and montant_final > 0 %}
+                    <div class="alert alert-info mt-3">
+                        <small>🎁 Points à gagner: <strong>+{{ points_a_gagner }} pts</strong></small>
+                    </div>
+                    {% endif %}
+
+                    {% if remise_promotionnelle == 0 and sous_total > 0 and sous_total < 40000 %}
+                    <div class="alert alert-warning mt-3">
+                        <small>💡 Plus que {{ 40000|floatformat:0|add:"-"|add:sous_total|floatformat:0 }} FCFA pour une remise de 5%!</small>
+                    </div>
+                    {% endif %}
+
+                    {% if panier %}
+                    <hr>
+                    <form method="POST" action="{% url 'caisse_valider_vente' %}" onsubmit="return confirm('Valider cette vente?')">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label"><strong>Moyen de paiement:</strong></label>
+                            <div class="d-grid gap-2">
+                                <button type="submit" name="moyen_paiement" value="ESPECES" class="btn btn-lg btn-success">
+                                    💰 ESPÈCES
+                                </button>
+                                <button type="submit" name="moyen_paiement" value="CARTE" class="btn btn-lg btn-primary">
+                                    💳 CARTE BANCAIRE
+                                </button>
+                                <button type="submit" name="moyen_paiement" value="MOBILE" class="btn btn-lg btn-warning">
+                                    📱 MOBILE MONEY
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.caisse-container {
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+.caisse-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: white;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.caisse-header h1 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.caisse-header p {
+    margin: 0;
+    color: #666;
+}
+
+.caisse-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.caisse-main {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+    gap: 1rem;
+}
+
+.panier-liste {
+    max-height: 500px;
+    overflow-y: auto;
+}
+
+.totaux-table td {
+    padding: 0.5rem 0;
+}
+
+.totaux-table tr:last-child td {
+    padding-top: 1rem;
+    border-top: 2px solid #dee2e6;
+}
+
+@media (max-width: 1200px) {
+    .caisse-main {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+
+<script>
+// Auto-focus sur le sélecteur de produit
+document.getElementById('produit_id').focus();
+
+// AJAX pour identifier client
+document.getElementById('identifierClientForm')?.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    
+    fetch('{% url "caisse_identifier_client" %}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert(data.error || 'Client non trouvé');
+        }
+    });
+});
+
+// AJAX pour ajouter produit
+document.getElementById('ajouterProduitForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const produitId = formData.get('produit_id');
+    
+    fetch('{% url "caisse_ajouter_produit" %}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Mettre à jour l'affichage du stock dans le select
+            const selectProduit = document.getElementById('produit_id');
+            const option = selectProduit.querySelector(`option[value="${data.produit_id}"]`);
+            if (option) {
+                const nomProduit = option.textContent.split('(')[0].trim();
+                const prix = option.getAttribute('data-prix');
+                option.textContent = `${nomProduit} (${parseFloat(prix).toFixed(0)} FCFA) - Stock: ${data.stock_disponible}`;
+                option.setAttribute('data-stock', data.stock_disponible);
+            }
+            
+            // Recharger la page pour mettre à jour le panier
+            location.reload();
+        } else {
+            alert(data.error || 'Erreur lors de l\'ajout');
+        }
+    });
+});
+</script>
+{% endblock %}

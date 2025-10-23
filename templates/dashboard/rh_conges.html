@@ -30,7 +30,12 @@
         <main class="main-content">
             <header class="content-header">
                 <h1>Gestion des Congés</h1>
-                <div class="user-info"><span>👤 {{ user.get_full_name }}</span></div>
+                <div class="user-info">
+                    <a href="{% url 'rh_conges_calendar' %}" style="background: linear-gradient(135deg, #8B5CF6, #7C3AED); color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none; margin-right: 15px; font-size: 0.9em;">
+                        📅 Calendrier
+                    </a>
+                    <span>👤 {{ user.get_full_name }}</span>
+                </div>
             </header>
 
             {% if messages %}

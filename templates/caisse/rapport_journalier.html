@@ -1,0 +1,252 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Rapport Journalier - {{ date }}{% endblock %}
+
+{% block content %}
+<div class="rapport-container">
+    <div class="page-header">
+        <div>
+            <h1>📊 RAPPORT VENTES JOURNALIER</h1>
+            <p>{{ date|date:"l d F Y" }}</p>
+        </div>
+        <div>
+            <a href="{% url 'caisse_vente' %}" class="btn btn-primary">
+                ⬅️ Retour Caisse
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtrer par date -->
+    <div class="card mb-3">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-4">
+                    <label for="date" class="form-label">Sélectionner une date:</label>
+                    <input type="date" name="date" id="date" class="form-control" 
+                           value="{{ date|date:'Y-m-d' }}">
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">Afficher</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- KPIs principaux -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card kpi-card bg-primary text-white">
+                <div class="card-body text-center">
+                    <h2 class="mb-0">{{ ca_total|floatformat:0 }}</h2>
+                    <p class="mb-0">💰 CA TOTAL (FCFA)</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card kpi-card bg-success text-white">
+                <div class="card-body text-center">
+                    <h2 class="mb-0">{{ nb_transactions }}</h2>
+                    <p class="mb-0">🛒 TRANSACTIONS</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card kpi-card bg-info text-white">
+                <div class="card-body text-center">
+                    <h2 class="mb-0">{{ panier_moyen|floatformat:0 }}</h2>
+                    <p class="mb-0">📊 PANIER MOYEN (FCFA)</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card kpi-card bg-danger text-white">
+                <div class="card-body text-center">
+                    <h2 class="mb-0">{{ remises_total|floatformat:0 }}</h2>
+                    <p class="mb-0">💸 REMISES TOTALES (FCFA)</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <!-- Top produits -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">🏆 TOP 10 PRODUITS VENDUS</h5>
+                </div>
+                <div class="card-body">
+                    {% if top_produits %}
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>PRODUIT</th>
+                                    <th class="text-center">QUANTITÉ</th>
+                                    <th class="text-end">CA (FCFA)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for produit in top_produits %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td><strong>{{ produit.produit__nom }}</strong></td>
+                                    <td class="text-center">× {{ produit.quantite_totale }}</td>
+                                    <td class="text-end">{{ produit.ca|floatformat:0 }} FCFA</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <p class="text-center text-muted py-4">Aucune vente pour cette date</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Moyens de paiement -->
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">💳 MOYENS DE PAIEMENT</h5>
+                </div>
+                <div class="card-body">
+                    {% if moyens_paiement %}
+                        {% for moyen in moyens_paiement %}
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span>
+                                    {% if 'Espèces' in moyen.type_paiement__nom or 'ESPECES' in moyen.type_paiement__nom %}💰 {{ moyen.type_paiement__nom }}
+                                    {% elif 'Carte' in moyen.type_paiement__nom or 'CARTE' in moyen.type_paiement__nom %}💳 {{ moyen.type_paiement__nom }}
+                                    {% elif 'Mobile' in moyen.type_paiement__nom or 'MTN' in moyen.type_paiement__nom or 'Moov' in moyen.type_paiement__nom or 'Orange' in moyen.type_paiement__nom %}📱 {{ moyen.type_paiement__nom }}
+                                    {% else %}� {{ moyen.type_paiement__nom }}
+                                    {% endif %}
+                                </span>
+                                <strong>{{ moyen.total|floatformat:0 }} FCFA</strong>
+                            </div>
+                            <div class="progress" style="height: 25px;">
+                                {% widthratio moyen.total ca_total 100 as pourcentage %}
+                                <div class="progress-bar {% if 'Espèces' in moyen.type_paiement__nom %}bg-success{% elif 'Carte' in moyen.type_paiement__nom %}bg-primary{% else %}bg-warning{% endif %}" 
+                                     style="width: {{ pourcentage }}%">
+                                    {{ pourcentage }}% ({{ moyen.nb }} transaction{{ moyen.nb|pluralize }})
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-center text-muted py-4">Aucune transaction</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- CA par caissier -->
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">👥 PERFORMANCE CAISSIERS</h5>
+                </div>
+                <div class="card-body">
+                    {% if ca_par_caissier %}
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>CAISSIER</th>
+                                    <th class="text-center">VENTES</th>
+                                    <th class="text-end">CA (FCFA)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for caissier in ca_par_caissier %}
+                                <tr>
+                                    <td>
+                                        {% if caissier.caissier__nom %}
+                                            {{ caissier.caissier__nom }} {{ caissier.caissier__prenom }}
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">{{ caissier.nb_ventes }}</td>
+                                    <td class="text-end"><strong>{{ caissier.ca|floatformat:0 }} FCFA</strong></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <p class="text-center text-muted py-4">Aucun caissier</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="card mt-4">
+        <div class="card-body text-center">
+            <button onclick="window.print()" class="btn btn-primary btn-lg">
+                🖨️ Imprimer le Rapport
+            </button>
+            <button onclick="exporterExcel()" class="btn btn-success btn-lg">
+                📊 Exporter Excel
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+.rapport-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.page-header h1 {
+    margin: 0;
+    font-size: 2rem;
+}
+
+.page-header p {
+    margin: 0;
+    color: #666;
+    font-size: 1.1rem;
+}
+
+.kpi-card {
+    border: none;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.kpi-card h2 {
+    font-size: 2.5rem;
+    font-weight: bold;
+}
+
+.kpi-card p {
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+@media print {
+    .btn, .card-header form {
+        display: none !important;
+    }
+    
+    .rapport-container {
+        padding: 0;
+    }
+}
+</style>
+
+<script>
+function exporterExcel() {
+    alert('Fonctionnalité d\'export Excel à implémenter');
+    // TODO: Implémenter export Excel
+}
+</script>
+{% endblock %}

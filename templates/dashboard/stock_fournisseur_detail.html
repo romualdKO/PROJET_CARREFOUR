@@ -1,0 +1,266 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ fournisseur.nom }} - Stock</title>
+    <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">🛒</div>
+                <h2>SuperMarché Plus</h2>
+                <p>Module Gestion Stock</p>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="{% url 'dashboard_stock' %}" class="nav-item">
+                    <span class="icon">📊</span>
+                    <span>Tableau de Bord</span>
+                </a>
+                <a href="{% url 'stock_add_product' %}" class="nav-item">
+                    <span class="icon">📦</span>
+                    <span>Nouveau Produit</span>
+                </a>
+                <a href="{% url 'stock_fournisseurs_list' %}" class="nav-item active">
+                    <span class="icon">🏭</span>
+                    <span>Fournisseurs</span>
+                </a>
+                <a href="{% url 'logout' %}" class="nav-item logout">
+                    <span class="icon">🚪</span>
+                    <span>Déconnexion</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="content-header">
+                <h1>{{ fournisseur.nom }}</h1>
+                <div class="user-info">
+                    <span>👤 {{ user.get_full_name }}</span>
+                </div>
+            </header>
+
+            <!-- Messages -->
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <!-- Actions -->
+            <div style="display: flex; gap: 15px; margin-bottom: 30px;">
+                <a href="{% url 'stock_fournisseurs_list' %}" 
+                   style="display: inline-block; background: #E5E7EB; color: #374151; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+                    ← Retour à la liste
+                </a>
+                <a href="{% url 'stock_fournisseur_edit' fournisseur.id %}" 
+                   style="display: inline-block; background: linear-gradient(135deg, #F59E0B, #D97706); color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+                    ✏️ Modifier
+                </a>
+                <a href="{% url 'stock_fournisseur_delete' fournisseur.id %}" 
+                   style="display: inline-block; background: linear-gradient(135deg, #EF4444, #DC2626); color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600;">
+                    🗑️ Supprimer
+                </a>
+            </div>
+
+            <!-- Statistiques -->
+            <div class="stats-grid" style="margin-bottom: 30px;">
+                <div class="stat-card">
+                    <div class="stat-icon">📦</div>
+                    <div class="stat-content">
+                        <div class="stat-value">{{ total_produits }}</div>
+                        <div class="stat-label">Produits Fournis</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📋</div>
+                    <div class="stat-content">
+                        <div class="stat-value">{{ total_commandes }}</div>
+                        <div class="stat-label">Commandes Passées</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">💰</div>
+                    <div class="stat-content">
+                        <div class="stat-value">{{ montant_total|floatformat:0 }} FCFA</div>
+                        <div class="stat-label">Montant Total Commandé</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🚚</div>
+                    <div class="stat-content">
+                        <div class="stat-value">{{ fournisseur.delai_livraison_moyen }}</div>
+                        <div class="stat-label">Délai Livraison (jours)</div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                <!-- Informations du fournisseur -->
+                <div style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <h3 style="color: #374151; margin-bottom: 20px; border-bottom: 2px solid #E5E7EB; padding-bottom: 10px;">
+                        📝 Informations Générales
+                    </h3>
+
+                    <div style="display: flex; flex-direction: column; gap: 15px;">
+                        <div>
+                            <label style="font-weight: 600; color: #6B7280; font-size: 13px; display: block; margin-bottom: 5px;">NOM</label>
+                            <p style="color: #111827; font-weight: 600; font-size: 16px;">{{ fournisseur.nom }}</p>
+                        </div>
+
+                        <div>
+                            <label style="font-weight: 600; color: #6B7280; font-size: 13px; display: block; margin-bottom: 5px;">PERSONNE DE CONTACT</label>
+                            <p style="color: #111827;">{{ fournisseur.contact }}</p>
+                        </div>
+
+                        <div>
+                            <label style="font-weight: 600; color: #6B7280; font-size: 13px; display: block; margin-bottom: 5px;">TÉLÉPHONE</label>
+                            <p style="color: #111827;">{{ fournisseur.telephone|default:"Non renseigné" }}</p>
+                        </div>
+
+                        <div>
+                            <label style="font-weight: 600; color: #6B7280; font-size: 13px; display: block; margin-bottom: 5px;">EMAIL</label>
+                            <p style="color: #111827;">{{ fournisseur.email|default:"Non renseigné" }}</p>
+                        </div>
+
+                        <div>
+                            <label style="font-weight: 600; color: #6B7280; font-size: 13px; display: block; margin-bottom: 5px;">ADRESSE</label>
+                            <p style="color: #111827;">{{ fournisseur.adresse|default:"Non renseignée" }}</p>
+                        </div>
+
+                        <div>
+                            <label style="font-weight: 600; color: #6B7280; font-size: 13px; display: block; margin-bottom: 5px;">STATUT</label>
+                            <p>
+                                {% if fournisseur.est_actif %}
+                                    <span style="background: #D1FAE5; color: #065F46; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;">
+                                        ✅ Actif
+                                    </span>
+                                {% else %}
+                                    <span style="background: #FEE2E2; color: #991B1B; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;">
+                                        ❌ Inactif
+                                    </span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Conditions commerciales -->
+                <div style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                    <h3 style="color: #374151; margin-bottom: 20px; border-bottom: 2px solid #E5E7EB; padding-bottom: 10px;">
+                        💼 Conditions Commerciales
+                    </h3>
+
+                    <div style="display: flex; flex-direction: column; gap: 15px;">
+                        <div>
+                            <label style="font-weight: 600; color: #6B7280; font-size: 13px; display: block; margin-bottom: 5px;">DÉLAI DE LIVRAISON MOYEN</label>
+                            <p style="color: #111827;">
+                                <span style="background: #DBEAFE; color: #1E40AF; padding: 6px 12px; border-radius: 20px; font-size: 14px; font-weight: 600;">
+                                    {{ fournisseur.delai_livraison_moyen }} jours
+                                </span>
+                            </p>
+                        </div>
+
+                        <div>
+                            <label style="font-weight: 600; color: #6B7280; font-size: 13px; display: block; margin-bottom: 5px;">CONDITIONS DE PAIEMENT</label>
+                            <p style="color: #111827; background: #F9FAFB; padding: 12px; border-radius: 8px; border-left: 3px solid #6366F1;">
+                                {{ fournisseur.conditions_paiement|default:"Non renseignées" }}
+                            </p>
+                        </div>
+
+                        <div>
+                            <label style="font-weight: 600; color: #6B7280; font-size: 13px; display: block; margin-bottom: 5px;">DATE DE CRÉATION</label>
+                            <p style="color: #111827;">{{ fournisseur.date_creation|date:"d/m/Y à H:i" }}</p>
+                        </div>
+
+                        <div>
+                            <label style="font-weight: 600; color: #6B7280; font-size: 13px; display: block; margin-bottom: 5px;">DERNIÈRE MODIFICATION</label>
+                            <p style="color: #111827;">{{ fournisseur.date_modification|date:"d/m/Y à H:i" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Produits fournis -->
+            <div style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-top: 30px;">
+                <h3 style="color: #374151; margin-bottom: 20px; border-bottom: 2px solid #E5E7EB; padding-bottom: 10px;">
+                    📦 Produits Fournis ({{ produits.count }})
+                </h3>
+
+                {% if produits %}
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px;">
+                        {% for produit in produits %}
+                            <div style="background: #F9FAFB; border: 2px solid #E5E7EB; border-radius: 8px; padding: 15px;">
+                                <h4 style="color: #111827; font-size: 14px; font-weight: 600; margin-bottom: 8px;">{{ produit.nom }}</h4>
+                                <p style="color: #6B7280; font-size: 12px; margin-bottom: 8px;">{{ produit.categorie.nom }}</p>
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="color: #10B981; font-weight: 600;">{{ produit.prix_vente|floatformat:0 }} FCFA</span>
+                                    <span style="background: #DBEAFE; color: #1E40AF; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;">
+                                        Stock: {{ produit.stock_actuel }}
+                                    </span>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p style="text-align: center; color: #6B7280; padding: 30px;">
+                        Aucun produit associé à ce fournisseur
+                    </p>
+                {% endif %}
+            </div>
+
+            <!-- Dernières commandes -->
+            <div style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-top: 30px;">
+                <h3 style="color: #374151; margin-bottom: 20px; border-bottom: 2px solid #E5E7EB; padding-bottom: 10px;">
+                    📋 Dernières Commandes
+                </h3>
+
+                {% if commandes %}
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead style="background: #F9FAFB;">
+                            <tr>
+                                <th style="padding: 12px; text-align: left; color: #6B7280; font-weight: 600; font-size: 13px; border-bottom: 2px solid #E5E7EB;">N° COMMANDE</th>
+                                <th style="padding: 12px; text-align: left; color: #6B7280; font-weight: 600; font-size: 13px; border-bottom: 2px solid #E5E7EB;">DATE</th>
+                                <th style="padding: 12px; text-align: center; color: #6B7280; font-weight: 600; font-size: 13px; border-bottom: 2px solid #E5E7EB;">STATUT</th>
+                                <th style="padding: 12px; text-align: right; color: #6B7280; font-weight: 600; font-size: 13px; border-bottom: 2px solid #E5E7EB;">MONTANT</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for commande in commandes %}
+                                <tr style="border-bottom: 1px solid #E5E7EB;">
+                                    <td style="padding: 12px; font-weight: 600;">{{ commande.numero_commande }}</td>
+                                    <td style="padding: 12px;">{{ commande.date_commande|date:"d/m/Y" }}</td>
+                                    <td style="padding: 12px; text-align: center;">
+                                        {% if commande.statut == 'EN_ATTENTE' %}
+                                            <span style="background: #FEF3C7; color: #92400E; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;">⏳ En attente</span>
+                                        {% elif commande.statut == 'VALIDEE' %}
+                                            <span style="background: #DBEAFE; color: #1E40AF; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;">✅ Validée</span>
+                                        {% elif commande.statut == 'LIVREE' %}
+                                            <span style="background: #D1FAE5; color: #065F46; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;">✅ Livrée</span>
+                                        {% else %}
+                                            <span style="background: #FEE2E2; color: #991B1B; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;">❌ Annulée</span>
+                                        {% endif %}
+                                    </td>
+                                    <td style="padding: 12px; text-align: right; font-weight: 600; color: #10B981;">{{ commande.montant_total|floatformat:0 }} FCFA</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p style="text-align: center; color: #6B7280; padding: 30px;">
+                        Aucune commande passée avec ce fournisseur
+                    </p>
+                {% endif %}
+            </div>
+        </main>
+    </div>
+</body>
+</html>

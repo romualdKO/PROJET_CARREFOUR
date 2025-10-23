@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Changer mon Mot de Passe{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">🔒 Changer mon Mot de Passe</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="ancien_mot_de_passe" class="form-label">Ancien Mot de Passe *</label>
+                            <input type="password" name="ancien_mot_de_passe" id="ancien_mot_de_passe" 
+                                class="form-control" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="nouveau_mot_de_passe" class="form-label">Nouveau Mot de Passe *</label>
+                            <input type="password" name="nouveau_mot_de_passe" id="nouveau_mot_de_passe" 
+                                class="form-control" required minlength="6">
+                            <small class="text-muted">Minimum 6 caractères</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="confirmer_mot_de_passe" class="form-label">Confirmer le Nouveau Mot de Passe *</label>
+                            <input type="password" name="confirmer_mot_de_passe" id="confirmer_mot_de_passe" 
+                                class="form-control" required>
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <strong>⚠️ Attention :</strong>
+                            <ul class="mb-0">
+                                <li>Le mot de passe doit contenir au moins 6 caractères</li>
+                                <li>Choisissez un mot de passe sécurisé</li>
+                                <li>Ne partagez jamais votre mot de passe</li>
+                            </ul>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                ✅ Changer le Mot de Passe
+                            </button>
+                            <a href="{% url 'mon_planning' %}" class="btn btn-secondary">
+                                Annuler
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h6>💡 Conseils de sécurité</h6>
+                    <ul class="small text-muted mb-0">
+                        <li>Utilisez une combinaison de lettres, chiffres et symboles</li>
+                        <li>Ne réutilisez pas le même mot de passe que d'autres sites</li>
+                        <li>Changez régulièrement votre mot de passe</li>
+                        <li>En cas d'oubli, contactez le service RH pour réinitialisation</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Vérifier que les mots de passe correspondent
+document.querySelector('form').addEventListener('submit', function(e) {
+    const nouveau = document.getElementById('nouveau_mot_de_passe').value;
+    const confirmer = document.getElementById('confirmer_mot_de_passe').value;
+    
+    if (nouveau !== confirmer) {
+        e.preventDefault();
+        alert('❌ Les mots de passe ne correspondent pas !');
+        document.getElementById('confirmer_mot_de_passe').focus();
+    }
+});
+</script>
+{% endblock %}

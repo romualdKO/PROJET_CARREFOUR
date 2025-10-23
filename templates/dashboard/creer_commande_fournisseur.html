@@ -1,0 +1,401 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Créer Commande Fournisseur{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <div class="page-header">
+        <h1>➕ Nouvelle Commande Fournisseur</h1>
+        <p>Scénario 8.1.1 - Réapprovisionnement intelligent basé sur les alertes et l'historique</p>
+    </div>
+
+    <div style="display: flex; gap: 2rem;">
+        <!-- Colonne gauche: Produits critiques -->
+        <div style="flex: 1;">
+            <div class="card alert-card">
+                <div class="card-header alert-header">
+                    <h3>⚠️ Produits à Réapprovisionner ({{ produits_critiques|length }})</h3>
+                    <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; opacity: 0.9;">
+                        Recommandations automatiques basées sur les seuils critiques et l'historique des ventes
+                    </p>
+                </div>
+                <div class="card-body">
+                    {% if produits_critiques %}
+                        {% for item in produits_critiques %}
+                        <div class="product-alert" onclick="selectProduct('{{ item.produit.id }}', '{{ item.produit.nom }}', '{{ item.quantite_recommandee }}', '{{ item.fournisseur.id }}', '{{ item.fournisseur.nom }}')">
+                            <div class="alert-icon">
+                                {% if item.produit.stock_actuel <= item.produit.stock_minimum %}
+                                    🔴
+                                {% else %}
+                                    🟡
+                                {% endif %}
+                            </div>
+                            <div class="alert-content">
+                                <h4>{{ item.produit.nom }}</h4>
+                                <div class="alert-details">
+                                    <span class="stock-info">
+                                        Stock: <strong>{{ item.produit.stock_actuel }}</strong> / 
+                                        Seuil: <strong>{{ item.produit.seuil_reapprovisionnement }}</strong>
+                                    </span>
+                                    <span class="recommandation">
+                                        💡 Recommandé: <strong>{{ item.quantite_recommandee }} unités</strong>
+                                    </span>
+                                </div>
+                                {% if item.fournisseur %}
+                                <div class="fournisseur-info">
+                                    <span>📦 {{ item.fournisseur.nom }}</span>
+                                    <span class="delai">⏱️ Délai: {{ item.fournisseur.delai_livraison_moyen }} jours</span>
+                                </div>
+                                {% else %}
+                                <div class="text-danger">
+                                    ⚠️ Aucun fournisseur défini
+                                </div>
+                                {% endif %}
+                            </div>
+                            <div class="alert-action">
+                                <button type="button" class="btn-select">
+                                    Sélectionner →
+                                </button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center text-muted" style="padding: 2rem;">
+                            ✅ Tous les stocks sont au niveau optimal!
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Colonne droite: Formulaire -->
+        <div style="flex: 1;">
+            <div class="card">
+                <div class="card-header">
+                    <h3>📝 Détails de la Commande</h3>
+                </div>
+                <div class="card-body" style="padding: 2rem;">
+                    <form method="POST" id="commandeForm">
+                        {% csrf_token %}
+                        
+                        <div class="form-group">
+                            <label for="fournisseur">
+                                <strong>🏢 Fournisseur</strong>
+                                <span class="required">*</span>
+                            </label>
+                            <select name="fournisseur" id="fournisseur" class="form-control" required>
+                                <option value="">-- Sélectionner un fournisseur --</option>
+                                {% for f in fournisseurs %}
+                                <option value="{{ f.id }}" data-delai="{{ f.delai_livraison_moyen }}">
+                                    {{ f.nom }} (Délai: {{ f.delai_livraison_moyen }} jours)
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <small class="form-text" id="fournisseurInfo"></small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="produit">
+                                <strong>📦 Produit</strong>
+                                <span class="required">*</span>
+                            </label>
+                            <select name="produit" id="produit" class="form-control" required onchange="updateProduitInfo()">
+                                <option value="">-- Sélectionner un produit --</option>
+                                {% for p in produits %}
+                                <option value="{{ p.id }}" 
+                                        data-stock="{{ p.stock_actuel }}"
+                                        data-seuil="{{ p.seuil_reapprovisionnement }}"
+                                        data-prix="{{ p.prix_achat }}">
+                                    {{ p.nom }} (Stock: {{ p.stock_actuel }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div id="produitInfo" class="alert alert-info" style="display: none; margin-top: 1rem;"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="quantite">
+                                <strong>📊 Quantité</strong>
+                                <span class="required">*</span>
+                            </label>
+                            <input type="number" name="quantite" id="quantite" class="form-control" 
+                                   min="1" required oninput="calculerTotal()">
+                            <small class="form-text text-muted" id="quantiteInfo"></small>
+                        </div>
+
+                        <div class="total-card">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <div class="label">MONTANT ESTIMÉ</div>
+                                    <div id="montantTotal" class="montant">0 FCFA</div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div class="label">LIVRAISON PRÉVUE</div>
+                                    <div id="dateLivraison" class="date">-</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                            <button type="submit" class="btn btn-primary" style="flex: 1;">
+                                ✅ Créer la Commande
+                            </button>
+                            <a href="{% url 'commandes_fournisseurs' %}" class="btn btn-secondary">
+                                ❌ Annuler
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function selectProduct(produitId, produitNom, quantite, fournisseurId, fournisseurNom) {
+    // Sélectionner le fournisseur
+    document.getElementById('fournisseur').value = fournisseurId;
+    updateFournisseurInfo();
+    
+    // Sélectionner le produit
+    document.getElementById('produit').value = produitId;
+    updateProduitInfo();
+    
+    // Remplir la quantité recommandée
+    document.getElementById('quantite').value = quantite;
+    calculerTotal();
+    
+    // Scroll vers le formulaire
+    document.getElementById('commandeForm').scrollIntoView({ behavior: 'smooth' });
+}
+
+function updateFournisseurInfo() {
+    const select = document.getElementById('fournisseur');
+    const option = select.options[select.selectedIndex];
+    const delai = option.getAttribute('data-delai');
+    
+    if (delai) {
+        const date = new Date();
+        date.setDate(date.getDate() + parseInt(delai));
+        const dateStr = date.toLocaleDateString('fr-FR');
+        
+        document.getElementById('fournisseurInfo').innerHTML = 
+            `📅 Livraison estimée: <strong>${dateStr}</strong> (dans ${delai} jours)`;
+        document.getElementById('dateLivraison').textContent = dateStr;
+    }
+}
+
+function updateProduitInfo() {
+    const select = document.getElementById('produit');
+    const option = select.options[select.selectedIndex];
+    
+    if (select.value) {
+        const stock = option.getAttribute('data-stock');
+        const seuil = option.getAttribute('data-seuil');
+        const prix = parseFloat(option.getAttribute('data-prix'));
+        
+        let alertClass = 'alert-info';
+        let icon = 'ℹ️';
+        let message = `Stock actuel: <strong>${stock} unités</strong>. Seuil de réapprovisionnement: <strong>${seuil} unités</strong>.`;
+        
+        if (parseInt(stock) <= parseInt(seuil)) {
+            alertClass = 'alert-warning';
+            icon = '⚠️';
+            message = `${icon} <strong>ALERTE!</strong> Stock bas (${stock}/${seuil}). Réapprovisionnement recommandé.`;
+        }
+        
+        const produitInfo = document.getElementById('produitInfo');
+        produitInfo.className = `alert ${alertClass}`;
+        produitInfo.innerHTML = message;
+        produitInfo.style.display = 'block';
+        
+        calculerTotal();
+    }
+}
+
+function calculerTotal() {
+    const selectProduit = document.getElementById('produit');
+    const quantite = parseInt(document.getElementById('quantite').value) || 0;
+    
+    if (selectProduit.value && quantite > 0) {
+        const option = selectProduit.options[selectProduit.selectedIndex];
+        const prix = parseFloat(option.getAttribute('data-prix'));
+        const total = prix * quantite;
+        
+        document.getElementById('montantTotal').textContent = 
+            total.toLocaleString('fr-FR') + ' FCFA';
+        
+        document.getElementById('quantiteInfo').textContent = 
+            `Prix unitaire: ${prix.toLocaleString('fr-FR')} FCFA`;
+    }
+}
+
+document.getElementById('fournisseur').addEventListener('change', updateFournisseurInfo);
+</script>
+
+<style>
+.alert-card .card-header {
+    background: linear-gradient(135deg, #DC3545 0%, #c82333 100%);
+    color: white;
+}
+
+.product-alert {
+    padding: 1.5rem;
+    border-bottom: 1px solid #E2E8F0;
+    display: flex;
+    gap: 1rem;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.product-alert:hover {
+    background: #F8FAFC;
+    border-left: 4px solid #DC3545;
+}
+
+.alert-icon {
+    font-size: 2rem;
+    width: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.alert-content {
+    flex: 1;
+}
+
+.alert-content h4 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.1rem;
+    color: #1E293B;
+}
+
+.alert-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.stock-info {
+    color: #64748B;
+    font-size: 0.9rem;
+}
+
+.recommandation {
+    color: #2563EB;
+    font-size: 0.95rem;
+}
+
+.fournisseur-info {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.85rem;
+    color: #64748B;
+}
+
+.delai {
+    color: #F59E0B;
+    font-weight: 500;
+}
+
+.btn-select {
+    background: #2563EB;
+    color: white;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.btn-select:hover {
+    background: #1e40af;
+    transform: translateX(5px);
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #1E293B;
+}
+
+.required {
+    color: #DC3545;
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #E2E8F0;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #2563EB;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.form-text {
+    display: block;
+    margin-top: 0.5rem;
+    color: #64748B;
+    font-size: 0.85rem;
+}
+
+.total-card {
+    background: linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 100%);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-top: 2rem;
+}
+
+.total-card .label {
+    font-size: 0.75rem;
+    color: #64748B;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.5rem;
+}
+
+.total-card .montant {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #2563EB;
+}
+
+.total-card .date {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #1E293B;
+}
+
+.alert {
+    padding: 1rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+}
+
+.alert-info {
+    background: #E3F2FD;
+    color: #1565C0;
+    border: 1px solid #90CAF9;
+}
+
+.alert-warning {
+    background: #FFF3E0;
+    color: #E65100;
+    border: 1px solid #FFB74D;
+}
+</style>
+{% endblock %}

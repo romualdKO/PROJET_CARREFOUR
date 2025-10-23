@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Clôture de Session - Caisse{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-lg">
+                <div class="card-header bg-danger text-white py-3">
+                    <h3><i class="fas fa-door-closed"></i> Clôture de Session de Caisse</h3>
+                    <p class="mb-0">Session #{{ session.id }} - {{ session.caissier.get_full_name }}</p>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="card bg-primary text-white">
+                                <div class="card-body text-center">
+                                    <h6>Fonds d'Ouverture</h6>
+                                    <h3>{{ session.fonds_ouverture|floatformat:0 }} FCFA</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-success text-white">
+                                <div class="card-body text-center">
+                                    <h6>Nombre de Ventes</h6>
+                                    <h3>{{ nb_transactions }}</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-info text-white">
+                                <div class="card-body text-center">
+                                    <h6>Total Ventes</h6>
+                                    <h3>{{ total_ventes|floatformat:0 }} FCFA</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-warning text-dark">
+                                <div class="card-body text-center">
+                                    <h6>Fonds Théorique</h6>
+                                    <h3>{{ fonds_theorique|floatformat:0 }} FCFA</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5><i class="fas fa-chart-pie"></i> Répartition des Paiements</h5>
+                                </div>
+                                <div class="card-body">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>Mode de Paiement</th>
+                                                <th>Nombre</th>
+                                                <th>Montant</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for stat in paiements_stats %}
+                                            <tr>
+                                                <td>{{ stat.type_paiement__nom }}</td>
+                                                <td><span class="badge bg-secondary">{{ stat.count }}</span></td>
+                                                <td><strong>{{ stat.total|floatformat:0 }} FCFA</strong></td>
+                                            </tr>
+                                            {% empty %}
+                                            <tr>
+                                                <td colspan="3" class="text-center text-muted">Aucun paiement</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header bg-light">
+                                    <h5><i class="fas fa-calculator"></i> Comptage de Caisse</h5>
+                                </div>
+                                <div class="card-body">
+                                    <form method="post">
+                                        {% csrf_token %}
+                                        
+                                        <div class="alert alert-warning">
+                                            <i class="fas fa-exclamation-triangle"></i>
+                                            <strong>Attention:</strong> Comptez soigneusement le montant réel en caisse.
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="fonds_reel" class="form-label">
+                                                <strong>Fonds Réel en Caisse (FCFA)</strong>
+                                            </label>
+                                            <input type="number" 
+                                                   class="form-control form-control-lg" 
+                                                   id="fonds_reel" 
+                                                   name="fonds_reel" 
+                                                   required
+                                                   min="0"
+                                                   step="100"
+                                                   placeholder="Montant compté..."
+                                                   autofocus>
+                                        </div>
+
+                                        <div id="ecart-preview" class="alert d-none mb-3">
+                                            <strong>Écart:</strong> <span id="ecart-value">0</span> FCFA
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label for="notes" class="form-label">Notes / Observations</label>
+                                            <textarea class="form-control" 
+                                                      id="notes" 
+                                                      name="notes" 
+                                                      rows="3" 
+                                                      placeholder="Incidents, remarques, etc."></textarea>
+                                        </div>
+
+                                        <div class="d-grid gap-2">
+                                            <button type="submit" class="btn btn-danger btn-lg">
+                                                <i class="fas fa-lock"></i> Clôturer la Session
+                                            </button>
+                                            <a href="{% url 'pos_interface' %}" class="btn btn-outline-secondary">
+                                                <i class="fas fa-arrow-left"></i> Retour à la Caisse
+                                            </a>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer text-muted">
+                    <small>
+                        <i class="fas fa-clock"></i> 
+                        Ouverture: {{ session.date_ouverture|date:"d/m/Y H:i" }} - 
+                        Durée: {{ session.date_ouverture|timesince }}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Calculer écart en temps réel
+document.getElementById('fonds_reel')?.addEventListener('input', function() {
+    const theorique = {{ fonds_theorique }};
+    const reel = parseFloat(this.value) || 0;
+    const ecart = reel - theorique;
+    
+    const ecartDiv = document.getElementById('ecart-preview');
+    const ecartValue = document.getElementById('ecart-value');
+    
+    ecartValue.textContent = ecart.toFixed(0);
+    
+    if (ecart > 0) {
+        ecartDiv.className = 'alert alert-success';
+        ecartValue.textContent = '+' + ecart.toFixed(0);
+    } else if (ecart < 0) {
+        ecartDiv.className = 'alert alert-danger';
+    } else {
+        ecartDiv.className = 'alert alert-info';
+    }
+    
+    ecartDiv.classList.remove('d-none');
+});
+</script>
+{% endblock %}

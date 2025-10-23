@@ -22,10 +22,22 @@
                 <li><a href="{% url 'rh_employees_list' %}"><span class="icon">👥</span> Employés</a></li>
                 <li><a href="{% url 'rh_planifications' %}"><span class="icon">📅</span> Planifications</a></li>
                 <li><a href="{% url 'rh_presences' %}"><span class="icon">✅</span> Présences</a></li>
+                <li><a href="{% url 'rh_historique_presences' %}"><span class="icon">📊</span> Historique Présences</a></li>
                 <li><a href="{% url 'rh_conges' %}"><span class="icon">🏖️</span> Congés</a></li>
+                <li><a href="{% url 'rh_demandes_conges' %}"><span class="icon">📥</span> Demandes de Congés</a></li>
                 <li><a href="{% url 'rh_formations' %}"><span class="icon">🎓</span> Formations</a></li>
-                <li><a href="{% url 'dashboard' %}"><span class="icon">🏠</span> Retour</a></li>
+                <li><a href="{% url 'rh_reinitialiser_mdp' %}"><span class="icon">🔐</span> Réinitialiser Mot de Passe</a></li>
+               
             </ul>
+
+            <div style="padding: 0 1.5rem; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb;">
+                <p style="font-size: 0.75rem; color: #9ca3af; text-transform: uppercase; margin-bottom: 0.75rem; font-weight: 600;">MON ESPACE</p>
+                <ul class="sidebar-menu">
+                  
+                    <li><a href="{% url 'mes_demandes_conges' %}"><span class="icon">📋</span> Mes Demandes</a></li>
+                    <li><a href="{% url 'changer_mot_de_passe' %}"><span class="icon">🔑</span> Changer Mot de Passe</a></li>
+                </ul>
+            </div>
 
             <div style="padding: 1.5rem; margin-top: auto;">
                 <a href="{% url 'logout' %}" style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: var(--bg-gray); border-radius: 8px; text-decoration: none; color: var(--text-dark);">
@@ -156,24 +168,7 @@
                 </div>
             </div>
 
-            <div class="quick-actions">
-                <a href="#" class="quick-action-btn">
-                    <div class="icon">👤</div>
-                    <span>Ajouter Employé</span>
-                </a>
-                <a href="#" class="quick-action-btn">
-                    <div class="icon">📅</div>
-                    <span>Planification</span>
-                </a>
-                <a href="#" class="quick-action-btn">
-                    <div class="icon">⏰</div>
-                    <span>Pointage</span>
-                </a>
-                <a href="#" class="quick-action-btn">
-                    <div class="icon">📊</div>
-                    <span>Rapports</span>
-                </a>
-            </div>
+            
         </main>
     </div>
 </body>

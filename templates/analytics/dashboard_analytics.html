@@ -1,0 +1,284 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Tableau de Bord Analytique{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- En-tête -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="fas fa-chart-line"></i> Tableau de Bord Analytique</h2>
+            <p class="text-muted">Vue d'ensemble des performances et tendances</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'export_ventes_excel' %}" class="btn btn-success">
+                <i class="fas fa-file-excel"></i> Exporter Excel
+            </a>
+            <a href="{% url 'rapport_mensuel' %}" class="btn btn-primary">
+                <i class="fas fa-file-pdf"></i> Rapport Mensuel
+            </a>
+        </div>
+    </div>
+
+    <!-- KPIs Principaux -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-primary">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">CA du Mois</h6>
+                    <h2 class="text-primary">{{ ca_mois|floatformat:0 }} FCFA</h2>
+                    <small>{{ nb_ventes_mois }} ventes</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-success">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Panier Moyen</h6>
+                    <h2 class="text-success">{{ panier_moyen_mois|floatformat:0 }} FCFA</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-warning">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Clients Actifs</h6>
+                    <h2 class="text-warning">{{ clients_actifs }}</h2>
+                    <small>+{{ nouveaux_clients }} nouveaux</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-info">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Valeur Stock</h6>
+                    <h2 class="text-info">{{ valeur_stock|floatformat:0 }} FCFA</h2>
+                    {% if produits_alerte > 0 %}
+                        <small class="text-danger">⚠️ {{ produits_alerte }} alertes</small>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Graphiques -->
+    <div class="row mb-4">
+        <!-- CA sur 30 jours -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-area"></i> Évolution du CA (30 derniers jours)</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="chartCA" height="80"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Répartition clients par niveau -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-pie"></i> Répartition Clients</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="chartNiveaux"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <!-- CA hebdomadaire -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-bar"></i> CA par Jour de la Semaine</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="chartHebdo" height="120"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top 10 produits -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-trophy"></i> Top 10 Produits du Mois</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="chartTopProduits" height="120"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Caissiers -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-users"></i> Performances des Caissiers</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Rang</th>
+                                <th>Caissier</th>
+                                <th>Nombre de Ventes</th>
+                                <th>CA Total</th>
+                                <th>Panier Moyen</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for caissier in top_caissiers %}
+                            <tr>
+                                <td><strong>#{{ forloop.counter }}</strong></td>
+                                <td>{{ caissier.caissier__first_name }} {{ caissier.caissier__last_name }}</td>
+                                <td>{{ caissier.nb_ventes }}</td>
+                                <td>{{ caissier.ca_total|floatformat:0 }} FCFA</td>
+                                <td>{{ caissier.ca_total|floatformat:0|divisibleby:caissier.nb_ventes|default:0 }} FCFA</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted">Aucune donnée</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Données depuis Django
+const dataCA = {{ ca_par_jour|safe }};
+const dataHebdo = {{ ca_hebdo|safe }};
+const dataNiveaux = {{ repartition_niveaux|safe }};
+
+// Configuration commune
+const commonOptions = {
+    responsive: true,
+    maintainAspectRatio: true,
+    plugins: {
+        legend: {
+            display: true
+        }
+    }
+};
+
+// Graphique CA 30 jours
+const ctxCA = document.getElementById('chartCA').getContext('2d');
+new Chart(ctxCA, {
+    type: 'line',
+    data: {
+        labels: dataCA.map(d => d.date),
+        datasets: [{
+            label: 'CA (FCFA)',
+            data: dataCA.map(d => d.montant),
+            borderColor: 'rgb(75, 192, 192)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            tension: 0.3,
+            fill: true
+        }]
+    },
+    options: {
+        ...commonOptions,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+// Graphique Répartition Niveaux
+const ctxNiveaux = document.getElementById('chartNiveaux').getContext('2d');
+new Chart(ctxNiveaux, {
+    type: 'doughnut',
+    data: {
+        labels: dataNiveaux.map(d => d.niveau),
+        datasets: [{
+            data: dataNiveaux.map(d => d.nombre),
+            backgroundColor: [
+                'rgba(205, 127, 50, 0.8)',  // Bronze
+                'rgba(192, 192, 192, 0.8)', // Argent
+                'rgba(255, 215, 0, 0.8)',   // Or
+                'rgba(229, 228, 226, 0.8)'  // Platine
+            ],
+            borderWidth: 2
+        }]
+    },
+    options: commonOptions
+});
+
+// Graphique Hebdomadaire
+const ctxHebdo = document.getElementById('chartHebdo').getContext('2d');
+new Chart(ctxHebdo, {
+    type: 'bar',
+    data: {
+        labels: dataHebdo.map(d => d.jour),
+        datasets: [{
+            label: 'CA (FCFA)',
+            data: dataHebdo.map(d => d.montant),
+            backgroundColor: 'rgba(54, 162, 235, 0.6)',
+            borderColor: 'rgb(54, 162, 235)',
+            borderWidth: 1
+        }]
+    },
+    options: {
+        ...commonOptions,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+// Graphique Top Produits
+const ctxTopProduits = document.getElementById('chartTopProduits').getContext('2d');
+const topProduitsLabels = [
+    {% for produit in top_produits %}
+        "{{ produit.produit__nom|truncatechars:20 }}"{% if not forloop.last %},{% endif %}
+    {% endfor %}
+];
+const topProduitsData = [
+    {% for produit in top_produits %}
+        {{ produit.quantite }}{% if not forloop.last %},{% endif %}
+    {% endfor %}
+];
+
+new Chart(ctxTopProduits, {
+    type: 'bar',
+    data: {
+        labels: topProduitsLabels,
+        datasets: [{
+            label: 'Quantité Vendue',
+            data: topProduitsData,
+            backgroundColor: 'rgba(255, 159, 64, 0.6)',
+            borderColor: 'rgb(255, 159, 64)',
+            borderWidth: 1
+        }]
+    },
+    options: {
+        ...commonOptions,
+        indexAxis: 'y',
+        scales: {
+            x: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

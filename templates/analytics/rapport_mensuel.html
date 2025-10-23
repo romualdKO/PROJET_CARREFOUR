@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Rapport Mensuel - {{ nom_mois }} {{ annee }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="fas fa-file-alt"></i> Rapport Mensuel - {{ nom_mois }} {{ annee }}</h2>
+        </div>
+        <div class="col-md-4 text-end">
+            <button onclick="window.print()" class="btn btn-primary">
+                <i class="fas fa-print"></i> Imprimer
+            </button>
+        </div>
+    </div>
+
+    <!-- Résumé -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Résumé Exécutif</h5>
+        </div>
+        <div class="card-body">
+            <div class="row text-center">
+                <div class="col-md-3">
+                    <h6 class="text-muted">Chiffre d'Affaires</h6>
+                    <h3 class="text-primary">{{ ca_total|floatformat:0 }} FCFA</h3>
+                </div>
+                <div class="col-md-3">
+                    <h6 class="text-muted">Nombre de Ventes</h6>
+                    <h3>{{ nb_ventes }}</h3>
+                </div>
+                <div class="col-md-3">
+                    <h6 class="text-muted">Panier Moyen</h6>
+                    <h3 class="text-success">{{ panier_moyen|floatformat:0 }} FCFA</h3>
+                </div>
+                <div class="col-md-3">
+                    <h6 class="text-muted">Clients Uniques</h6>
+                    <h3 class="text-info">{{ nb_clients_uniques }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Produits -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-trophy"></i> Top 5 Produits</h5>
+        </div>
+        <div class="card-body">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Rang</th>
+                        <th>Produit</th>
+                        <th>Quantité Vendue</th>
+                        <th>CA Généré</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for produit in top_produits %}
+                    <tr>
+                        <td><strong>#{{ forloop.counter }}</strong></td>
+                        <td>{{ produit.produit__nom }}</td>
+                        <td>{{ produit.quantite }}</td>
+                        <td>{{ produit.ca|floatformat:0 }} FCFA</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Performances Caissiers -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-users"></i> Performances Caissiers</h5>
+        </div>
+        <div class="card-body">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Caissier</th>
+                        <th>Ventes</th>
+                        <th>CA</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for caissier in caissiers %}
+                    <tr>
+                        <td>{{ caissier.caissier__first_name }} {{ caissier.caissier__last_name }}</td>
+                        <td>{{ caissier.nb_ventes }}</td>
+                        <td>{{ caissier.ca_total|floatformat:0 }} FCFA</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Ventes par jour -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-calendar"></i> Détail par Jour</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Ventes</th>
+                            <th>CA</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for jour in ventes_par_jour %}
+                        <tr>
+                            <td>{{ jour.date|date:"d/m/Y" }}</td>
+                            <td>{{ jour.nb_ventes }}</td>
+                            <td>{{ jour.ca|floatformat:0 }} FCFA</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@media print {
+    .btn { display: none; }
+}
+</style>
+{% endblock %}

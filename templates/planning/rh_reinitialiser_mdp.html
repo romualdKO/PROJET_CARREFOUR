@@ -1,0 +1,153 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Réinitialiser Mot de Passe - RH{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>🔐 Réinitialiser Mot de Passe Employé</h1>
+        <a href="{% url 'dashboard_rh' %}" class="btn btn-secondary">⬅️ Retour</a>
+    </div>
+
+    <div class="row">
+        <!-- Formulaire -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-warning text-white">
+                    <h5 class="mb-0">🔑 Réinitialisation</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="employe_id" class="form-label">Sélectionner l'Employé *</label>
+                            <select name="employe_id" id="employe_id" class="form-control" required>
+                                <option value="">-- Choisir un employé --</option>
+                                {% for emp in employes %}
+                                <option value="{{ emp.id }}">
+                                    {{ emp.get_full_name }} - {{ emp.get_role_display }} ({{ emp.username }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="nouveau_mot_de_passe" class="form-label">Nouveau Mot de Passe *</label>
+                            <div class="input-group">
+                                <input type="text" name="nouveau_mot_de_passe" id="nouveau_mot_de_passe" 
+                                    class="form-control" required minlength="6" value="Carrefour2025">
+                                <button type="button" class="btn btn-outline-secondary" onclick="genererMDP()">
+                                    🎲 Générer
+                                </button>
+                            </div>
+                            <small class="text-muted">Minimum 6 caractères</small>
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <strong>⚠️ Important :</strong>
+                            <ul class="mb-0">
+                                <li>Notez le mot de passe avant de le réinitialiser</li>
+                                <li>Communiquez-le à l'employé de manière sécurisée</li>
+                                <li>L'employé pourra le modifier après connexion</li>
+                            </ul>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-warning btn-lg">
+                                ✅ Réinitialiser le Mot de Passe
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Liste des employés -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">👥 Employés Actifs</h5>
+                </div>
+                <div class="card-body" style="max-height: 600px; overflow-y: auto;">
+                    <div class="list-group">
+                        {% for emp in employes %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">{{ emp.get_full_name }}</h6>
+                                    <p class="mb-1">
+                                        <span class="badge bg-secondary">{{ emp.get_role_display }}</span>
+                                        <span class="badge bg-info">{{ emp.employee_id }}</span>
+                                    </p>
+                                    <small class="text-muted">
+                                        👤 Login: <strong>{{ emp.username }}</strong>
+                                    </small>
+                                </div>
+                                <button class="btn btn-sm btn-outline-warning" 
+                                    onclick="selectEmploye('{{ emp.id }}', '{{ emp.get_full_name }}')">
+                                    Sélectionner
+                                </button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Historique récent -->
+    <div class="card mt-4">
+        <div class="card-header bg-secondary text-white">
+            <h5 class="mb-0">📜 Conseils de Sécurité</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <h6>🔒 Mot de Passe Temporaire</h6>
+                    <ul class="small">
+                        <li>Utilisez un mot de passe temporaire complexe</li>
+                        <li>Ne le partagez jamais par email</li>
+                        <li>Communiquez-le en personne ou par téléphone</li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h6>👤 Bonnes Pratiques</h6>
+                    <ul class="small">
+                        <li>Demandez à l'employé de le changer dès la première connexion</li>
+                        <li>Vérifiez l'identité de la personne faisant la demande</li>
+                        <li>Documentez la raison de la réinitialisation</li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h6>🎲 Générateur de MDP</h6>
+                    <ul class="small">
+                        <li>Utilisez le bouton "Générer" pour créer un mot de passe aléatoire</li>
+                        <li>Le mot de passe par défaut est "Carrefour2025"</li>
+                        <li>Recommandez un changement immédiat</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function selectEmploye(id, nom) {
+    document.getElementById('employe_id').value = id;
+    document.getElementById('nouveau_mot_de_passe').focus();
+}
+
+function genererMDP() {
+    const longueur = 10;
+    const caracteres = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789@#$%';
+    let mdp = '';
+    for (let i = 0; i < longueur; i++) {
+        mdp += caracteres.charAt(Math.floor(Math.random() * caracteres.length));
+    }
+    document.getElementById('nouveau_mot_de_passe').value = mdp;
+}
+</script>
+{% endblock %}

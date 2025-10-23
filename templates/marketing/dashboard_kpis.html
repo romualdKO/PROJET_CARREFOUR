@@ -1,0 +1,571 @@
+{% extends "dashboard/base.html" %}
+{% load static %}
+
+{% block title %}Dashboard KPIs CRM - Marketing{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="fas fa-chart-pie"></i> Dashboard KPIs CRM & Fidélité</h2>
+            <p class="text-muted">Indicateurs de performance consolidés</p>
+        </div>
+        <a href="{% url 'dashboard_marketing' %}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Retour
+        </a>
+    </div>
+
+    <!-- Filtres -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label"><i class="fas fa-calendar"></i> Période</label>
+                    <select name="periode" class="form-select" onchange="this.form.submit()">
+                        <option value="7" {% if periode == 7 %}selected{% endif %}>7 derniers jours</option>
+                        <option value="30" {% if periode == 30 %}selected{% endif %}>30 derniers jours</option>
+                        <option value="90" {% if periode == 90 %}selected{% endif %}>3 derniers mois</option>
+                        <option value="180" {% if periode == 180 %}selected{% endif %}>6 derniers mois</option>
+                        <option value="365" {% if periode == 365 %}selected{% endif %}>12 derniers mois</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label"><i class="fas fa-users"></i> Segment Client</label>
+                    <select name="segment" class="form-select" onchange="this.form.submit()">
+                        <option value="tous" {% if segment == 'tous' %}selected{% endif %}>Tous les segments</option>
+                        <option value="VIP" {% if segment == 'VIP' %}selected{% endif %}>VIP uniquement</option>
+                        <option value="GOLD" {% if segment == 'GOLD' %}selected{% endif %}>GOLD uniquement</option>
+                        <option value="SILVER" {% if segment == 'SILVER' %}selected{% endif %}>SILVER uniquement</option>
+                        <option value="TOUS" {% if segment == 'TOUS' %}selected{% endif %}>TOUS uniquement</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">&nbsp;</label>
+                    <button type="button" class="btn btn-primary w-100" onclick="window.print()">
+                        <i class="fas fa-print"></i> Imprimer Rapport
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- KPIs Principaux -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="kpi-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <div class="kpi-icon"><i class="fas fa-id-card"></i></div>
+                <div class="kpi-content">
+                    <h3>{{ taux_identification }}%</h3>
+                    <p>Taux d'Identification</p>
+                    <small>{{ transactions_identifiees }}/{{ total_transactions }} transactions</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="kpi-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                <div class="kpi-icon"><i class="fas fa-users"></i></div>
+                <div class="kpi-content">
+                    <h3>{{ total_clients }}</h3>
+                    <p>Clients Fidèles</p>
+                    <small>Base de données active</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="kpi-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                <div class="kpi-icon"><i class="fas fa-ticket-alt"></i></div>
+                <div class="kpi-content">
+                    <h3>{{ taux_utilisation_coupons }}%</h3>
+                    <p>Utilisation Coupons</p>
+                    <small>{{ coupons_utilises }}/{{ coupons_distribues }} coupons</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="kpi-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                <div class="kpi-icon"><i class="fas fa-percentage"></i></div>
+                <div class="kpi-content">
+                    <h3>{{ taux_retention }}%</h3>
+                    <p>Taux de Rétention</p>
+                    <small>{{ clients_mois_actuel }} clients actifs ce mois</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Graphiques Ligne 1 -->
+    <div class="row mb-4">
+        <!-- KPI 1: Évolution Identification -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-chart-line"></i> Évolution du Taux d'Identification</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="identificationChart" height="250"></canvas>
+                    <div class="mt-3 text-center">
+                        <p class="mb-0"><strong>Objectif:</strong> Augmenter l'identification pour mieux connaître les clients</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- KPI 2: Croissance Segments -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-chart-area"></i> Croissance des Segments Clients</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="segmentsChart" height="250"></canvas>
+                    <div class="mt-3">
+                        <div class="row text-center">
+                            <div class="col-3">
+                                <strong class="text-danger">{{ repartition_actuelle.VIP }}</strong>
+                                <br><small>VIP</small>
+                            </div>
+                            <div class="col-3">
+                                <strong class="text-warning">{{ repartition_actuelle.GOLD }}</strong>
+                                <br><small>GOLD</small>
+                            </div>
+                            <div class="col-3">
+                                <strong class="text-info">{{ repartition_actuelle.SILVER }}</strong>
+                                <br><small>SILVER</small>
+                            </div>
+                            <div class="col-3">
+                                <strong class="text-secondary">{{ repartition_actuelle.TOUS }}</strong>
+                                <br><small>TOUS</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Graphiques Ligne 2 -->
+    <div class="row mb-4">
+        <!-- KPI 3: Utilisation Coupons -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-ticket-alt"></i> Performance des Coupons</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="couponsChart" height="250"></canvas>
+                    <div class="mt-3">
+                        <div class="row">
+                            <div class="col-6">
+                                <div class="p-3 bg-light rounded text-center">
+                                    <h4 class="text-primary">{{ taux_generiques }}%</h4>
+                                    <p class="mb-0">Coupons Génériques</p>
+                                    <small>{{ coupons_generiques }} distribués</small>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="p-3 bg-light rounded text-center">
+                                    <h4 class="text-danger">{{ taux_speciaux }}%</h4>
+                                    <p class="mb-0">Coupons Spéciaux</p>
+                                    <small>{{ coupons_speciaux }} distribués</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- KPI 4: Marge Nette -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-warning text-white">
+                    <h5 class="mb-0"><i class="fas fa-coins"></i> Impact des Remises sur la Marge</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="margeChart" height="250"></canvas>
+                    <div class="mt-3">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <tr>
+                                    <td><strong>CA Brut:</strong></td>
+                                    <td class="text-end"><strong>{{ ca_brut|floatformat:0 }} CFA</strong></td>
+                                </tr>
+                                <tr class="text-danger">
+                                    <td>- Remises Fidélité:</td>
+                                    <td class="text-end">{{ remises_fidelite|floatformat:0 }} CFA</td>
+                                </tr>
+                                <tr class="text-danger">
+                                    <td>- Remises Coupons:</td>
+                                    <td class="text-end">{{ remises_coupons|floatformat:0 }} CFA</td>
+                                </tr>
+                                <tr class="table-success">
+                                    <td><strong>CA Net:</strong></td>
+                                    <td class="text-end"><strong>{{ ca_net|floatformat:0 }} CFA</strong></td>
+                                </tr>
+                                <tr>
+                                    <td>Taux de Remise:</td>
+                                    <td class="text-end"><span class="badge bg-warning">{{ taux_remise }}%</span></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Graphiques Ligne 3 -->
+    <div class="row mb-4">
+        <!-- KPI 5: Rétention -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0"><i class="fas fa-user-check"></i> Rétention & Churn Clients</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="retentionChart" height="250"></canvas>
+                    <div class="mt-3">
+                        <div class="row text-center">
+                            <div class="col-4">
+                                <div class="p-3 bg-success text-white rounded">
+                                    <h4>{{ taux_retention }}%</h4>
+                                    <p class="mb-0">Rétention</p>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="p-3 bg-danger text-white rounded">
+                                    <h4>{{ taux_churn }}%</h4>
+                                    <p class="mb-0">Churn</p>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="p-3 bg-info text-white rounded">
+                                    <h4>{{ clients_mois_actuel }}</h4>
+                                    <p class="mb-0">Actifs</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- KPI 6: Fréquence d'achat -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-purple text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <h5 class="mb-0"><i class="fas fa-shopping-cart"></i> Fréquence d'Achat par Niveau</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="frequenceChart" height="250"></canvas>
+                    <div class="mt-3">
+                        <p class="text-center mb-0"><strong>Objectif:</strong> Les clients VIP achètent plus fréquemment</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Coupons -->
+    <div class="card">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0"><i class="fas fa-trophy"></i> Top 10 Coupons les Plus Utilisés</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Code Coupon</th>
+                            <th>Type Remise</th>
+                            <th>Valeur</th>
+                            <th>Utilisations</th>
+                            <th>Total Remise</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for coupon in top_coupons %}
+                        <tr>
+                            <td><strong>{{ forloop.counter }}</strong></td>
+                            <td><code>{{ coupon.coupon__code }}</code></td>
+                            <td>
+                                {% if coupon.coupon__type_remise == 'POURCENTAGE' %}
+                                    <span class="badge bg-info">Pourcentage</span>
+                                {% else %}
+                                    <span class="badge bg-success">Montant Fixe</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if coupon.coupon__type_remise == 'POURCENTAGE' %}
+                                    {{ coupon.coupon__valeur_remise }}%
+                                {% else %}
+                                    {{ coupon.coupon__valeur_remise }} CFA
+                                {% endif %}
+                            </td>
+                            <td><strong>{{ coupon.nb_utilisations }}</strong></td>
+                            <td><strong>{{ coupon.total_remise|floatformat:0 }} CFA</strong></td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">Aucune utilisation de coupon sur cette période</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.kpi-card {
+    border-radius: 12px;
+    padding: 20px;
+    color: white;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    position: relative;
+    overflow: hidden;
+    min-height: 140px;
+}
+
+.kpi-icon {
+    position: absolute;
+    right: 20px;
+    top: 20px;
+    font-size: 3rem;
+    opacity: 0.3;
+}
+
+.kpi-content h3 {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: white;
+}
+
+.kpi-content p {
+    font-size: 1rem;
+    margin-bottom: 5px;
+    color: rgba(255,255,255,0.9);
+}
+
+.kpi-content small {
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.8);
+}
+
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+@media print {
+    .btn, .form-select {
+        display: none !important;
+    }
+    
+    .card {
+        page-break-inside: avoid;
+    }
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+// Chart 1: Évolution Identification
+const idCtx = document.getElementById('identificationChart').getContext('2d');
+new Chart(idCtx, {
+    type: 'line',
+    data: {
+        labels: {{ evolution_identification|safe }}.map(item => item.periode),
+        datasets: [{
+            label: 'Taux d\'Identification (%)',
+            data: {{ evolution_identification|safe }}.map(item => item.taux),
+            borderColor: '#667eea',
+            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+            tension: 0.4,
+            fill: true
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                max: 100,
+                ticks: {
+                    callback: function(value) { return value + '%'; }
+                }
+            }
+        }
+    }
+});
+
+// Chart 2: Croissance Segments
+const segCtx = document.getElementById('segmentsChart').getContext('2d');
+new Chart(segCtx, {
+    type: 'line',
+    data: {
+        labels: {{ evolution_segments|safe }}.map(item => item.mois),
+        datasets: [
+            {
+                label: 'VIP',
+                data: {{ evolution_segments|safe }}.map(item => item.vip),
+                borderColor: '#dc3545',
+                backgroundColor: 'rgba(220, 53, 69, 0.2)',
+                tension: 0.4,
+                fill: true
+            },
+            {
+                label: 'GOLD',
+                data: {{ evolution_segments|safe }}.map(item => item.gold),
+                borderColor: '#ffc107',
+                backgroundColor: 'rgba(255, 193, 7, 0.2)',
+                tension: 0.4,
+                fill: true
+            },
+            {
+                label: 'SILVER',
+                data: {{ evolution_segments|safe }}.map(item => item.silver),
+                borderColor: '#17a2b8',
+                backgroundColor: 'rgba(23, 162, 184, 0.2)',
+                tension: 0.4,
+                fill: true
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { position: 'bottom' }
+        },
+        scales: {
+            y: { beginAtZero: true, stacked: true },
+            x: { stacked: true }
+        }
+    }
+});
+
+// Chart 3: Coupons
+const cpCtx = document.getElementById('couponsChart').getContext('2d');
+new Chart(cpCtx, {
+    type: 'doughnut',
+    data: {
+        labels: ['Génériques Utilisés', 'Génériques Non Utilisés', 'Spéciaux Utilisés', 'Spéciaux Non Utilisés'],
+        datasets: [{
+            data: [
+                {{ taux_generiques }} * {{ coupons_generiques }} / 100,
+                {{ coupons_generiques }} - ({{ taux_generiques }} * {{ coupons_generiques }} / 100),
+                {{ taux_speciaux }} * {{ coupons_speciaux }} / 100,
+                {{ coupons_speciaux }} - ({{ taux_speciaux }} * {{ coupons_speciaux }} / 100)
+            ],
+            backgroundColor: ['#17a2b8', '#b8d4d9', '#dc3545', '#d9b8ba']
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false
+    }
+});
+
+// Chart 4: Marge
+const mgCtx = document.getElementById('margeChart').getContext('2d');
+new Chart(mgCtx, {
+    type: 'bar',
+    data: {
+        labels: ['CA Brut', 'Remises Fidélité', 'Remises Coupons', 'CA Net'],
+        datasets: [{
+            data: [{{ ca_brut }}, {{ remises_fidelite }}, {{ remises_coupons }}, {{ ca_net }}],
+            backgroundColor: ['#28a745', '#ffc107', '#dc3545', '#17a2b8']
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return value.toLocaleString() + ' CFA';
+                    }
+                }
+            }
+        }
+    }
+});
+
+// Chart 5: Rétention
+const retCtx = document.getElementById('retentionChart').getContext('2d');
+new Chart(retCtx, {
+    type: 'line',
+    data: {
+        labels: {{ evolution_retention|safe }}.map(item => item.mois),
+        datasets: [{
+            label: 'Clients Actifs',
+            data: {{ evolution_retention|safe }}.map(item => item.clients),
+            borderColor: '#dc3545',
+            backgroundColor: 'rgba(220, 53, 69, 0.1)',
+            tension: 0.4,
+            fill: true
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false }
+        },
+        scales: {
+            y: { beginAtZero: true }
+        }
+    }
+});
+
+// Chart 6: Fréquence
+const freqCtx = document.getElementById('frequenceChart').getContext('2d');
+new Chart(freqCtx, {
+    type: 'bar',
+    data: {
+        labels: ['VIP', 'GOLD', 'SILVER', 'TOUS'],
+        datasets: [{
+            label: 'Achats/mois',
+            data: [
+                {{ frequences.VIP }},
+                {{ frequences.GOLD }},
+                {{ frequences.SILVER }},
+                {{ frequences.TOUS }}
+            ],
+            backgroundColor: ['#dc3545', '#ffc107', '#17a2b8', '#6c757d']
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return value + ' achats/mois';
+                    }
+                }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}
