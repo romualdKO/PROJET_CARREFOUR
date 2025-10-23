@@ -12,7 +12,7 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
     
     # Tableaux de bord
-    
+    path('dashboard/', views.dashboard, name='dashboard'),
     path('dashboard/dg/', views.dashboard_dg, name='dashboard_dg'),
     path('dashboard/daf/', views.dashboard_daf, name='dashboard_daf'),
     path('dashboard/rh/', views.dashboard_rh, name='dashboard_rh'),

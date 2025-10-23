@@ -2146,11 +2146,12 @@ def stock_fournisseur_delete(request, fournisseur_id):
 @login_required
 def stock_commandes_list(request):
     """Liste toutes les commandes fournisseurs"""
-    if not request.user.has_perm('CarrefourApp.view_commandefournisseur'):
-        messages.error(request, "❌ Vous n'avez pas la permission de voir les commandes")
-        return redirect('dashboard')
+    # Vérifier que l'utilisateur a accès au module Stock
+    if request.user.role != 'STOCK':
+        messages.error(request, "Accès refusé. Vous n'avez pas les permissions pour voir les commandes.")
+        return redirect('dashboard_stock')
     
-    commandes = CommandeFournisseur.objects.all().select_related('fournisseur', 'employe').order_by('-date_commande')
+    commandes = CommandeFournisseur.objects.all().select_related('fournisseur', 'employe').prefetch_related('lignes__produit').order_by('-date_commande')
     
     # Filtres
     statut = request.GET.get('statut', '')
@@ -2195,9 +2196,10 @@ def stock_commandes_list(request):
 @login_required
 def stock_commande_detail(request, commande_id):
     """Affiche les détails d'une commande"""
-    if not request.user.has_perm('CarrefourApp.view_commandefournisseur'):
-        messages.error(request, "❌ Vous n'avez pas la permission de voir cette commande")
-        return redirect('dashboard')
+    # Vérifier que l'utilisateur a accès au module Stock
+    if request.user.role != 'STOCK':
+        messages.error(request, "Accès refusé. Vous n'avez pas les permissions pour voir cette commande.")
+        return redirect('dashboard_stock')
     
     commande = get_object_or_404(CommandeFournisseur, id=commande_id)
     lignes = commande.lignes.all().select_related('produit')  # ✅ CORRECTION
@@ -2212,9 +2214,10 @@ def stock_commande_detail(request, commande_id):
 @login_required
 def stock_commande_create(request):
     """Crée une nouvelle commande fournisseur"""
-    if not request.user.has_perm('CarrefourApp.add_commandefournisseur'):
-        messages.error(request, "❌ Vous n'avez pas la permission de créer une commande")
-        return redirect('dashboard')
+    # Vérifier que l'utilisateur a accès au module Stock
+    if request.user.role != 'STOCK':
+        messages.error(request, "Accès refusé. Vous n'avez pas les permissions pour créer une commande.")
+        return redirect('dashboard_stock')
     
     if request.method == 'POST':
         fournisseur_id = request.POST.get('fournisseur')
@@ -2286,9 +2289,10 @@ def stock_commande_create(request):
 @login_required
 def stock_commande_valider(request, commande_id):
     """Valide une commande"""
-    if not request.user.has_perm('CarrefourApp.change_commandefournisseur'):
-        messages.error(request, "❌ Vous n'avez pas la permission de valider cette commande")
-        return redirect('dashboard')
+    # Vérifier que l'utilisateur a accès au module Stock
+    if request.user.role != 'STOCK':
+        messages.error(request, "Accès refusé. Vous n'avez pas les permissions pour valider cette commande.")
+        return redirect('dashboard_stock')
     
     commande = get_object_or_404(CommandeFournisseur, id=commande_id)
     
@@ -2306,9 +2310,10 @@ def stock_commande_valider(request, commande_id):
 @login_required
 def stock_commande_recevoir(request, commande_id):
     """Marque une commande comme reçue/livrée"""
-    if not request.user.has_perm('CarrefourApp.change_commandefournisseur'):
-        messages.error(request, "❌ Vous n'avez pas la permission de recevoir cette commande")
-        return redirect('dashboard')
+    # Vérifier que l'utilisateur a accès au module Stock
+    if request.user.role != 'STOCK':
+        messages.error(request, "Accès refusé. Vous n'avez pas les permissions pour recevoir cette commande.")
+        return redirect('dashboard_stock')
     
     commande = get_object_or_404(CommandeFournisseur, id=commande_id)
     
@@ -2361,9 +2366,10 @@ def stock_commande_recevoir(request, commande_id):
 @login_required
 def stock_commande_annuler(request, commande_id):
     """Annule une commande"""
-    if not request.user.has_perm('CarrefourApp.change_commandefournisseur'):
-        messages.error(request, "❌ Vous n'avez pas la permission d'annuler cette commande")
-        return redirect('dashboard')
+    # Vérifier que l'utilisateur a accès au module Stock
+    if request.user.role != 'STOCK':
+        messages.error(request, "Accès refusé. Vous n'avez pas les permissions pour annuler cette commande.")
+        return redirect('dashboard_stock')
     
     commande = get_object_or_404(CommandeFournisseur, id=commande_id)
     
@@ -3736,7 +3742,7 @@ def commandes_fournisseurs(request):
     statut_filtre = request.GET.get('statut', '')
     fournisseur_filtre = request.GET.get('fournisseur', '')
     
-    commandes = CommandeFournisseur.objects.all().select_related('fournisseur', 'employe')
+    commandes = CommandeFournisseur.objects.all().select_related('fournisseur', 'employe').prefetch_related('lignes__produit')
     
     if statut_filtre:
         commandes = commandes.filter(statut=statut_filtre)
@@ -3805,7 +3811,7 @@ def creer_commande_fournisseur(request):
             LigneCommandeFournisseur.objects.create(
                 commande=commande,
                 produit=produit,
-                quantite=quantite,
+                quantite_commandee=quantite,
                 prix_unitaire=produit.prix_achat
             )
             
@@ -3873,7 +3879,7 @@ def recevoir_commande_fournisseur(request, commande_id):
         # Mettre à jour stocks pour chaque ligne
         for ligne in commande.lignes.all():
             stock_avant = ligne.produit.stock_actuel
-            ligne.produit.stock_actuel += ligne.quantite
+            ligne.produit.stock_actuel += ligne.quantite_commandee
             stock_apres = ligne.produit.stock_actuel
             ligne.produit.save()
             
@@ -3881,9 +3887,9 @@ def recevoir_commande_fournisseur(request, commande_id):
             MouvementStock.objects.create(
                 produit=ligne.produit,
                 type_mouvement='ENTREE',
-                quantite=ligne.quantite,
+                quantite=ligne.quantite_commandee,
                 raison=f'Réception commande {commande.numero_commande}',
-                employe=request.user.employe if hasattr(request.user, 'employe') else None,
+                employe=request.user,
                 stock_avant=stock_avant,
                 stock_apres=stock_apres,
                 commande_fournisseur=commande

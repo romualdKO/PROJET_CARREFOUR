@@ -144,6 +144,41 @@
                             {% endif %}
                         </td>
                     </tr>
+                    <!-- Détails des produits de la commande -->
+                    {% if cmd.lignes.all %}
+                    <tr style="background-color: #F9FAFB;">
+                        <td colspan="9" style="padding: 0;">
+                            <div style="padding: 1rem 2rem;">
+                                <table style="width: 100%; border-collapse: collapse;">
+                                    <thead>
+                                        <tr style="border-bottom: 2px solid #E5E7EB;">
+                                            <th style="padding: 0.5rem; text-align: left; font-weight: 600; color: #374151;">Produit</th>
+                                            <th style="padding: 0.5rem; text-align: center; font-weight: 600; color: #374151;">Stock Actuel</th>
+                                            <th style="padding: 0.5rem; text-align: center; font-weight: 600; color: #374151;">Quantité Commandée</th>
+                                            <th style="padding: 0.5rem; text-align: right; font-weight: 600; color: #374151;">Prix Unitaire</th>
+                                            <th style="padding: 0.5rem; text-align: right; font-weight: 600; color: #374151;">Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for ligne in cmd.lignes.all %}
+                                        <tr style="border-bottom: 1px solid #E5E7EB;">
+                                            <td style="padding: 0.5rem;">{{ ligne.produit.nom }}</td>
+                                            <td style="padding: 0.5rem; text-align: center;">
+                                                <span class="badge {% if ligne.produit.stock_actuel <= ligne.produit.stock_critique %}bg-danger{% else %}bg-success{% endif %}">
+                                                    {{ ligne.produit.stock_actuel }}
+                                                </span>
+                                            </td>
+                                            <td style="padding: 0.5rem; text-align: center;"><strong>{{ ligne.quantite_commandee }}</strong></td>
+                                            <td style="padding: 0.5rem; text-align: right;">{{ ligne.prix_unitaire|floatformat:0 }} FCFA</td>
+                                            <td style="padding: 0.5rem; text-align: right;"><strong>{{ ligne.montant_ligne|floatformat:0 }} FCFA</strong></td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endif %}
                     {% empty %}
                     <tr>
                         <td colspan="9" class="text-center text-muted">

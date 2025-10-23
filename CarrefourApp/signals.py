@@ -146,7 +146,7 @@ def gerer_statut_commande(sender, instance, created, **kwargs):
     """
     if instance.statut == 'LIVREE':
         # Vérifier si tous les produits ont été reçus
-        lignes_commande = instance.lignecommandefournisseur_set.all()
+        lignes_commande = instance.lignes.all()
         
         for ligne in lignes_commande:
             if ligne.quantite_recue > 0:

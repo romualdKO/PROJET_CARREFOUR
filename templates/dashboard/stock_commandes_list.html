@@ -42,10 +42,10 @@
                     <input type="text" name="search" placeholder="N° commande ou fournisseur" value="{{ search }}" />
                     <select name="statut">
                         <option value="">Tous statuts</option>
-                        <option value="EN_ATTENTE" {% if statut=='EN_ATTENTE' %}selected{% endif %}>En attente</option>
-                        <option value="VALIDEE" {% if statut=='VALIDEE' %}selected{% endif %}>Validée</option>
-                        <option value="LIVREE" {% if statut=='LIVREE' %}selected{% endif %}>Livrée</option>
-                        <option value="ANNULEE" {% if statut=='ANNULEE' %}selected{% endif %}>Annulée</option>
+                        <option value="EN_ATTENTE" {% if statut == 'EN_ATTENTE' %}selected{% endif %}>En attente</option>
+                        <option value="VALIDEE" {% if statut == 'VALIDEE' %}selected{% endif %}>Validée</option>
+                        <option value="LIVREE" {% if statut == 'LIVREE' %}selected{% endif %}>Livrée</option>
+                        <option value="ANNULEE" {% if statut == 'ANNULEE' %}selected{% endif %}>Annulée</option>
                     </select>
                     <select name="fournisseur">
                         <option value="">Tous fournisseurs</option>
@@ -95,6 +95,30 @@
                                     {% endif %}
                                 </td>
                             </tr>
+                            {% if c.lignes.all %}
+                            <tr style="background:#F9FAFB;">
+                                <td colspan="6" style="padding:0 0 12px 0;">
+                                    <table style="width:100%; border-collapse:collapse; margin:0;">
+                                        <thead>
+                                            <tr>
+                                                <th style="padding:6px 12px; text-align:left;">Produit</th>
+                                                <th style="padding:6px 12px; text-align:right;">Stock actuel</th>
+                                                <th style="padding:6px 12px; text-align:right;">Quantité commandée</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for l in c.lignes.all %}
+                                            <tr>
+                                                <td style="padding:6px 12px;">{{ l.produit.nom }}</td>
+                                                <td style="padding:6px 12px; text-align:right;">{{ l.produit.stock_actuel }}</td>
+                                                <td style="padding:6px 12px; text-align:right;">{{ l.quantite_commandee }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </td>
+                            </tr>
+                            {% endif %}
                         {% endfor %}
                     </tbody>
                 </table>
