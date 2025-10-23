@@ -1,0 +1,286 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Approvisionnements</title>
+    <link rel="stylesheet" href="{% static 'css/approvisionnement.css' %}">
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="logo">
+            <div class="logo-icon">📦</div>
+            <h2>Gestion des Stocks</h2>
+        </div>
+        <nav class="nav-menu">
+            <a href="{% url 'dashboard_stock' %}" class="nav-item">
+                <span class="nav-icon">📊</span>
+                <span>Tableau de Bord</span>
+            </a>
+            <a href="{% url 'stock_add_product' %}" class="nav-item">
+                <span class="nav-icon">➕</span>
+                <span>Ajouter Produit</span>
+            </a>
+            <a href="#" class="nav-item">
+                <span class="nav-icon">🏠</span>
+                <span>Retour</span>
+            </a>
+            <a href="#" class="nav-item">
+                <span class="nav-icon">🕐</span>
+                <span>Historique</span>
+            </a>
+            <a href="{% url 'page_approvisionnement' %}" class="nav-item active">
+                <span class="nav-icon">📋</span>
+                <span>Approvisionnement</span>
+            </a>
+            <a href="{% url 'page_fournisseurs' %}" class="nav-item">
+                <span class="nav-icon">🚚</span>
+                <span>Fournisseurs</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <div class="app-icon">📋</div>
+                <h1>Gestion des Approvisionnements</h1>
+            </div>
+            <div class="header-right">
+                <div class="user-info">
+                    <span class="user-icon">👤</span>
+                    <span>Jean Kouassi - Gestionnaire Stock</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Dashboard Title -->
+        <div class="dashboard-title">
+            <h2>Tableau de Bord des Commandes</h2>
+        </div>
+
+        <!-- Search and Filter -->
+        <div class="search-section">
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" placeholder="Rechercher une commande...">
+            </div>
+            <select class="filter-select">
+                <option>Tous les statuts</option>
+                <option>En attente</option>
+                <option>Confirmée</option>
+                <option>En livraison</option>
+                <option>Livrée</option>
+                <option>Annulée</option>
+            </select>
+            <a class="btn-primary" href="{% url 'form_commande' %}">
+                <span>➕</span> Nouvelle Commande
+            </a>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon blue">📦</div>
+                <div class="stat-info">
+                    <p class="stat-label">Total Commandes</p>
+                    <p class="stat-value">48</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon green">✅</div>
+                <div class="stat-info">
+                    <p class="stat-label">Commandes Livrées</p>
+                    <p class="stat-value">32</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon orange">⏱️</div>
+                <div class="stat-info">
+                    <p class="stat-label">En Attente</p>
+                    <p class="stat-value">12</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon red">❌</div>
+                <div class="stat-info">
+                    <p class="stat-label">Annulées</p>
+                    <p class="stat-value">4</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Orders List -->
+        <div class="orders-section">
+            <h3>Liste des Commandes d'Approvisionnement</h3>
+            
+            <div class="table-container">
+                <table class="orders-table">
+                    <thead>
+                        <tr>
+                            <th>ID COMMANDE</th>
+                            <th>FOURNISSEUR</th>
+                            <th>DATE COMMANDE</th>
+                            <th>DATE LIVRAISON PRÉVUE</th>
+                            <th>STATUT</th>
+                            <th>DÉLAI RESTANT</th>
+                            <th>ACTIONS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="order-id">CMD-2024-001</td>
+                            <td>
+                                <div class="supplier-info">
+                                    <span class="supplier-icon">🚚</span>
+                                    <span>SACO</span>
+                                </div>
+                            </td>
+                            <td>15/10/2024</td>
+                            <td>20/10/2024</td>
+                            <td><span class="status-badge status-pending">En attente</span></td>
+                            <td><span class="delay-badge delay-normal">5 jours</span></td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn-icon btn-view" title="Voir">👁️</button>
+                                    <button class="btn-icon btn-edit" title="Modifier">✏️</button>
+                                    <button class="btn-icon btn-status" title="Changer statut">🔄</button>
+                                    <button class="btn-icon btn-delete" title="Supprimer">🗑️</button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="order-id">CMD-2024-002</td>
+                            <td>
+                                <div class="supplier-info">
+                                    <span class="supplier-icon">🚚</span>
+                                    <span>AGRO DISTRIB</span>
+                                </div>
+                            </td>
+                            <td>12/10/2024</td>
+                            <td>15/10/2024</td>
+                            <td><span class="status-badge status-delivered">Livrée</span></td>
+                            <td><span class="delay-badge delay-completed">Terminé</span></td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn-icon btn-view" title="Voir">👁️</button>
+                                    <button class="btn-icon btn-edit" title="Modifier">✏️</button>
+                                    <button class="btn-icon btn-status" title="Changer statut">🔄</button>
+                                    <button class="btn-icon btn-delete" title="Supprimer">🗑️</button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="order-id">CMD-2024-003</td>
+                            <td>
+                                <div class="supplier-info">
+                                    <span class="supplier-icon">🚚</span>
+                                    <span>PRIMO IMPORT</span>
+                                </div>
+                            </td>
+                            <td>18/10/2024</td>
+                            <td>25/10/2024</td>
+                            <td><span class="status-badge status-confirmed">Confirmée</span></td>
+                            <td><span class="delay-badge delay-normal">7 jours</span></td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn-icon btn-view" title="Voir">👁️</button>
+                                    <button class="btn-icon btn-edit" title="Modifier">✏️</button>
+                                    <button class="btn-icon btn-status" title="Changer statut">🔄</button>
+                                    <button class="btn-icon btn-delete" title="Supprimer">🗑️</button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="order-id">CMD-2024-004</td>
+                            <td>
+                                <div class="supplier-info">
+                                    <span class="supplier-icon">🚚</span>
+                                    <span>FRUITS & CO</span>
+                                </div>
+                            </td>
+                            <td>19/10/2024</td>
+                            <td>21/10/2024</td>
+                            <td><span class="status-badge status-shipping">En livraison</span></td>
+                            <td><span class="delay-badge delay-urgent">2 jours</span></td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn-icon btn-view" title="Voir">👁️</button>
+                                    <button class="btn-icon btn-edit" title="Modifier">✏️</button>
+                                    <button class="btn-icon btn-status" title="Changer statut">🔄</button>
+                                    <button class="btn-icon btn-delete" title="Supprimer">🗑️</button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="order-id">CMD-2024-005</td>
+                            <td>
+                                <div class="supplier-info">
+                                    <span class="supplier-icon">🚚</span>
+                                    <span>SACO</span>
+                                </div>
+                            </td>
+                            <td>10/10/2024</td>
+                            <td>17/10/2024</td>
+                            <td><span class="status-badge status-cancelled">Annulée</span></td>
+                            <td><span class="delay-badge delay-cancelled">-</span></td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn-icon btn-view" title="Voir">👁️</button>
+                                    <button class="btn-icon btn-edit" title="Modifier">✏️</button>
+                                    <button class="btn-icon btn-status" title="Changer statut">🔄</button>
+                                    <button class="btn-icon btn-delete" title="Supprimer">🗑️</button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Status Change Modal -->
+    <div id="statusModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Changer le Statut de la Commande</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-order-id">CMD-2024-001</p>
+                <div class="status-options">
+                    <label class="status-option">
+                        <input type="radio" name="status" value="pending">
+                        <span class="status-label status-pending">En attente</span>
+                    </label>
+                    <label class="status-option">
+                        <input type="radio" name="status" value="confirmed">
+                        <span class="status-label status-confirmed">Confirmée</span>
+                    </label>
+                    <label class="status-option">
+                        <input type="radio" name="status" value="shipping">
+                        <span class="status-label status-shipping">En livraison</span>
+                    </label>
+                    <label class="status-option">
+                        <input type="radio" name="status" value="delivered">
+                        <span class="status-label status-delivered">Livrée</span>
+                    </label>
+                    <label class="status-option">
+                        <input type="radio" name="status" value="cancelled">
+                        <span class="status-label status-cancelled">Annulée</span>
+                    </label>
+                </div>
+                <textarea placeholder="Commentaire (optionnel)..." rows="4"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary">Annuler</button>
+                <button class="btn-primary">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

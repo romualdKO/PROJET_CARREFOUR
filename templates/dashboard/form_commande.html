@@ -1,0 +1,139 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nouvelle Commande d'Approvisionnement</title>
+    <link rel="stylesheet" href="{% static 'css/form_commande.css' %}">
+</head>
+<body>
+    <!-- Overlay Modal -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-container">
+            <!-- Modal Header -->
+            <div class="modal-header">
+                <div class="header-icon">
+                    <div class="icon-circle">
+                        📦
+                    </div>
+                </div>
+                <h2 class="modal-title">Nouvelle Commande</h2>
+                <p class="modal-subtitle">Ajouter une nouvelle commande d'approvisionnement</p>
+                <button class="btn-close" id="btnClose">✕</button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="modal-body">
+                <form id="formCommande" method="POST" action="">
+
+                    <!-- Fournisseur -->
+                    <div class="form-group">
+                        <label for="fournisseur" class="form-label">
+                            Fournisseur <span class="required">*</span>
+                        </label>
+                        <select id="fournisseur" name="fournisseur" class="form-select" required>
+                            <option value="">Sélectionner un fournisseur</option>
+                            <option value="1">SACO - Rémy Djimy</option>
+                            <option value="2">AGRO DISTRIB - Marie Konan</option>
+                            <option value="3">PRIMO IMPORT - Jean Baptiste</option>
+                            <option value="4">FRUITS & CO - Aminata Traoré</option>
+                        </select>
+                    </div>
+
+                    <!-- Row: Date Livraison et Statut -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="dateLivraisonPrevue" class="form-label">
+                                Date Livraison Prévue <span class="required">*</span>
+                            </label>
+                            <input 
+                                type="date" 
+                                id="dateLivraisonPrevue" 
+                                name="dateLivraisonPrevue" 
+                                class="form-input"
+                                required
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="statutCommande" class="form-label">
+                                Statut <span class="required">*</span>
+                            </label>
+                            <select id="statutCommande" name="statutCommande" class="form-select" required>
+                                <option value="">Sélectionner un statut</option>
+                                <option value="En attente">En attente</option>
+                                <option value="Confirmée">Confirmée</option>
+                                <option value="En livraison">En livraison</option>
+                                <option value="Livrée">Livrée</option>
+                                <option value="Annulée">Annulée</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Description (Optionnel) -->
+                    <div class="form-group">
+                        <label for="description" class="form-label">
+                            Description
+                        </label>
+                        <textarea 
+                            id="description" 
+                            name="description" 
+                            class="form-textarea" 
+                            rows="4"
+                            placeholder="Description de la commande..."
+                        ></textarea>
+                    </div>
+
+                    <!-- Info Box -->
+                    <div class="info-box">
+                        <span class="info-icon">ℹ️</span>
+                        <p class="info-text">
+                            La date de commande sera automatiquement enregistrée lors de la création.
+                        </p>
+                    </div>
+
+                    <!-- Modal Footer -->
+                    <div class="modal-footer">
+                        <button type="button" class="btn-secondary" id="btnCancel">
+                            Annuler
+                        </button>
+                        <button type="submit" class="btn-primary">
+                            <span class="btn-icon">✓</span>
+                            Créer la commande
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // JavaScript pour gérer la modal
+        const modalOverlay = document.getElementById('modalOverlay');
+        const btnClose = document.getElementById('btnClose');
+        const btnCancel = document.getElementById('btnCancel');
+
+        // Fermer la modal
+        btnClose.addEventListener('click', () => {
+            modalOverlay.style.display = 'none';
+        });
+
+        btnCancel.addEventListener('click', () => {
+            modalOverlay.style.display = 'none';
+        });
+
+        // Fermer si clic en dehors de la modal
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) {
+                modalOverlay.style.display = 'none';
+            }
+        });
+
+        // Afficher la modal au chargement (pour test)
+        window.addEventListener('load', () => {
+            modalOverlay.style.display = 'flex';
+        });
+    </script>
+</body>
+</html>
