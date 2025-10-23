@@ -37,7 +37,7 @@
             {% endif %}
 
             <div class="chart-container">
-                <form method="post" style="padding: 2rem;">
+                <form method="post" enctype="multipart/form-data" style="padding: 2rem;">
                     {% csrf_token %}
                     
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
@@ -94,6 +94,12 @@
                     <div style="margin-top: 1.5rem;">
                         <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Description (optionnel)</label>
                         <textarea name="description" rows="3" class="form-input" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-gray); border-radius: 8px;" placeholder="Description du produit..."></textarea>
+                    </div>
+
+                    <div style="margin-top: 1.5rem;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 0.5rem;">📸 Image du produit (optionnel)</label>
+                        <input type="file" name="image" accept=".jpg,.jpeg,.png,.gif" class="form-input" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-gray); border-radius: 8px;">
+                        <small style="display: block; margin-top: 0.5rem; color: #6c757d;">Formats acceptés : JPG, PNG, GIF (max 5MB)</small>
                     </div>
 
                     <div style="display: flex; gap: 1rem; margin-top: 2rem;">

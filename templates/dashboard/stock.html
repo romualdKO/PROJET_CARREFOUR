@@ -99,6 +99,7 @@
                 <table>
                     <thead>
                         <tr>
+                            <th>IMAGE</th>
                             <th>PRODUIT</th>
                             <th>CATÉGORIE</th>
                             <th>STOCK</th>
@@ -112,6 +113,13 @@
                     <tbody>
                         {% for produit in produits %}
                         <tr>
+                            <td>
+                                {% if produit.image %}
+                                    <img src="{{ produit.image.url }}" alt="{{ produit.nom }}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border-gray);">
+                                {% else %}
+                                    <div style="width: 50px; height: 50px; background: var(--bg-gray); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;">📦</div>
+                                {% endif %}
+                            </td>
                             <td><strong>{{ produit.nom }}</strong><br><small>REF: {{ produit.reference }}</small></td>
                             <td>{{ produit.get_categorie_display }}</td>
                             <td><strong>{{ produit.stock_actuel }}</strong> unités</td>

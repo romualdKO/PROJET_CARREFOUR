@@ -883,8 +883,14 @@ def stock_add_product(request):
                 prix_achat=Decimal(prix_achat),
                 prix_unitaire=Decimal(prix_vente),
                 stock_actuel=int(stock),
-                fournisseur=fournisseur
+                fournisseur=fournisseur,
+                description=description if description else None
             )
+            
+            # Gestion de l'image si elle est fournie
+            if 'image' in request.FILES:
+                produit.image = request.FILES['image']
+                produit.save()
             
             messages.success(request, f"✅ Produit '{nom}' ajouté avec succès ! Stock initial: {stock} unités")
             return redirect('dashboard_stock')
@@ -985,8 +991,8 @@ def stock_produit_edit(request, produit_id):
             produit.seuil_reapprovisionnement = int(seuil_reapprovisionnement)
             produit.stock_minimum = int(stock_minimum)
             produit.stock_maximum = int(stock_maximum)
-            produit.description = description if description else None
-            produit.code_barre = code_barre if code_barre else None
+            produit.description = description if description else ''
+            produit.code_barre = code_barre if code_barre else ''
             produit.fournisseur_principal = fournisseur
             
             produit.save()
@@ -1000,8 +1006,10 @@ def stock_produit_edit(request, produit_id):
                     produit=produit,
                     type_mouvement=type_mouvement,
                     quantite=abs(difference),
+                    stock_avant=stock_ancien,
+                    stock_apres=int(stock_actuel),
                     raison=f"Ajustement manuel (modification produit)",
-                    effectue_par=request.user
+                    employe=request.user
                 )
             
             messages.success(request, f"✅ Produit '{nom}' modifié avec succès !")

@@ -277,6 +277,39 @@
                 return false;
             }
         });
+
+        // Prévisualisation de l'image
+        const imageInput = document.getElementById('imageInput');
+        const imagePreview = document.getElementById('imagePreview');
+        const imageInfo = document.getElementById('imageInfo');
+
+        imageInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                // Vérifier la taille (max 5MB)
+                if (file.size > 5 * 1024 * 1024) {
+                    alert('⚠️ L\'image est trop volumineuse. Taille maximale: 5MB');
+                    imageInput.value = '';
+                    return;
+                }
+
+                // Vérifier le type
+                if (!file.type.match('image.*')) {
+                    alert('⚠️ Veuillez sélectionner un fichier image valide.');
+                    imageInput.value = '';
+                    return;
+                }
+
+                // Afficher la prévisualisation
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    imagePreview.src = e.target.result;
+                    imagePreview.style.display = 'block';
+                    imageInfo.textContent = `Nouvelle image sélectionnée: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
     </script>
 </body>
 </html>

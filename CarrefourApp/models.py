@@ -126,9 +126,9 @@ class Produit(models.Model):
     )
     fournisseur = models.CharField(max_length=200, blank=True, verbose_name="Fournisseur (ancien)")
     
-    description = models.TextField(blank=True, verbose_name="Description")
+    description = models.TextField(blank=True, default='', verbose_name="Description")
     image = models.ImageField(upload_to='produits/', blank=True, null=True)
-    code_barre = models.CharField(max_length=50, blank=True, verbose_name="Code-barres")
+    code_barre = models.CharField(max_length=50, blank=True, default='', verbose_name="Code-barres")
     statut = models.CharField(max_length=20, choices=STATUTS, default='EN_STOCK')
     est_actif = models.BooleanField(default=True, verbose_name="Produit actif")
     date_ajout = models.DateTimeField(auto_now_add=True)
@@ -485,7 +485,7 @@ class UtilisationCoupon(models.Model):
     coupon = models.ForeignKey(Coupon, on_delete=models.CASCADE, related_name='utilisations')
     client = models.ForeignKey(Client, on_delete=models.SET_NULL, null=True, related_name='coupons_utilises')
     transaction = models.ForeignKey('Transaction', on_delete=models.CASCADE, null=True, blank=True)
-    vente = models.ForeignKey('Vente', on_delete=models.CASCADE, null=True, blank=True)
+    vente = models.ForeignKey(Vente, on_delete=models.CASCADE, null=True, blank=True)
     montant_remise = models.DecimalField(max_digits=10, decimal_places=2)
     date_utilisation = models.DateTimeField(auto_now_add=True)
     
@@ -1063,6 +1063,8 @@ class AlerteStock(models.Model):
     )
     
     message = models.TextField(
+        default='',
+        blank=True,
         verbose_name="Message de l'alerte"
     )
     
