@@ -35,6 +35,7 @@ urlpatterns = [
     path('dashboard/stock/', views.dashboard_stock, name='dashboard_stock'),
     path('dashboard/stock/add-product/', views.stock_add_product, name='stock_add_product'),
     path('dashboard/stock/produit/<int:produit_id>/edit/', views.stock_produit_edit, name='stock_produit_edit'),
+    path('dashboard/stock/produit/<int:produit_id>/delete/', views.stock_produit_delete, name='stock_produit_delete'),
     
     # Gestion des fournisseurs
     path('dashboard/stock/fournisseurs/', views.stock_fournisseurs_list, name='stock_fournisseurs_list'),

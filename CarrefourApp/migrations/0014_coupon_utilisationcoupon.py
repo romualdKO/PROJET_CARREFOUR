@@ -49,7 +49,7 @@ class Migration(migrations.Migration):
                 ('client', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='coupons_utilises', to='CarrefourApp.client')),
                 ('coupon', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='utilisations', to='CarrefourApp.coupon')),
                 ('transaction', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='CarrefourApp.transaction')),
-                ('vente', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='CarrefourApp.vente')),
+                ('vente', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='CarrefourApp.Vente')),
             ],
             options={
                 'verbose_name': 'Utilisation de coupon',

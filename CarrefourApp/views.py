@@ -469,7 +469,8 @@ def dashboard_stock(request):
     # ========== STATISTIQUES DE BASE ==========
     total_produits = Produit.objects.filter(est_actif=True).count()
     produits_rupture = Produit.objects.filter(stock_actuel=0, est_actif=True).count()
-    produits_critiques = Produit.objects.filter(stock_actuel__gt=0, stock_actuel__lte=10, est_actif=True).count()
+    # Utiliser la méthode est_critique() qui compare stock_actuel avec stock_critique de chaque produit
+    produits_critiques = sum(1 for p in Produit.objects.filter(est_actif=True) if p.est_critique())
     
     # ========== VALEUR DU STOCK ==========
     valeur_stock_achat = Decimal('0')
@@ -565,6 +566,7 @@ def dashboard_stock(request):
         'total_produits': total_produits,
         'produits_rupture': produits_rupture,
         'produits_critiques_count': produits_critiques,
+        'stock_critique': produits_critiques,  # Alias pour le template
         'valeur_stock_achat': valeur_stock_achat,
         'valeur_stock_vente': valeur_stock_vente,
         'marge_potentielle': marge_potentielle,
@@ -1024,6 +1026,81 @@ def stock_produit_edit(request, produit_id):
         'CATEGORIES': Produit.CATEGORIES
     }
     return render(request, 'dashboard/stock_produit_edit.html', context)
+
+
+@login_required
+def stock_produit_delete(request, produit_id):
+    """Supprimer un produit avec confirmation et validation par mot de passe"""
+    # Vérifier que l'utilisateur est STOCK
+    if request.user.role != 'STOCK':
+        return JsonResponse({
+            'success': False,
+            'message': "Accès non autorisé. Seul le gestionnaire de stock peut supprimer des produits."
+        }, status=403)
+    
+    # Récupérer le produit
+    try:
+        produit = Produit.objects.get(id=produit_id)
+    except Produit.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'message': "Produit introuvable."
+        }, status=404)
+    
+    if request.method == 'POST':
+        import json
+        try:
+            data = json.loads(request.body)
+            password = data.get('password', '')
+            
+            # Vérifier le mot de passe
+            if not request.user.check_password(password):
+                return JsonResponse({
+                    'success': False,
+                    'message': "❌ Mot de passe incorrect. Suppression annulée."
+                }, status=400)
+            
+            # Sauvegarder les infos du produit pour le message
+            nom_produit = produit.nom
+            reference_produit = produit.reference
+            
+            # Créer un mouvement de stock pour tracer la suppression
+            if produit.stock_actuel > 0:
+                MouvementStock.objects.create(
+                    produit=produit,
+                    type_mouvement='SORTIE',
+                    quantite=produit.stock_actuel,
+                    stock_avant=produit.stock_actuel,
+                    stock_apres=0,
+                    raison=f"Suppression du produit {nom_produit} (REF: {reference_produit})",
+                    employe=request.user
+                )
+            
+            # Marquer le produit comme inactif au lieu de le supprimer définitivement
+            # (bonne pratique pour garder l'historique)
+            produit.est_actif = False
+            produit.save()
+            
+            return JsonResponse({
+                'success': True,
+                'message': f"✅ Produit '{nom_produit}' supprimé avec succès !"
+            })
+            
+        except json.JSONDecodeError:
+            return JsonResponse({
+                'success': False,
+                'message': "Erreur de format des données."
+            }, status=400)
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'message': f"Erreur lors de la suppression: {str(e)}"
+            }, status=500)
+    
+    return JsonResponse({
+        'success': False,
+        'message': "Méthode non autorisée."
+    }, status=405)
 
 
 # Vue pour créer un employé (accès RH uniquement)

@@ -105,7 +105,7 @@ class Migration(migrations.Migration):
                 ('prix_unitaire', models.DecimalField(decimal_places=2, max_digits=10)),
                 ('montant_ligne', models.DecimalField(decimal_places=2, max_digits=12)),
                 ('produit', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='CarrefourApp.produit')),
-                ('vente', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='lignes', to='CarrefourApp.vente')),
+                ('vente', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='lignes', to='CarrefourApp.Vente')),
             ],
         ),
         migrations.CreateModel(

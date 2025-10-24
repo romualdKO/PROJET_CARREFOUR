@@ -136,9 +136,12 @@
                                 {% endif %}
                             </td>
                             <td>
-                                <a href="{% url 'stock_produit_edit' produit.id %}" style="border: none; background: var(--primary-blue); color: white; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; text-decoration: none; display: inline-block;">
+                                <a href="{% url 'stock_produit_edit' produit.id %}" style="border: none; background: var(--primary-blue); color: white; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; text-decoration: none; display: inline-block; margin-right: 0.5rem;">
                                     ✏️ Modifier
                                 </a>
+                                <button onclick="confirmDelete({{ produit.id }}, '{{ produit.nom|escapejs }}')" style="border: none; background: #dc3545; color: white; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer;">
+                                    🗑️ Supprimer
+                                </button>
                             </td>
                         </tr>
                         {% endfor %}
@@ -147,5 +150,120 @@
             </div>
         </main>
     </div>
+
+    <!-- Modal de confirmation de suppression -->
+    <div id="deleteModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
+        <div style="background: white; padding: 2rem; border-radius: 12px; max-width: 500px; width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
+            <h2 style="color: #dc3545; margin-bottom: 1rem;">⚠️ Confirmation de suppression</h2>
+            <p style="margin-bottom: 1rem; color: #666;">
+                Êtes-vous sûr de vouloir supprimer le produit <strong id="productName"></strong> ?
+            </p>
+            <p style="margin-bottom: 1.5rem; color: #dc3545; font-weight: 600;">
+                ⚠️ Cette action est irréversible !
+            </p>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: #333;">
+                    Veuillez entrer votre mot de passe pour confirmer :
+                </label>
+                <input type="password" id="deletePassword" placeholder="Mot de passe" style="width: 100%; padding: 0.75rem; border: 2px solid #ddd; border-radius: 8px; font-size: 1rem;">
+                <small id="passwordError" style="color: #dc3545; display: none; margin-top: 0.5rem;">Mot de passe incorrect</small>
+            </div>
+            
+            <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                <button onclick="closeDeleteModal()" style="background: #6c757d; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                    Annuler
+                </button>
+                <button onclick="executeDelete()" style="background: #dc3545; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                    🗑️ Confirmer la suppression
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let productToDelete = null;
+
+        function confirmDelete(productId, productName) {
+            productToDelete = productId;
+            document.getElementById('productName').textContent = productName;
+            document.getElementById('deletePassword').value = '';
+            document.getElementById('passwordError').style.display = 'none';
+            document.getElementById('deleteModal').style.display = 'flex';
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').style.display = 'none';
+            productToDelete = null;
+        }
+
+        async function executeDelete() {
+            const password = document.getElementById('deletePassword').value;
+            const errorDiv = document.getElementById('passwordError');
+            
+            if (!password) {
+                errorDiv.textContent = 'Veuillez entrer votre mot de passe';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/dashboard/stock/produit/${productToDelete}/delete/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({ password: password })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Afficher un message de succès
+                    alert(data.message);
+                    // Recharger la page pour mettre à jour la liste
+                    window.location.reload();
+                } else {
+                    // Afficher l'erreur
+                    errorDiv.textContent = data.message;
+                    errorDiv.style.display = 'block';
+                }
+            } catch (error) {
+                errorDiv.textContent = 'Erreur réseau. Veuillez réessayer.';
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        // Fonction pour récupérer le token CSRF
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // Fermer la modal si on clique en dehors
+        document.getElementById('deleteModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeDeleteModal();
+            }
+        });
+
+        // Permettre la soumission avec Enter
+        document.getElementById('deletePassword').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                executeDelete();
+            }
+        });
+    </script>
 </body>
 </html>
