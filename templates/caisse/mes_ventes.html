@@ -182,7 +182,7 @@
                         {% for transaction in transactions %}
                         <tr>
                             <td>{{ transaction.date_transaction|date:'d/m/Y H:i' }}</td>
-                            <td><code>{{ transaction.numero_transaction }}</code></td>
+                            <td><code>{{ transaction.numero_ticket }}</code></td>
                             <td>
                                 {% if transaction.client %}
                                     <i class="fas fa-user text-success"></i> {{ transaction.client.get_full_name }}
@@ -192,10 +192,10 @@
                                 {% endif %}
                             </td>
                             <td>{{ transaction.lignes.count }}</td>
-                            <td>{{ transaction.montant_ht|floatformat:0|intcomma }} FCFA</td>
+                            <td>{{ transaction.montant_total|floatformat:0|intcomma }} FCFA</td>
                             <td>
-                                {% if transaction.remise > 0 %}
-                                    <span class="badge badge-warning">-{{ transaction.remise|floatformat:0|intcomma }} FCFA</span>
+                                {% if transaction.montant_remise > 0 %}
+                                    <span class="badge badge-warning">-{{ transaction.montant_remise|floatformat:0|intcomma }} FCFA</span>
                                 {% else %}
                                     --
                                 {% endif %}
@@ -222,6 +222,27 @@
                         {% endfor %}
                     </tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Détails Transaction -->
+<div class="modal fade" id="detailsModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="fas fa-receipt"></i> Détails de la Transaction</h5>
+                <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body" id="detailsContent">
+                <div class="text-center">
+                    <i class="fas fa-spinner fa-spin fa-3x text-primary"></i>
+                    <p>Chargement...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Fermer</button>
             </div>
         </div>
     </div>
@@ -283,8 +304,148 @@ new Chart(document.getElementById('caChart'), {
 });
 
 function voirDetails(transactionId) {
-    // TODO: Ouvrir modal ou page détails
-    alert('Détails de la transaction ID: ' + transactionId);
+    // Ouvrir le modal
+    $('#detailsModal').modal('show');
+    
+    // Charger les détails via AJAX
+    fetch(`/caisse/transaction/${transactionId}/details/`, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Construire le HTML des détails
+            let html = `
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <p><strong>N° Transaction:</strong> <code>${data.transaction.numero}</code></p>
+                        <p><strong>Date:</strong> ${data.transaction.date}</p>
+                        <p><strong>Caissier:</strong> ${data.transaction.caissier}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Client:</strong> ${data.transaction.client || 'Anonyme'}</p>
+                        ${data.transaction.client_phone ? `<p><strong>Téléphone:</strong> ${data.transaction.client_phone}</p>` : ''}
+                    </div>
+                </div>
+                
+                <h6 class="border-bottom pb-2 mb-3"><i class="fas fa-shopping-basket"></i> Produits Achetés</h6>
+                <div class="table-responsive mb-3">
+                    <table class="table table-sm table-bordered">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>Produit</th>
+                                <th class="text-center">Qté</th>
+                                <th class="text-right">P.U.</th>
+                                <th class="text-right">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+            
+            data.lignes.forEach(ligne => {
+                html += `
+                    <tr>
+                        <td>${ligne.produit}</td>
+                        <td class="text-center">${ligne.quantite}</td>
+                        <td class="text-right">${ligne.prix_unitaire.toLocaleString('fr-FR')} FCFA</td>
+                        <td class="text-right">${ligne.total.toLocaleString('fr-FR')} FCFA</td>
+                    </tr>`;
+            });
+            
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+                
+                <h6 class="border-bottom pb-2 mb-3"><i class="fas fa-calculator"></i> Récapitulatif Financier</h6>
+                <table class="table table-sm">
+                    <tr>
+                        <td><strong>Sous-total HT:</strong></td>
+                        <td class="text-right">${data.transaction.montant_ht.toLocaleString('fr-FR')} FCFA</td>
+                    </tr>`;
+            
+            if (data.transaction.remise_fidelite > 0) {
+                html += `
+                    <tr class="text-success">
+                        <td><i class="fas fa-star"></i> Remise Fidélité (${data.transaction.pourcentage_fidelite}%):</td>
+                        <td class="text-right">-${data.transaction.remise_fidelite.toLocaleString('fr-FR')} FCFA</td>
+                    </tr>`;
+            }
+            
+            if (data.transaction.remise_promo > 0) {
+                html += `
+                    <tr class="text-info">
+                        <td><i class="fas fa-gift"></i> Remise Promo:</td>
+                        <td class="text-right">-${data.transaction.remise_promo.toLocaleString('fr-FR')} FCFA</td>
+                    </tr>`;
+            }
+            
+            if (data.transaction.remise_coupon > 0) {
+                html += `
+                    <tr class="text-warning">
+                        <td><i class="fas fa-ticket-alt"></i> Coupon:</td>
+                        <td class="text-right">-${data.transaction.remise_coupon.toLocaleString('fr-FR')} FCFA</td>
+                    </tr>`;
+            }
+            
+            if (data.transaction.remise_totale > 0) {
+                html += `
+                    <tr class="bg-light font-weight-bold">
+                        <td><strong>Total Remises:</strong></td>
+                        <td class="text-right text-danger">-${data.transaction.remise_totale.toLocaleString('fr-FR')} FCFA</td>
+                    </tr>`;
+            }
+            
+            html += `
+                    <tr>
+                        <td><strong>TVA (18%):</strong></td>
+                        <td class="text-right">${data.transaction.tva.toLocaleString('fr-FR')} FCFA</td>
+                    </tr>
+                    <tr class="table-success font-weight-bold" style="font-size: 1.1rem;">
+                        <td><strong>MONTANT TOTAL TTC:</strong></td>
+                        <td class="text-right">${data.transaction.montant_final.toLocaleString('fr-FR')} FCFA</td>
+                    </tr>
+                </table>
+                
+                <h6 class="border-bottom pb-2 mb-3 mt-4"><i class="fas fa-money-bill-wave"></i> Paiement</h6>
+                <table class="table table-sm">`;
+            
+            data.paiements.forEach(paiement => {
+                html += `
+                    <tr>
+                        <td><strong>${paiement.type}:</strong></td>
+                        <td class="text-right">${paiement.montant.toLocaleString('fr-FR')} FCFA</td>
+                    </tr>`;
+            });
+            
+            html += `
+                    <tr class="bg-info text-white font-weight-bold">
+                        <td><strong>Montant Donné:</strong></td>
+                        <td class="text-right">${data.transaction.montant_donne.toLocaleString('fr-FR')} FCFA</td>
+                    </tr>
+                    <tr class="bg-warning font-weight-bold">
+                        <td><strong>Monnaie Rendue:</strong></td>
+                        <td class="text-right">${data.transaction.monnaie.toLocaleString('fr-FR')} FCFA</td>
+                    </tr>
+                </table>`;
+            
+            document.getElementById('detailsContent').innerHTML = html;
+        } else {
+            document.getElementById('detailsContent').innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i> ${data.message || 'Erreur lors du chargement des détails'}
+                </div>`;
+        }
+    })
+    .catch(error => {
+        console.error('Erreur:', error);
+        document.getElementById('detailsContent').innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle"></i> Erreur de connexion au serveur
+            </div>`;
+    });
 }
 </script>
 

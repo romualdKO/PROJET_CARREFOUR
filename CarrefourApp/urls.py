@@ -66,6 +66,7 @@ urlpatterns = [
     path('caisse/valider-vente/', views.caisse_valider_vente, name='caisse_valider_vente'),
     path('caisse/rapport/', views.caisse_rapport_journalier, name='caisse_rapport_journalier'),
     path('caisse/mes-ventes/', views.caissier_mes_ventes, name='caissier_mes_ventes'),
+    path('caisse/transaction/<int:transaction_id>/details/', views.transaction_details, name='transaction_details'),
     
     # Gestion planning et congés (Scénario 8.1.3) - Espace Employé
     path('planning/mon-planning/', views.mon_planning, name='mon_planning'),
@@ -123,6 +124,7 @@ urlpatterns = [
     # Algorithme Intelligent de Fidélité (Marketing)
     path('marketing/analyser-fidelite/', views.marketing_analyser_fidelite, name='marketing_analyser_fidelite'),
     path('marketing/fidelite-stats/', views.marketing_fidelite_stats, name='marketing_fidelite_stats'),
+    path('marketing/clients-details/', views.marketing_clients_details, name='marketing_clients_details'),
     
     # Dashboard KPIs CRM
     path('marketing/kpis/', views.marketing_dashboard_kpis, name='marketing_dashboard_kpis'),

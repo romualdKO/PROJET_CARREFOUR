@@ -8,7 +8,7 @@
     <div class="caisse-header">
         <div class="caisse-info">
             <h1>🛒 CAISSE {{ caisse_numero }}</h1>
-            <p>Caissier: {% if request.user.employe %}{{ request.user.employe.nom }} {{ request.user.employe.prenom }}{% else %}{{ request.user.username }}{% endif %}</p>
+            <p>Caissier: {{ request.user.get_full_name|default:request.user.username }}</p>
         </div>
         <div class="caisse-actions">
             <a href="{% url 'caisse_rapport_journalier' %}" class="btn btn-info">
@@ -185,7 +185,59 @@
                     <h5 class="mb-0">💰 TOTAUX</h5>
                 </div>
                 <div class="card-body">
-                    <table class="table table-borderless totaux-table">
+                    <!-- ✅ NOUVEAU : Explication des remises -->
+                    {% if client or remise_promotionnelle > 0 or remise_coupon > 0 %}
+                    <div class="alert alert-info mb-3">
+                        <h6 class="mb-2"><strong>📊 Remises Appliquées</strong></h6>
+                        {% if client %}
+                        <div class="mb-1">
+                            <small>
+                                🏆 <strong>Fidélité {{ client.niveau_fidelite }}</strong>: 
+                                {% if client.niveau_fidelite == 'VIP' %}
+                                    10% de remise automatique
+                                {% elif client.niveau_fidelite == 'GOLD' %}
+                                    5% de remise automatique
+                                {% elif client.niveau_fidelite == 'SILVER' %}
+                                    3% de remise automatique
+                                {% else %}
+                                    Aucune remise (besoin de 100,000 FCFA d'achats pour SILVER)
+                                {% endif %}
+                            </small>
+                        </div>
+                        {% endif %}
+                        {% if remise_promotionnelle > 0 %}
+                        <div class="mb-1">
+                            <small>
+                                🎉 <strong>Promotion</strong>: 5% sur achats ≥ 40 000 FCFA
+                            </small>
+                        </div>
+                        {% endif %}
+                        {% if remise_coupon > 0 %}
+                        <div class="mb-1">
+                            <small>
+                                🎫 <strong>Coupon {{ coupon_applique.code }}</strong>: {{ coupon_applique.description }}
+                            </small>
+                        </div>
+                        {% endif %}
+                        {% if client %}
+                        <hr class="my-2">
+                        <small class="text-muted">
+                            📈 Progression: <strong>{{ client.total_achats|floatformat:0|intcomma }} FCFA</strong> d'achats
+                            {% if client.total_achats < 100000 %}
+                                ({{ 100000|add:"-"|add:client.total_achats|floatformat:0|intcomma }} FCFA restants pour SILVER)
+                            {% elif client.total_achats < 1000000 %}
+                                ({{ 1000000|add:"-"|add:client.total_achats|floatformat:0|intcomma }} FCFA restants pour GOLD)
+                            {% elif client.total_achats < 2000000 %}
+                                ({{ 2000000|add:"-"|add:client.total_achats|floatformat:0|intcomma }} FCFA restants pour VIP)
+                            {% else %}
+                                ⭐ Niveau maximum atteint !
+                            {% endif %}
+                        </small>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    <table class="table table-borderless totaux-table">{
                         <tr>
                             <td>Sous-total:</td>
                             <td class="text-end"><strong>{{ sous_total|floatformat:0 }} FCFA</strong></td>

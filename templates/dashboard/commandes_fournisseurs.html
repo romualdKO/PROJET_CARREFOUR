@@ -125,7 +125,7 @@
                             {% endif %}
                         </td>
                         <td><strong>{{ cmd.montant_total|floatformat:0 }} FCFA</strong></td>
-                        <td>{% if cmd.employe %}{{ cmd.employe.nom }} {{ cmd.employe.prenom }}{% else %}N/A{% endif %}</td>
+                        <td>{% if cmd.employe %}{{ cmd.employe.get_full_name }}{% else %}N/A{% endif %}</td>
                         <td>
                             {% if cmd.statut == 'EN_ATTENTE' %}
                                 <a href="{% url 'valider_commande_fournisseur' cmd.id %}" 

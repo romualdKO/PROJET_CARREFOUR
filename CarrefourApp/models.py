@@ -284,28 +284,52 @@ class Client(models.Model):
     est_actif = models.BooleanField(default=True, verbose_name="Client actif")
     
     def calculer_niveau(self):
-        if self.points_fidelite >= 2000:
+        """Calcule le niveau de fidélité basé sur le MONTANT TOTAL D'ACHATS"""
+        montant_total = float(self.total_achats or 0)
+        
+        # VIP: 2,000,000 FCFA et plus (10% de réduction)
+        if montant_total >= 2000000:
             return 'VIP'
-        elif self.points_fidelite >= 1000:
+        # GOLD: 1,000,000 FCFA et plus (5% de réduction)
+        elif montant_total >= 1000000:
             return 'GOLD'
-        elif self.points_fidelite >= 500:
+        # SILVER: 100,000 FCFA et plus (3% de réduction)
+        elif montant_total >= 100000:
             return 'SILVER'
+        # TOUS: Moins de 100,000 FCFA (0% de réduction)
         return 'TOUS'
     
     def save(self, *args, **kwargs):
         # Générer numéro client si vide
         if not self.numero_client:
-            last_client = Client.objects.all().order_by('-id').last()
-            if last_client and last_client.numero_client:
-                try:
-                    last_num = int(last_client.numero_client.replace('CLT', ''))
-                    self.numero_client = f'CLT{str(last_num + 1).zfill(3)}'
-                except:
-                    self.numero_client = 'CLT001'
-            else:
-                self.numero_client = 'CLT001'
+            from django.db.models import Max
+            import random
+            
+            # Essayer de générer un numéro unique (max 10 tentatives)
+            for attempt in range(10):
+                # Trouver le dernier numéro utilisé
+                last_client = Client.objects.aggregate(Max('numero_client'))['numero_client__max']
+                
+                if last_client and last_client.startswith('CLT'):
+                    try:
+                        last_num = int(last_client.replace('CLT', ''))
+                        new_num = last_num + 1
+                    except:
+                        new_num = random.randint(1000, 9999)
+                else:
+                    new_num = 1
+                
+                self.numero_client = f'CLT{str(new_num).zfill(4)}'
+                
+                # Vérifier si ce numéro existe déjà
+                if not Client.objects.filter(numero_client=self.numero_client).exists():
+                    break
+                    
+                # Si on arrive ici, le numéro existe, on réessaie avec un nombre aléatoire
+                self.numero_client = f'CLT{random.randint(1000, 9999)}'
         
-        self.niveau_fidelite = self.calculer_niveau()
+        # ✅ CORRECTION: Éviter recalcul du niveau pendant save()
+        # Le niveau sera mis à jour après la transaction
         super().save(*args, **kwargs)
     
     def __str__(self):
@@ -454,10 +478,14 @@ class Coupon(models.Model):
     
     def calculer_remise(self, montant):
         """Calcule le montant de la remise"""
+        from decimal import Decimal
+        montant = Decimal(str(montant))
+        valeur = Decimal(str(self.valeur))
+        
         if self.type_remise == 'POURCENTAGE':
-            return montant * (self.valeur / 100)
+            return montant * (valeur / Decimal('100'))
         else:
-            return min(self.valeur, montant)  # Ne pas dépasser le montant total
+            return min(valeur, montant)  # Ne pas dépasser le montant total
     
     def marquer_utilise(self):
         """Marque le coupon comme utilisé"""
@@ -1186,7 +1214,8 @@ class Transaction(models.Model):
     
     def calculer_montant_total(self):
         """Calcule le montant total de la transaction"""
-        total = sum(ligne.sous_total() for ligne in self.lignes.all())
+        from decimal import Decimal
+        total = sum((ligne.sous_total() for ligne in self.lignes.all()), Decimal('0'))
         self.montant_total = total
         self.montant_final = total - self.montant_remise
         self.save()
