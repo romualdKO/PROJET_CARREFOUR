@@ -3475,15 +3475,22 @@ def dashboard_analytics(request):
     
     # === Produits ===
     # Top 10 produits vendus
-    from django.db.models import Count
+    from django.db.models import Count, ExpressionWrapper, DecimalField
+    
+    # Annoter d'abord le montant de chaque ligne, puis grouper
     top_produits = LigneTransaction.objects.filter(
         transaction__statut='VALIDEE',
         transaction__date_transaction__gte=debut_mois
+    ).annotate(
+        montant_ligne=ExpressionWrapper(
+            F('quantite') * F('prix_unitaire'),
+            output_field=DecimalField()
+        )
     ).values(
         'produit__nom'
     ).annotate(
         quantite=Sum('quantite'),
-        ca=Sum(F('quantite') * F('prix_unitaire'))
+        ca=Sum('montant_ligne')
     ).order_by('-quantite')[:10]
     
     # === Clients ===
