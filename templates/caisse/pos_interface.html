@@ -379,47 +379,98 @@
             <small>{{ session.caissier.get_full_name }}</small>
         </div>
 
-        <!-- Section Identification Client -->
-        <div class="client-section">
-            <h6 class="mb-0"><i class="fas fa-user"></i> Identification Client</h6>
-            
-            <!-- Formulaire de recherche -->
-            <div id="clientSearchForm">
-                <div class="client-input-group">
-                    <input type="tel" id="clientPhone" placeholder="Numéro de téléphone" maxlength="15">
-                    <button type="button" onclick="identifyClient()">
-                        <i class="fas fa-search"></i> Identifier
-                    </button>
-                </div>
+        <!-- Section Identification Client (COLLAPSIBLE) -->
+        <div class="client-section" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); overflow: hidden;">
+            <!-- Header cliquable pour replier/déplier -->
+            <div onclick="toggleClientSection()" style="padding: 10px 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none;">
+                <h6 style="margin: 0; font-size: 14px; color: white; font-weight: 700; letter-spacing: 0.5px;">
+                    <i class="fas fa-user-circle"></i> IDENTIFICATION CLIENT
+                </h6>
+                <i id="clientToggleIcon" class="fas fa-chevron-up" style="color: white; font-size: 14px; transition: transform 0.3s;"></i>
             </div>
-
-            <!-- Informations client identifié -->
-            <div id="clientInfo" style="display: none;">
-                <div class="client-info">
-                    <div class="client-info-row">
-                        <strong><i class="fas fa-id-card"></i> <span id="clientName"></span></strong>
-                        <span id="clientBadge"></span>
-                    </div>
-                    <div class="client-info-row">
-                        <span><i class="fas fa-phone"></i> <span id="clientPhoneDisplay"></span></span>
-                        <span><i class="fas fa-star"></i> <span id="clientPoints"></span> pts</span>
-                    </div>
-                    <div class="client-info-row">
-                        <span><i class="fas fa-shopping-bag"></i> <span id="clientAchats"></span> achats</span>
-                        <span><i class="fas fa-percentage"></i> -<span id="clientRemise"></span>%</span>
-                    </div>
-                    
-                    <!-- Liste des coupons disponibles -->
-                    <div id="clientCoupons" style="display: none;">
-                        <div style="margin-top: 8px; font-size: 12px; font-weight: 600;">
-                            <i class="fas fa-ticket-alt"></i> Coupons disponibles:
+            
+            <!-- Contenu collapsible -->
+            <div id="clientSectionContent" style="max-height: 350px; overflow-y: auto; transition: max-height 0.3s ease-out;">
+                <div style="padding: 10px 15px;">
+                    <!-- Formulaire de recherche -->
+                    <div id="clientSearchForm">
+                        <div style="background: white; padding: 12px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1);">
+                            <label style="display: block; color: #333; font-weight: 600; margin-bottom: 6px; font-size: 12px;">
+                                <i class="fas fa-phone" style="color: #667eea;"></i> Numéro de téléphone :
+                            </label>
+                            <input 
+                                type="tel" 
+                                id="clientPhone" 
+                                placeholder="Ex: 0123456789" 
+                                maxlength="15" 
+                                style="
+                                    font-size: 15px; 
+                                    padding: 10px 12px; 
+                                    border-radius: 6px; 
+                                    border: 2px solid #e0e0e0; 
+                                    width: 100%; 
+                                    box-sizing: border-box;
+                                    font-weight: 500;
+                                    transition: all 0.3s;
+                                "
+                                onfocus="this.style.borderColor='#667eea'; this.style.boxShadow='0 0 0 3px rgba(102, 126, 234, 0.1)';"
+                                onblur="this.style.borderColor='#e0e0e0'; this.style.boxShadow='none';"
+                                onkeypress="if(event.key==='Enter') identifyClient();"
+                            >
+                            <button 
+                                type="button" 
+                                onclick="identifyClient()" 
+                                style="
+                                    font-size: 13px; 
+                                    padding: 10px 16px; 
+                                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                                    color: white; 
+                                    border: none; 
+                                    border-radius: 6px; 
+                                    font-weight: 700; 
+                                    margin-top: 8px; 
+                                    width: 100%; 
+                                    cursor: pointer; 
+                                    transition: all 0.3s;
+                                    box-shadow: 0 3px 5px rgba(102, 126, 234, 0.3);
+                                "
+                                onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 5px 10px rgba(102, 126, 234, 0.4)';"
+                                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 3px 5px rgba(102, 126, 234, 0.3)';"
+                            >
+                                <i class="fas fa-search"></i> Identifier
+                            </button>
                         </div>
-                        <div class="coupons-list" id="couponsList"></div>
                     </div>
-                    
-                    <button type="button" class="btn-remove-client" onclick="removeClient()">
-                        <i class="fas fa-times"></i> Retirer client
-                    </button>
+
+                    <!-- Informations client identifié (COMPACTE) -->
+                    <div id="clientInfo" style="display: none;">
+                        <div class="client-info" style="background: white; border-radius: 8px; padding: 10px; margin-top: 8px;">
+                            <div class="client-info-row" style="margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
+                                <strong style="font-size: 13px; color: #333;"><i class="fas fa-id-card" style="color: #667eea;"></i> <span id="clientName"></span></strong>
+                                <span id="clientBadge"></span>
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; font-size: 15px;">
+                                <div style="background: linear-gradient(135deg, #fff9e6 0%, #ffe4a3 100%); padding: 8px 10px; border-radius: 8px; text-align: center; border: 2px solid #ffc107; box-shadow: 0 2px 4px rgba(255, 193, 7, 0.2);">
+                                    <i class="fas fa-star" style="color: #ff9800; font-size: 16px;"></i> <strong style="font-size: 18px; color: #ff6f00;"><span id="clientPoints"></span></strong> <span style="font-weight: 600; color: #f57c00;">pts</span>
+                                </div>
+                                <div style="background: linear-gradient(135deg, #e8f5e9 0%, #a5d6a7 100%); padding: 8px 10px; border-radius: 8px; text-align: center; border: 2px solid #28a745; box-shadow: 0 2px 4px rgba(40, 167, 69, 0.2);">
+                                    <i class="fas fa-percentage" style="color: #2e7d32; font-size: 16px;"></i> <strong style="font-size: 18px; color: #1b5e20;">-<span id="clientRemise"></span>%</strong>
+                                </div>
+                            </div>
+                            
+                            <!-- Liste des coupons (collapsible) -->
+                            <div id="clientCoupons" style="display: none; margin-top: 6px;">
+                                <div style="font-size: 11px; font-weight: 600; margin-bottom: 4px; color: #667eea;">
+                                    <i class="fas fa-ticket-alt"></i> Coupons disponibles:
+                                </div>
+                                <div class="coupons-list" id="couponsList" style="font-size: 11px; max-height: 60px; overflow-y: auto;"></div>
+                            </div>
+                            
+                            <button type="button" class="btn-remove-client" onclick="removeClient()" style="margin-top: 8px; padding: 6px 10px; font-size: 11px; background: #dc3545; color: white; border: none; border-radius: 5px; width: 100%; cursor: pointer; font-weight: 600;">
+                                <i class="fas fa-times"></i> Retirer Client
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -680,14 +731,33 @@ function updateCartDisplay() {
     } else {
         let html = '';
         let subtotal = 0;
+        
+        // Récupérer le pourcentage de remise client (si affiché)
+        const remiseClientElement = document.getElementById('clientRemise');
+        const remisePercentage = remiseClientElement ? parseFloat(remiseClientElement.textContent) || 0 : 0;
+        
         cart.forEach(item => {
             const itemTotal = item.price * item.quantity;
             subtotal += itemTotal;
+            
+            // Calculer la remise pour cet article si client identifié
+            let remiseItem = 0;
+            let itemApresRemise = itemTotal;
+            if (remisePercentage > 0) {
+                remiseItem = itemTotal * (remisePercentage / 100);
+                itemApresRemise = itemTotal - remiseItem;
+            }
+            
             html += `
                 <div class="cart-item">
                     <div>
                         <div class="cart-item-name">${item.name}</div>
-                        <small>${item.price.toFixed(0)} FCFA</small>
+                        <small>${item.price.toFixed(0)} FCFA × ${item.quantity} = ${itemTotal.toFixed(0)} FCFA</small>
+                        ${remisePercentage > 0 ? `
+                        <div style="font-size: 11px; color: #28a745; font-weight: 600; margin-top: 2px;">
+                            <i class="fas fa-tag"></i> Remise ${remisePercentage}%: -${remiseItem.toFixed(0)} FCFA → ${itemApresRemise.toFixed(0)} FCFA
+                        </div>
+                        ` : ''}
                     </div>
                     <div class="cart-item-qty">
                         <button class="qty-btn" onclick="updateQuantity(${item.id}, -1)">-</button>
@@ -701,9 +771,14 @@ function updateCartDisplay() {
             `;
         });
         cartContainer.innerHTML = html;
+        
+        // Calculer la remise totale
+        const discountTotal = subtotal * (remisePercentage / 100);
+        const finalTotal = subtotal - discountTotal;
+        
         document.getElementById('subtotal').textContent = subtotal.toFixed(0) + ' FCFA';
-        document.getElementById('discount').textContent = '0 FCFA';
-        document.getElementById('total').textContent = subtotal.toFixed(0) + ' FCFA';
+        document.getElementById('discount').textContent = (discountTotal > 0 ? '-' : '') + discountTotal.toFixed(0) + ' FCFA';
+        document.getElementById('total').textContent = finalTotal.toFixed(0) + ' FCFA';
         document.getElementById('btnCheckout').disabled = false;
     }
 }
@@ -1029,41 +1104,47 @@ async function confirmPayment() {
         const data = await response.json();
         console.log('Réponse serveur:', data);
         
-        // ⚠️ DÉTECTION D'INCOHÉRENCE ENTRE CLIENT ET SERVEUR
+        // ⚠️ NOTE: Le montant affiché peut différer du montant serveur
+        // car le serveur applique automatiquement les remises (fidélité, promo, coupons)
+        // Cette différence est NORMALE et ne nécessite PAS de nettoyage
+        
         if (!data.success && data.error && data.error.includes('Montant insuffisant')) {
-            const errorMatch = data.error.match(/Requis: ([\d.]+) FCFA/);
-            if (errorMatch) {
-                const serverTotal = parseFloat(errorMatch[1]);
-                if (Math.abs(serverTotal - total) > 1) {  // Différence > 1 FCFA
-                    const doCleanup = confirm(`🚨 INCOHÉRENCE DÉTECTÉE!\n\n` +
-                          `Le panier affiché (${total.toFixed(0)} FCFA) ne correspond PAS\n` +
-                          `à la transaction en base de données (${serverTotal.toFixed(0)} FCFA).\n\n` +
-                          `✅ CORRECTION AUTOMATIQUE:\n` +
-                          `Cliquez OK pour NETTOYER la transaction bloquée\n` +
-                          `et recommencer avec un panier vide.\n\n` +
-                          `Cliquez Annuler pour fermer cette fenêtre\n` +
-                          `et rafraîchir manuellement (Ctrl+F5).`);
-                    
-                    if (doCleanup) {
-                        // Appeler la fonction d'annulation pour nettoyer
-                        await cancelTransaction();
-                    }
-                    return;
-                }
-            }
+            // Afficher simplement l'erreur sans alerte d'incohérence
+            alert('❌ ' + data.error);
+            return;
         }
         
         if (data.success) {
-            const monnaie = received - total;
+            // ✅ Utiliser le montant RÉEL retourné par le serveur
+            const montantFinal = data.montant_final || total;
+            const monnaie = received - montantFinal;
             
             let message = `✅ Vente validée avec succès!\n\n`;
             message += `📄 Ticket: ${data.numero_ticket}\n`;
-            message += `💰 Montant: ${total.toFixed(0)} FCFA\n`;
+            message += `💰 Montant final: ${montantFinal.toFixed(0)} FCFA\n`;
+            
+            // Afficher les remises appliquées si montant différent du sous-total
+            if (Math.abs(montantFinal - total) > 1) {
+                const remiseTotale = total - montantFinal;
+                message += `🎁 Remises appliquées: ${remiseTotale.toFixed(0)} FCFA\n`;
+            }
+            
             message += `💳 Mode: ${currentPaymentCode}\n`;
             message += `📥 Reçu: ${received.toFixed(0)} FCFA\n`;
             
             if (currentPaymentCode === 'ESPECES' && monnaie > 0) {
                 message += `\n💸 MONNAIE À RENDRE: ${monnaie.toFixed(0)} FCFA`;
+            }
+            
+            // ✅ Afficher infos client si présent
+            if (data.client && currentClient) {
+                message += `\n\n� Client: ${data.client.nom_complet}`;
+                if (data.client.points_gagnes) {
+                    message += `\n🎁 +${data.client.points_gagnes} pts (Total: ${data.client.points} pts)`;
+                }
+                if (data.client.progression) {
+                    message += `\n� ${data.client.progression}`;
+                }
             }
             
             alert(message);
@@ -1179,6 +1260,8 @@ async function createNewClient(phone, nom, prenom, email) {
 }
 
 function displayClientInfo(client) {
+    console.log('📋 Affichage info client:', client);
+    
     // Cacher le formulaire de recherche
     document.getElementById('clientSearchForm').style.display = 'none';
     
@@ -1186,11 +1269,20 @@ function displayClientInfo(client) {
     const infoDiv = document.getElementById('clientInfo');
     infoDiv.style.display = 'block';
     
-    document.getElementById('clientName').textContent = client.nom_complet;
-    document.getElementById('clientPhoneDisplay').textContent = client.telephone;
-    document.getElementById('clientPoints').textContent = client.points;
-    document.getElementById('clientAchats').textContent = client.nombre_achats;
-    document.getElementById('clientRemise').textContent = client.remise_fidelite;
+    // Remplir les informations du client
+    document.getElementById('clientName').textContent = client.nom_complet || (client.nom + ' ' + client.prenom);
+    document.getElementById('clientPoints').textContent = client.points_fidelite || 0;
+    
+    // Calculer le pourcentage de remise selon le niveau
+    let pourcentageRemise = 0;
+    if (client.niveau_fidelite === 'SILVER') {
+        pourcentageRemise = 3;
+    } else if (client.niveau_fidelite === 'GOLD') {
+        pourcentageRemise = 5;
+    } else if (client.niveau_fidelite === 'VIP') {
+        pourcentageRemise = 10;
+    }
+    document.getElementById('clientRemise').textContent = pourcentageRemise;
     
     // Badge niveau
     const badgeClass = {
@@ -1198,10 +1290,10 @@ function displayClientInfo(client) {
         'GOLD': 'badge-gold',
         'SILVER': 'badge-silver',
         'TOUS': 'badge-tous'
-    }[client.niveau] || 'badge-tous';
+    }[client.niveau_fidelite] || 'badge-tous';
     
     document.getElementById('clientBadge').innerHTML = 
-        `<span class="badge-niveau ${badgeClass}">${client.niveau_label}</span>`;
+        `<span class="badge-niveau ${badgeClass}">${client.niveau_fidelite || 'TOUS'}</span>`;
     
     // Afficher les coupons si disponibles
     if (client.coupons && client.coupons.length > 0) {
@@ -1222,7 +1314,12 @@ function displayClientInfo(client) {
             `;
             couponsList.appendChild(couponItem);
         });
+    } else {
+        // Pas de coupons, cacher la section
+        document.getElementById('clientCoupons').style.display = 'none';
     }
+    
+    console.log('✅ Info client affichées - Points:', client.points_fidelite, 'Niveau:', client.niveau_fidelite, 'Remise:', pourcentageRemise + '%');
     
     // Recalculer le total avec la remise fidélité
     updateCartDisplay();
@@ -1242,6 +1339,26 @@ function removeClient() {
         updateCartDisplay();
         
         showNotification('info', 'Client retiré. Vente anonyme.');
+    }
+}
+
+// Fonction pour replier/déplier la section client
+function toggleClientSection() {
+    const content = document.getElementById('clientSectionContent');
+    const icon = document.getElementById('clientToggleIcon');
+    
+    if (content.style.maxHeight === '0px') {
+        // Déplier
+        content.style.maxHeight = '350px';
+        icon.classList.remove('fa-chevron-down');
+        icon.classList.add('fa-chevron-up');
+        icon.style.transform = 'rotate(0deg)';
+    } else {
+        // Replier
+        content.style.maxHeight = '0px';
+        icon.classList.remove('fa-chevron-up');
+        icon.classList.add('fa-chevron-down');
+        icon.style.transform = 'rotate(180deg)';
     }
 }
 
@@ -1300,8 +1417,17 @@ updateCartDisplay = function() {
             subtotal += item.price * item.quantity;
         });
         
-        const remiseFidelite = currentClient.remise_fidelite;
-        const montantRemise = subtotal * (remiseFidelite / 100);
+        // Calculer le pourcentage de remise selon le niveau
+        let pourcentageRemise = 0;
+        if (currentClient.niveau_fidelite === 'SILVER') {
+            pourcentageRemise = 3;
+        } else if (currentClient.niveau_fidelite === 'GOLD') {
+            pourcentageRemise = 5;
+        } else if (currentClient.niveau_fidelite === 'VIP') {
+            pourcentageRemise = 10;
+        }
+        
+        const montantRemise = subtotal * (pourcentageRemise / 100);
         const total = subtotal - montantRemise;
         
         document.getElementById('subtotal').textContent = subtotal.toFixed(0) + ' FCFA';

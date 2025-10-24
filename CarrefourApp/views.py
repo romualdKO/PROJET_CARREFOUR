@@ -2588,11 +2588,35 @@ def pos_interface(request):
         messages.warning(request, "Vous devez ouvrir une session de caisse avant de commencer.")
         return redirect('pos_ouvrir_session')
     
+    # 🧹 NETTOYAGE : Supprimer les transactions EN_COURS sans lignes (transactions fantômes)
+    from django.db.models import Count
+    transactions_vides = Transaction.objects.filter(
+        caissier=request.user,
+        statut='EN_COURS'
+    ).annotate(nb_lignes=Count('lignes')).filter(nb_lignes=0)
+    
+    nb_supprimees = transactions_vides.count()
+    if nb_supprimees > 0:
+        transactions_vides.delete()
+        print(f"🧹 NETTOYAGE : {nb_supprimees} transaction(s) vide(s) supprimée(s)")
+    
     # Récupérer la transaction en cours (si existe)
     transaction_en_cours = Transaction.objects.filter(
         caissier=request.user,
         statut='EN_COURS'
-    ).first()
+    ).order_by('-date_transaction').first()
+    
+    # ✅ Si aucune transaction EN_COURS, en créer une automatiquement
+    if not transaction_en_cours:
+        print(f"✨ CRÉATION AUTOMATIQUE d'une nouvelle transaction pour {request.user.username}")
+        transaction_en_cours = Transaction.objects.create(
+            caissier=request.user,
+            statut='EN_COURS',
+            montant_total=Decimal('0'),
+            montant_remise=Decimal('0'),
+            montant_final=Decimal('0')
+        )
+        print(f"   ✅ Transaction #{transaction_en_cours.id} créée (Ticket: {transaction_en_cours.numero_ticket})")
     
     # Produits disponibles (stock > 0)
     produits = Produit.objects.filter(
@@ -2802,11 +2826,23 @@ def pos_valider_vente(request):
         paiements = data.get('paiements', [])
         client_id = data.get('client_id')
         
-        # Transaction en cours
+        # 🧹 Nettoyer les vieilles transactions fantômes (>24h)
+        from datetime import timedelta
+        seuil_nettoyage = timezone.now() - timedelta(hours=24)
+        vieilles_transactions = Transaction.objects.filter(
+            caissier=request.user,
+            statut='EN_COURS',
+            date_transaction__lt=seuil_nettoyage
+        )
+        if vieilles_transactions.exists():
+            print(f"🧹 Nettoyage de {vieilles_transactions.count()} vieilles transactions fantômes")
+            vieilles_transactions.update(statut='ANNULE')
+        
+        # Transaction en cours (la plus récente)
         transaction = Transaction.objects.filter(
             caissier=request.user,
             statut='EN_COURS'
-        ).first()
+        ).order_by('-date_transaction').first()
         
         if not transaction:
             return JsonResponse({
@@ -2820,59 +2856,105 @@ def pos_valider_vente(request):
                 'error': 'La transaction ne contient aucun produit.'
             })
         
-        # Vérifier que le montant total des paiements correspond
-        montant_paye = sum(Decimal(str(p['montant'])) for p in paiements)
-        if montant_paye < transaction.montant_final:
-            return JsonResponse({
-                'success': False,
-                'error': f'Montant insuffisant. Reçu: {montant_paye} FCFA, Requis: {transaction.montant_final} FCFA'
-            })
-        
         try:
-            # Associer le client si fourni
+            # Associer le client si fourni ET recalculer les remises
             client = None
             if client_id:
-                print(f"👤 ASSOCIATION CLIENT - ID: {client_id}")
+                print(f"\n👤 ASSOCIATION CLIENT - ID: {client_id}")
                 client = Client.objects.get(id=client_id)
                 transaction.client = client
-                print(f"   ✅ Client associé: {client.get_full_name()} (ID: {client.id})")
+                print(f"   ✅ Client associé: {client.get_full_name()} (Niveau: {client.niveau_fidelite}, Total achats: {client.total_achats} FCFA)")
+                
+                # ⭐ RECALCULER LES MONTANTS avec la remise fidélité
+                sous_total = Decimal(str(transaction.montant_total))
+                print(f"\n💰 RECALCUL REMISES - Sous-total: {sous_total} FCFA")
+                
+                # 1️⃣ Remise fidélité selon le niveau
+                remise_fidelite = Decimal('0')
+                pourcentage_fidelite = 0
+                if client.niveau_fidelite == 'SILVER':
+                    pourcentage_fidelite = 3
+                    remise_fidelite = sous_total * Decimal('0.03')
+                elif client.niveau_fidelite == 'GOLD':
+                    pourcentage_fidelite = 5
+                    remise_fidelite = sous_total * Decimal('0.05')
+                elif client.niveau_fidelite == 'VIP':
+                    pourcentage_fidelite = 10
+                    remise_fidelite = sous_total * Decimal('0.10')
+                
+                if remise_fidelite > Decimal('0'):
+                    print(f"🏆 Remise Fidélité {client.niveau_fidelite}: {pourcentage_fidelite}% = {remise_fidelite} FCFA")
+                
+                # 2️⃣ Remise promotionnelle (≥40k) - SUR LE SOUS-TOTAL (cumulative)
+                remise_promotionnelle = Decimal('0')
+                pourcentage_promo = 0
+                if sous_total >= Decimal('40000'):
+                    pourcentage_promo = 5
+                    remise_promotionnelle = sous_total * Decimal('0.05')
+                    print(f"🎉 Remise Promo (≥40k): {pourcentage_promo}% = {remise_promotionnelle} FCFA")
+                
+                # Total remises (avant coupon)
+                total_remises = remise_fidelite + remise_promotionnelle
+                
+                # Mettre à jour la transaction avec les remises
+                transaction.montant_remise = total_remises
+                transaction.montant_final = sous_total - total_remises
+                transaction.save()
+                
+                print(f"📊 REMISES TOTALES: {remise_fidelite} + {remise_promotionnelle} = {total_remises} FCFA")
+                print(f"✅ MONTANT FINAL RECALCULÉ: {sous_total} - {total_remises} = {transaction.montant_final} FCFA\n")
+                
                 # Mettre à jour dernière visite
                 client.derniere_visite = timezone.now()
                 client.save()
-                print(f"   ✅ Dernière visite mise à jour")
             else:
                 print(f"⚠️ AUCUN CLIENT_ID fourni - vente sans client")
             
-            # ✅ NOUVEAU : Appliquer automatiquement le meilleur coupon
-            from datetime import date
-            coupon_utilise = None
-            remise_coupon_montant = 0
+            # Vérifier que le montant total des paiements correspond (APRÈS recalcul)
+            montant_paye = sum(Decimal(str(p['montant'])) for p in paiements)
+            print(f"💳 VÉRIFICATION PAIEMENT: Reçu {montant_paye} FCFA vs Requis {transaction.montant_final} FCFA")
             
-            if transaction.montant_total > 0:
-                aujourd_hui = date.today()
-                coupons = Coupon.objects.filter(
-                    statut='ACTIF',
-                    date_debut__lte=aujourd_hui,
-                    date_fin__gte=aujourd_hui,
-                    type_coupon='GENERIC'
-                ).order_by('-valeur')
-                
-                for coupon in coupons:
-                    est_valide, message = coupon.est_valide(
-                        client=client, 
-                        montant_achat=float(transaction.montant_total)
-                    )
-                    if est_valide:
-                        remise_coupon_montant = coupon.calculer_remise(float(transaction.montant_total))
-                        coupon_utilise = coupon
-                        
-                        # Appliquer la remise à la transaction
-                        transaction.montant_remise += Decimal(str(remise_coupon_montant))
-                        transaction.montant_final -= Decimal(str(remise_coupon_montant))
-                        transaction.save()
-                        
-                        print(f"🎫 COUPON APPLIQUÉ: {coupon.code} - Remise: {remise_coupon_montant} FCFA")
-                        break
+            # ❌ DÉSACTIVÉ: Les coupons doivent être gérés dans le CRM, pas appliqués automatiquement
+            # Les clients doivent recevoir des coupons SPECIAL (personnalisés) via le CRM
+            # Les coupons GENERIC ne s'appliquent plus automatiquement au POS
+            coupon_utilise = None
+            remise_coupon_montant = Decimal('0')
+            
+            # Si vous voulez activer les coupons automatiques, décommentez ce code:
+            # from datetime import date
+            # if transaction.montant_total > 0:
+            #     aujourd_hui = date.today()
+            #     coupons = Coupon.objects.filter(
+            #         statut='ACTIF',
+            #         date_debut__lte=aujourd_hui,
+            #         date_fin__gte=aujourd_hui,
+            #         type_coupon='GENERIC'
+            #     ).order_by('-valeur')
+            #     
+            #     for coupon in coupons:
+            #         est_valide, message = coupon.est_valide(
+            #             client=client, 
+            #             montant_achat=float(transaction.montant_total)
+            #         )
+            #         if est_valide:
+            #             remise_coupon_montant = Decimal(str(coupon.calculer_remise(float(transaction.montant_total))))
+            #             coupon_utilise = coupon
+            #             
+            #             # Appliquer la remise coupon à la transaction
+            #             transaction.montant_remise += remise_coupon_montant
+            #             transaction.montant_final -= remise_coupon_montant
+            #             transaction.save()
+            #             
+            #             print(f"🎫 COUPON APPLIQUÉ: {coupon.code} - Remise: {remise_coupon_montant} FCFA")
+            #             print(f"✅ MONTANT FINAL AVEC COUPON: {transaction.montant_final} FCFA\n")
+            #             break
+            
+            # RE-vérifier avec le montant final (après coupon)
+            if montant_paye < transaction.montant_final:
+                return JsonResponse({
+                    'success': False,
+                    'error': f'Montant insuffisant. Reçu: {montant_paye} FCFA, Requis: {transaction.montant_final} FCFA'
+                })
             
             # Enregistrer les paiements
             for paiement_data in paiements:
@@ -2900,8 +2982,9 @@ def pos_valider_vente(request):
                 MouvementStock.objects.create(
                     produit=produit,
                     type_mouvement='SORTIE',
-                    quantite=-ligne.quantite,  # Négatif pour sortie
+                    quantite=ligne.quantite,  # Positif pour la quantité vendue
                     stock_avant=stock_avant,
+                    stock_apres=nouveau_stock,  # ✅ AJOUT du stock après
                     raison=f'Vente - Ticket {transaction.numero_ticket}',
                     employe=request.user
                 )
@@ -2919,6 +3002,30 @@ def pos_valider_vente(request):
                 coupon_utilise.marquer_utilise()
                 print(f"🎫 UTILISATION COUPON ENREGISTRÉE: {coupon_utilise.code}")
             
+            # ✅ CORRECTION: Attribuer points et mettre à jour niveau
+            if client:
+                # Calculer points gagnés (1 point par 1000 FCFA)
+                points_gagnes = int(transaction.montant_final / 1000)
+                
+                # Mettre à jour les points en base de données directement
+                Client.objects.filter(id=client.id).update(
+                    points_fidelite=F('points_fidelite') + points_gagnes,
+                    total_achats=F('total_achats') + transaction.montant_final
+                )
+                
+                # Recharger le client pour avoir les valeurs à jour
+                client.refresh_from_db()
+                
+                # Mettre à jour le niveau selon le nombre d'achats
+                nouveau_niveau = client.calculer_niveau()
+                if client.niveau_fidelite != nouveau_niveau:
+                    Client.objects.filter(id=client.id).update(niveau_fidelite=nouveau_niveau)
+                    client.niveau_fidelite = nouveau_niveau
+                    print(f"🎉 UPGRADE NIVEAU: {client.get_full_name()} → {nouveau_niveau}")
+                
+                print(f"🎁 POINTS ATTRIBUÉS: {client.get_full_name()} +{points_gagnes} pts (Total: {client.points_fidelite})")
+                print(f"📊 ACHATS: {client.nombre_achats()} | NIVEAU: {client.niveau_fidelite}")
+            
             # Valider la transaction
             transaction.statut = 'VALIDEE'
             transaction.save()
@@ -2930,6 +3037,10 @@ def pos_valider_vente(request):
             client_data = None
             if transaction.client:
                 client = transaction.client
+                
+                # Calculer points gagnés (en fonction du montant final)
+                points_gagnes = int(transaction.montant_final / 1000)
+                
                 client_data = {
                     'id': client.id,
                     'nom_complet': client.get_full_name(),
@@ -2938,8 +3049,21 @@ def pos_valider_vente(request):
                     'nombre_achats': client.nombre_achats(),  # Recalculé en temps réel
                     'niveau': client.niveau_fidelite,
                     'niveau_label': client.get_niveau_fidelite_display(),
-                    'remise_fidelite': get_remise_fidelite(client.niveau_fidelite)
+                    'remise_fidelite': get_remise_fidelite(client.niveau_fidelite),
+                    'points_gagnes': points_gagnes  # ✅ NOUVEAU: Points gagnés
                 }
+                
+                # ✅ NOUVEAU: Calculer progression vers niveau suivant
+                achats = client.nombre_achats()
+                if achats < 5:
+                    client_data['progression'] = f"{5 - achats} achats restants pour SILVER"
+                elif achats < 15:
+                    client_data['progression'] = f"{15 - achats} achats restants pour GOLD"
+                elif achats < 30:
+                    client_data['progression'] = f"{30 - achats} achats restants pour VIP"
+                else:
+                    client_data['progression'] = "Niveau maximum atteint! 🎉"
+                
                 print(f"👤 DONNÉES CLIENT MISES À JOUR: {client.get_full_name()} - {client.nombre_achats()} achats")
             
             return JsonResponse({
@@ -4039,11 +4163,15 @@ def caisse_vente(request):
     # Calculer totaux
     sous_total = sum(item['montant_ligne'] for item in panier)
     
-    # Calcul remises
+    # ✅ CORRECTION: Calcul remises CUMULATIVES sur sous-total
     remise_fidelite = 0
     remise_promotionnelle = 0
     pourcentage_fidelite = 0
+    pourcentage_promo = 0
     
+    print(f"\n💰 CALCUL REMISES - Sous-total: {sous_total} FCFA")
+    
+    # 1. Remise fidélité (sur sous-total)
     if client:
         if client.niveau_fidelite == 'VIP':
             pourcentage_fidelite = 10
@@ -4054,11 +4182,14 @@ def caisse_vente(request):
         elif client.niveau_fidelite == 'SILVER':
             pourcentage_fidelite = 3
             remise_fidelite = sous_total * 0.03
+        print(f"🏆 Remise Fidélité {client.niveau_fidelite}: {pourcentage_fidelite}% = {remise_fidelite} FCFA")
     
-    # Remise promotionnelle (5% si ≥ 40,000 FCFA)
-    montant_apres_fidelite = sous_total - remise_fidelite
-    if montant_apres_fidelite >= 40000:
-        remise_promotionnelle = montant_apres_fidelite * 0.05
+    # 2. Remise promotionnelle (sur sous-total si ≥ 40,000 FCFA)
+    # ✅ CORRECTION: Calculer sur sous_total, pas sur montant après fidélité
+    if sous_total >= 40000:
+        pourcentage_promo = 5
+        remise_promotionnelle = sous_total * 0.05
+        print(f"🎉 Remise Promo (≥40k): 5% = {remise_promotionnelle} FCFA")
     
     # ✅ NOUVEAU : Recherche et application automatique des coupons
     from datetime import date
@@ -4099,11 +4230,17 @@ def caisse_vente(request):
                     coupon_applique = coupon
                     remise_coupon = remise_calculee
                     coupons_disponibles[-1]['est_applique'] = True
+                    print(f"🎫 Coupon APPLIQUÉ: {coupon.code} - {remise_calculee} FCFA")
     
+    # ✅ CUMUL DE TOUTES LES REMISES
     total_remises = remise_fidelite + remise_promotionnelle + remise_coupon
+    print(f"📊 TOTAL REMISES: {remise_fidelite} + {remise_promotionnelle} + {remise_coupon} = {total_remises} FCFA")
+    
     montant_avant_tva = sous_total - total_remises
     tva = montant_avant_tva * 0.18  # TVA 18%
     montant_final = montant_avant_tva + tva
+    
+    print(f"✅ MONTANT FINAL: {sous_total} - {total_remises} = {montant_avant_tva} + TVA {tva} = {montant_final} FCFA\n")
     
     # Points fidélité à gagner
     points_a_gagner = int(montant_final / 1000) if montant_final > 0 else 0
@@ -4117,6 +4254,7 @@ def caisse_vente(request):
         'remise_fidelite': remise_fidelite,
         'pourcentage_fidelite': pourcentage_fidelite,
         'remise_promotionnelle': remise_promotionnelle,
+        'pourcentage_promo': pourcentage_promo,  # ✅ NOUVEAU
         'remise_coupon': remise_coupon,  # ✅ NOUVEAU
         'coupon_applique': coupon_applique,  # ✅ NOUVEAU
         'coupons_disponibles': coupons_disponibles,  # ✅ NOUVEAU
@@ -4215,97 +4353,54 @@ def caisse_vider_panier(request):
 def caisse_identifier_client(request):
     """AJAX - Identifier ou créer un client par téléphone"""
     if request.method == 'POST':
-        import json
-        telephone = request.POST.get('telephone', '').strip()
-        action = request.POST.get('action', 'identify')  # identify ou create
-        
-        if not telephone:
-            request.session['client_id'] = None
-            request.session.modified = True
-            return JsonResponse({'success': True, 'client': None, 'message': 'Vente anonyme'})
-        
-        # Vérifier si le client existe
         try:
-            client = Client.objects.get(telephone=telephone)
-            client.derniere_visite = timezone.now()
-            client.save()
+            import json
+            telephone = request.POST.get('telephone', '').strip()
+            action = request.POST.get('action', 'identify')  # identify ou create
             
-            request.session['client_id'] = client.id
-            request.session.modified = True
+            if not telephone:
+                request.session['client_id'] = None
+                request.session.modified = True
+                return JsonResponse({'success': True, 'client': None, 'message': 'Vente anonyme'})
             
-            # Récupérer les coupons disponibles (si modèle Coupon existe)
-            coupons_disponibles = []
+            # Vérifier si le client existe
             try:
-                from datetime import date
-                coupons = Coupon.objects.filter(
-                    client=client,
-                    est_utilise=False,
-                    date_debut__lte=date.today(),
-                    date_fin__gte=date.today()
-                )
-                for coupon in coupons:
-                    coupons_disponibles.append({
-                        'id': coupon.id,
-                        'code': coupon.code,
-                        'type': coupon.type_remise,
-                        'valeur': float(coupon.valeur),
-                        'description': coupon.description
-                    })
-            except:
-                pass
-            
-            return JsonResponse({
-                'success': True,
-                'action': 'identified',
-                'client': {
-                    'id': client.id,
-                    'numero': client.numero_client,
-                    'nom_complet': client.get_full_name(),
-                    'nom': client.nom,
-                    'prenom': client.prenom,
-                    'telephone': client.telephone,
-                    'email': client.email,
-                    'niveau': client.niveau_fidelite,
-                    'niveau_label': client.get_niveau_fidelite_display(),
-                    'points': client.points_fidelite,
-                    'total_achats': float(client.total_achats),
-                    'nombre_achats': client.nombre_achats(),
-                    'coupons': coupons_disponibles,
-                    'remise_fidelite': get_remise_fidelite(client.niveau_fidelite)
-                },
-                'message': f'Client {client.get_full_name()} identifié!'
-            })
-            
-        except Client.DoesNotExist:
-            # Si action = create, créer le nouveau client
-            if action == 'create':
-                nom = request.POST.get('nom', '').strip()
-                prenom = request.POST.get('prenom', '').strip()
-                email = request.POST.get('email', '').strip()
-                
-                if not nom:
-                    return JsonResponse({
-                        'success': False,
-                        'error': 'Le nom est obligatoire pour créer un nouveau client'
-                    })
-                
-                # Créer le nouveau client
-                client = Client.objects.create(
-                    telephone=telephone,
-                    nom=nom,
-                    prenom=prenom,
-                    email=email,
-                    points_fidelite=0,
-                    niveau_fidelite='TOUS',
-                    derniere_visite=timezone.now()
-                )
+                client = Client.objects.get(telephone=telephone)
+                client.derniere_visite = timezone.now()
+                client.save(update_fields=['derniere_visite'])  # ✅ Sauvegarder seulement derniere_visite
                 
                 request.session['client_id'] = client.id
                 request.session.modified = True
                 
+                # Récupérer les coupons disponibles (si modèle Coupon existe)
+                coupons_disponibles = []
+                try:
+                    from datetime import date
+                    # ✅ CORRECTION: Inclure coupons génériques ET spécifiques au client
+                    coupons = Coupon.objects.filter(
+                        Q(client=client) | Q(type_coupon='GENERIC'),  # ✅ Client OU Générique
+                        est_utilise=False,
+                        statut='ACTIF',
+                        date_debut__lte=date.today(),
+                        date_fin__gte=date.today()
+                    ).distinct()
+                    
+                    for coupon in coupons:
+                        coupons_disponibles.append({
+                            'id': coupon.id,
+                            'code': coupon.code,
+                            'type': coupon.type_remise,
+                            'valeur': float(coupon.valeur),
+                            'description': coupon.description,
+                            'type_coupon': coupon.type_coupon  # ✅ Indiquer si générique ou spécifique
+                        })
+                except Exception as e:
+                    print(f"⚠️ Erreur récupération coupons: {e}")
+                    pass
+                
                 return JsonResponse({
                     'success': True,
-                    'action': 'created',
+                    'action': 'identified',
                     'client': {
                         'id': client.id,
                         'numero': client.numero_client,
@@ -4317,22 +4412,89 @@ def caisse_identifier_client(request):
                         'niveau': client.niveau_fidelite,
                         'niveau_label': client.get_niveau_fidelite_display(),
                         'points': client.points_fidelite,
-                        'total_achats': 0,
-                        'nombre_achats': 0,
-                        'coupons': [],
-                        'remise_fidelite': 0
+                        'total_achats': float(client.total_achats),
+                        'nombre_achats': client.nombre_achats(),
+                        'coupons': coupons_disponibles,
+                        'remise_fidelite': get_remise_fidelite(client.niveau_fidelite)
                     },
-                    'message': f'Nouveau client {client.get_full_name()} créé avec succès!'
+                    'message': f'Client {client.get_full_name()} identifié!'
                 })
-            else:
-                # Client non trouvé, demander confirmation pour création
-                return JsonResponse({
-                    'success': False,
-                    'action': 'not_found',
-                    'error': 'Client non trouvé',
-                    'message': f'Aucun client avec le numéro {telephone}. Voulez-vous créer un nouveau client?',
-                    'telephone': telephone
-                })
+                
+            except Client.DoesNotExist:
+                # Si action = create, créer le nouveau client
+                if action == 'create':
+                    nom = request.POST.get('nom', '').strip()
+                    prenom = request.POST.get('prenom', '').strip()
+                    email = request.POST.get('email', '').strip()
+                    
+                    if not nom:
+                        return JsonResponse({
+                            'success': False,
+                            'error': 'Le nom est obligatoire pour créer un nouveau client'
+                        })
+                    
+                    try:
+                        # ✅ Créer le nouveau client avec gestion d'erreur
+                        client = Client.objects.create(
+                            telephone=telephone,
+                            nom=nom,
+                            prenom=prenom,
+                            email=email if email else None,
+                            points_fidelite=0,
+                            niveau_fidelite='TOUS',
+                            derniere_visite=timezone.now()
+                        )
+                        
+                        request.session['client_id'] = client.id
+                        request.session.modified = True
+                        
+                        print(f"✅ NOUVEAU CLIENT CRÉÉ: {client.get_full_name()} - {client.telephone}")
+                        
+                        return JsonResponse({
+                            'success': True,
+                            'action': 'created',
+                            'client': {
+                                'id': client.id,
+                                'numero': client.numero_client,
+                                'nom_complet': client.get_full_name(),
+                                'nom': client.nom,
+                                'prenom': client.prenom,
+                                'telephone': client.telephone,
+                                'email': client.email or '',
+                                'niveau': client.niveau_fidelite,
+                                'niveau_label': client.get_niveau_fidelite_display(),
+                                'points': client.points_fidelite,
+                                'total_achats': 0,
+                                'nombre_achats': 0,
+                                'coupons': [],
+                                'remise_fidelite': 0
+                            },
+                            'message': f'Nouveau client {client.get_full_name()} créé avec succès!'
+                        })
+                    except Exception as e:
+                        print(f"❌ ERREUR CRÉATION CLIENT: {e}")
+                        return JsonResponse({
+                            'success': False,
+                            'error': f'Erreur lors de la création du client: {str(e)}'
+                        })
+                else:
+                    # Client non trouvé, demander confirmation pour création
+                    return JsonResponse({
+                        'success': False,
+                        'action': 'not_found',
+                        'error': 'Client non trouvé',
+                        'message': f'Aucun client avec le numéro {telephone}. Voulez-vous créer un nouveau client?',
+                        'telephone': telephone
+                    })
+        
+        except Exception as e:
+            print(f"❌ ERREUR caisse_identifier_client: {e}")
+            import traceback
+            traceback.print_exc()
+            return JsonResponse({
+                'success': False,
+                'error': f'Erreur serveur: {str(e)}'
+            })
     
     return JsonResponse({'success': False, 'error': 'Méthode non autorisée'})
 
@@ -4373,19 +4535,31 @@ def caisse_valider_vente(request):
             # Calculer totaux
             sous_total = sum(item['montant_ligne'] for item in panier)
             
+            # ✅ REMISE FIDÉLITÉ basée sur le sous-total
             remise_fidelite = 0
+            pourcentage_fidelite = 0
             if client:
                 if client.niveau_fidelite == 'VIP':
+                    pourcentage_fidelite = 10
                     remise_fidelite = sous_total * 0.10
                 elif client.niveau_fidelite == 'GOLD':
+                    pourcentage_fidelite = 5
                     remise_fidelite = sous_total * 0.05
                 elif client.niveau_fidelite == 'SILVER':
+                    pourcentage_fidelite = 3
                     remise_fidelite = sous_total * 0.03
             
-            montant_apres_fidelite = sous_total - remise_fidelite
+            print(f"\n💰 CALCUL REMISES - Sous-total: {sous_total} FCFA")
+            if client:
+                print(f"🏆 Remise Fidélité {client.niveau_fidelite}: {pourcentage_fidelite}% = {remise_fidelite} FCFA")
+            
+            # ✅ REMISE PROMO : Calculée sur le SOUS-TOTAL (pas montant après fidélité)
             remise_promotionnelle = 0
-            if montant_apres_fidelite >= 40000:
-                remise_promotionnelle = montant_apres_fidelite * 0.05
+            pourcentage_promo = 0
+            if sous_total >= 40000:  # ✅ Correction : Sur sous_total
+                pourcentage_promo = 5
+                remise_promotionnelle = sous_total * 0.05
+                print(f"🎉 Remise Promo (≥40k): 5% = {remise_promotionnelle} FCFA")
             
             # ✅ NOUVEAU : Appliquer automatiquement le meilleur coupon
             from datetime import date
@@ -4408,12 +4582,16 @@ def caisse_valider_vente(request):
                     if est_valide:
                         remise_coupon = coupon.calculer_remise(sous_total)
                         coupon_utilise = coupon
+                        print(f"🎫 Coupon APPLIQUÉ: {coupon.code} - {remise_coupon} FCFA")
                         break  # Prendre le premier (meilleur)
             
             total_remises = remise_fidelite + remise_promotionnelle + remise_coupon
             montant_avant_tva = sous_total - total_remises
             tva = montant_avant_tva * 0.18
             montant_final = montant_avant_tva + tva
+            
+            print(f"📊 TOTAL REMISES: {remise_fidelite} + {remise_promotionnelle} + {remise_coupon} = {total_remises} FCFA")
+            print(f"✅ MONTANT FINAL: {sous_total} - {total_remises} = {montant_avant_tva} + TVA {tva} = {montant_final} FCFA\n")
             
             # Créer la vente
             vente = Vente.objects.create(
@@ -4456,11 +4634,30 @@ def caisse_valider_vente(request):
                     stock_apres=produit.stock_actuel
                 )
             
-            # Attribuer points fidélité
+            # ✅ CORRECTION : Attribuer points fidélité et mettre à jour niveau
             if client:
+                # Calculer points gagnés (1 point par 1000 FCFA)
                 points_gagnes = int(montant_final / 1000)
-                client.points_fidelite += points_gagnes
-                client.save()
+                
+                # Mettre à jour les points en base de données directement
+                Client.objects.filter(id=client.id).update(
+                    points_fidelite=models.F('points_fidelite') + points_gagnes,
+                    derniere_visite=timezone.now(),
+                    total_achats=models.F('total_achats') + montant_final
+                )
+                
+                # Recharger le client pour avoir les valeurs à jour
+                client.refresh_from_db()
+                
+                # Mettre à jour le niveau selon le nombre d'achats
+                nouveau_niveau = client.calculer_niveau()
+                if client.niveau_fidelite != nouveau_niveau:
+                    Client.objects.filter(id=client.id).update(niveau_fidelite=nouveau_niveau)
+                    client.niveau_fidelite = nouveau_niveau
+                    print(f"🎉 UPGRADE NIVEAU: {client.get_full_name()} → {nouveau_niveau}")
+                
+                print(f"🎁 POINTS ATTRIBUÉS: {client.get_full_name()} +{points_gagnes} pts (Total: {client.points_fidelite})")
+                print(f"📊 ACHATS: {client.nombre_achats()} | NIVEAU: {client.niveau_fidelite}")
             
             # ✅ NOUVEAU : Enregistrer l'utilisation du coupon
             if coupon_utilise:
@@ -4478,7 +4675,25 @@ def caisse_valider_vente(request):
             request.session['client_id'] = None
             request.session.modified = True
             
-            messages.success(request, f'✅ Vente {vente.numero_transaction} enregistrée! Montant: {montant_final:,.0f} FCFA')
+            # ✅ Message de succès détaillé avec info fidélité
+            message_success = f'✅ Vente {vente.numero_transaction} enregistrée! Montant: {montant_final:,.0f} FCFA'
+            
+            if client:
+                # Recharger pour avoir les dernières données
+                client.refresh_from_db()
+                message_success += f' | 🎁 {client.get_full_name()}: +{points_gagnes} pts (Total: {client.points_fidelite} pts)'
+                message_success += f' | 🏆 Niveau: {client.niveau_fidelite} ({client.nombre_achats()} achats)'
+                
+                # Indiquer progression
+                achats = client.nombre_achats()
+                if achats < 5:
+                    message_success += f' | 📈 {5 - achats} achats restants pour SILVER'
+                elif achats < 15:
+                    message_success += f' | 📈 {15 - achats} achats restants pour GOLD'
+                elif achats < 30:
+                    message_success += f' | 📈 {30 - achats} achats restants pour VIP'
+            
+            messages.success(request, message_success)
             return redirect('caisse_vente')
             
         except Exception as e:
@@ -4691,6 +4906,105 @@ def caissier_mes_ventes(request):
     return render(request, 'caisse/mes_ventes.html', context)
 
 
+@login_required
+def transaction_details(request, transaction_id):
+    """API pour récupérer les détails d'une transaction pour le modal"""
+    if request.user.role not in ['CAISSIER', 'MANAGER', 'ADMIN']:
+        return JsonResponse({'success': False, 'message': 'Accès refusé'}, status=403)
+    
+    try:
+        # Récupérer la transaction
+        transaction = Transaction.objects.select_related('client', 'caissier').prefetch_related(
+            'lignes__produit', 'paiements__type_paiement'
+        ).get(id=transaction_id, caissier=request.user)
+        
+        # Construire les données
+        lignes_data = []
+        sous_total = 0
+        for ligne in transaction.lignes.all():
+            total_ligne = float(ligne.quantite * ligne.prix_unitaire)
+            sous_total += total_ligne
+            lignes_data.append({
+                'produit': ligne.produit.nom,
+                'quantite': ligne.quantite,
+                'prix_unitaire': float(ligne.prix_unitaire),
+                'total': total_ligne
+            })
+        
+        paiements_data = []
+        montant_donne_total = 0
+        for paiement in transaction.paiements.all():
+            paiements_data.append({
+                'type': paiement.type_paiement.nom,
+                'montant': float(paiement.montant)
+            })
+            montant_donne_total += float(paiement.montant)
+        
+        # Calculer la monnaie rendue
+        monnaie = montant_donne_total - float(transaction.montant_final)
+        
+        # Remise totale
+        remise_totale = float(transaction.montant_remise) if transaction.montant_remise else 0
+        
+        # Calculer le montant avant TVA
+        montant_avant_tva = float(transaction.montant_final) / 1.18  # Retirer la TVA de 18%
+        tva = float(transaction.montant_final) - montant_avant_tva
+        
+        # Déterminer les remises (estimation si pas stockées séparément)
+        remise_fidelite = 0
+        remise_promo = 0
+        remise_coupon = 0
+        pourcentage_fidelite = 0
+        
+        if transaction.client:
+            if transaction.client.niveau_fidelite == 'SILVER':
+                pourcentage_fidelite = 3
+                remise_fidelite = sous_total * 0.03
+            elif transaction.client.niveau_fidelite == 'GOLD':
+                pourcentage_fidelite = 5
+                remise_fidelite = sous_total * 0.05
+            elif transaction.client.niveau_fidelite == 'VIP':
+                pourcentage_fidelite = 10
+                remise_fidelite = sous_total * 0.10
+        
+        # Si remise totale > remise fidélité, il y a d'autres remises
+        if remise_totale > remise_fidelite:
+            remise_promo = remise_totale - remise_fidelite
+        
+        data = {
+            'success': True,
+            'transaction': {
+                'numero': transaction.numero_ticket,
+                'date': transaction.date_transaction.strftime('%d/%m/%Y %H:%M'),
+                'caissier': transaction.caissier.get_full_name(),
+                'client': transaction.client.get_full_name() if transaction.client else None,
+                'client_phone': transaction.client.telephone if transaction.client else None,
+                'montant_ht': sous_total,  # Sous-total des produits
+                'remise_fidelite': remise_fidelite,
+                'remise_promo': remise_promo,
+                'remise_coupon': remise_coupon,
+                'remise_totale': remise_totale,
+                'pourcentage_fidelite': pourcentage_fidelite,
+                'tva': tva,
+                'montant_final': float(transaction.montant_final),
+                'montant_donne': montant_donne_total,
+                'monnaie': monnaie
+            },
+            'lignes': lignes_data,
+            'paiements': paiements_data
+        }
+        
+        return JsonResponse(data)
+        
+    except Transaction.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Transaction introuvable'}, status=404)
+    except Exception as e:
+        print(f"❌ Erreur détails transaction: {e}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
+
 # ==================== GESTION PLANNING & CONGÉS (Scénario 8.1.3) ====================
 
 @login_required
@@ -4889,21 +5203,21 @@ def rh_traiter_demande(request, demande_id):
             
             if action == 'approuver':
                 demande.statut = 'APPROUVE'
-                demande.approuve_par = request.user.employe if hasattr(request.user, 'employe') else None
+                demande.approuve_par = request.user
                 demande.date_traitement = timezone.now()
                 demande.commentaire_rh = commentaire_rh
                 demande.save()
                 
-                messages.success(request, f'✅ Demande de congé approuvée pour {demande.employe.nom}')
+                messages.success(request, f'✅ Demande de congé approuvée pour {demande.employe.get_full_name()}')
                 
             elif action == 'rejeter':
                 demande.statut = 'REJETE'
-                demande.approuve_par = request.user.employe if hasattr(request.user, 'employe') else None
+                demande.approuve_par = request.user
                 demande.date_traitement = timezone.now()
                 demande.commentaire_rh = commentaire_rh
                 demande.save()
                 
-                messages.warning(request, f'❌ Demande de congé rejetée pour {demande.employe.nom}')
+                messages.warning(request, f'❌ Demande de congé rejetée pour {demande.employe.get_full_name()}')
             
             return redirect('rh_demandes_conges')
             
@@ -4938,7 +5252,7 @@ def rh_gestion_absences(request):
                 commentaire=commentaire
             )
             
-            messages.success(request, f'✅ Absence enregistrée pour {employe.nom}')
+            messages.success(request, f'✅ Absence enregistrée pour {employe.get_full_name()}')
             
         except Exception as e:
             messages.error(request, f'Erreur: {str(e)}')
@@ -5236,18 +5550,63 @@ def marketing_analyser_fidelite(request):
         out = StringIO()
         
         try:
+            # Statistiques AVANT analyse
+            stats_avant = {
+                'tous': Client.objects.filter(niveau_fidelite='TOUS', est_actif=True).count(),
+                'silver': Client.objects.filter(niveau_fidelite='SILVER', est_actif=True).count(),
+                'gold': Client.objects.filter(niveau_fidelite='GOLD', est_actif=True).count(),
+                'vip': Client.objects.filter(niveau_fidelite='VIP', est_actif=True).count(),
+            }
+            stats_avant['total'] = sum(stats_avant.values())
+            
             call_command('analyser_fidelite', 
                         generer_coupons=generer_coupons,
                         stdout=out)
             
-            # Récupérer les statistiques
+            # Récupérer les statistiques APRÈS analyse
+            stats_apres = {
+                'tous': Client.objects.filter(niveau_fidelite='TOUS', est_actif=True).count(),
+                'silver': Client.objects.filter(niveau_fidelite='SILVER', est_actif=True).count(),
+                'gold': Client.objects.filter(niveau_fidelite='GOLD', est_actif=True).count(),
+                'vip': Client.objects.filter(niveau_fidelite='VIP', est_actif=True).count(),
+            }
+            stats_apres['total'] = sum(stats_apres.values())
+            
+            # Calculer les changements
+            upgrades = 0
+            downgrades = 0
+            for niveau in ['vip', 'gold', 'silver']:
+                diff = stats_apres[niveau] - stats_avant[niveau]
+                if diff > 0:
+                    upgrades += diff
+                elif diff < 0:
+                    downgrades += abs(diff)
+            
+            # Compter les coupons générés (si option activée)
+            coupons_generes = 0
+            if generer_coupons:
+                # Compter les coupons créés aujourd'hui
+                from datetime import timedelta
+                today_start = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+                coupons_generes = Coupon.objects.filter(
+                    date_creation__gte=today_start,
+                    description__icontains='promotion'
+                ).count()
+            
+            # Récupérer l'output
             output = out.getvalue()
             
             messages.success(request, '✅ Analyse de fidélité terminée avec succès!')
             
             context = {
                 'output': output,
-                'success': True
+                'success': True,
+                'stats_avant': stats_avant,
+                'stats_apres': stats_apres,
+                'total_clients': stats_avant['total'],
+                'upgrades': upgrades,
+                'downgrades': downgrades,
+                'coupons_generes': coupons_generes
             }
             
             return render(request, 'marketing/analyse_fidelite_resultat.html', context)
@@ -5298,6 +5657,14 @@ def marketing_fidelite_stats(request):
         'VIP': Client.objects.filter(niveau_fidelite='VIP', est_actif=True).count(),
     }
     
+    # Total clients actifs
+    total_clients = Client.objects.filter(est_actif=True).count()
+    
+    # Calculer les pourcentages
+    pourcentages = {}
+    for niveau in ['TOUS', 'SILVER', 'GOLD', 'VIP']:
+        pourcentages[niveau] = (repartition[niveau] / total_clients * 100) if total_clients > 0 else 0
+    
     # Essayer Transaction d'abord
     try:
         # Clients actifs (achat dans les 30 derniers jours)
@@ -5306,6 +5673,15 @@ def marketing_fidelite_stats(request):
             transactions__date_transaction__date__gte=un_mois_ago,
             est_actif=True
         ).distinct().count()
+        
+        # Taux d'activité
+        taux_activite = (clients_actifs / total_clients * 100) if total_clients > 0 else 0
+        
+        # CA total 3 mois
+        ca_total_3mois = Transaction.objects.filter(
+            statut='VALIDEE',
+            date_transaction__date__gte=trois_mois_ago
+        ).aggregate(total=Sum('montant_final'))['total'] or 0
         
         # CA par niveau sur 3 mois
         ca_par_niveau = {}
@@ -5341,6 +5717,12 @@ def marketing_fidelite_stats(request):
             est_actif=True
         ).distinct().count()
         
+        taux_activite = (clients_actifs / total_clients * 100) if total_clients > 0 else 0
+        
+        ca_total_3mois = Vente.objects.filter(
+            date_vente__date__gte=trois_mois_ago
+        ).aggregate(total=Sum('montant_final'))['total'] or 0
+        
         ca_par_niveau = {}
         for niveau in ['TOUS', 'SILVER', 'GOLD', 'VIP']:
             ca = Vente.objects.filter(
@@ -5364,7 +5746,18 @@ def marketing_fidelite_stats(request):
             nb_achats=Count('id')
         ).order_by('-ca')[:10]
     
+    # Créer l'objet stats pour le template
+    stats = {
+        'total_clients': total_clients,
+        'clients_actifs_30j': clients_actifs,
+        'taux_activite': taux_activite,
+        'ca_total_3mois': ca_total_3mois,
+        'repartition': repartition,
+        'pourcentages': pourcentages,
+    }
+    
     context = {
+        'stats': stats,
         'repartition': repartition,
         'clients_actifs': clients_actifs,
         'ca_par_niveau': ca_par_niveau,
@@ -5372,6 +5765,120 @@ def marketing_fidelite_stats(request):
     }
     
     return render(request, 'marketing/fidelite_stats.html', context)
+
+
+@login_required
+def marketing_clients_details(request):
+    """Vue détaillée des clients avec leurs statistiques d'achat"""
+    if request.user.role not in ['MARKETING', 'DG', 'ADMIN']:
+        messages.error(request, "Accès refusé.")
+        dashboard_url = get_dashboard_by_role(request.user)
+        return redirect(dashboard_url)
+    
+    from datetime import timedelta
+    from django.db.models import Sum, Count, Avg, Max
+    
+    # Récupérer les filtres
+    periode = request.GET.get('periode', 'mois')  # jour, semaine, mois, tout
+    niveau_filter = request.GET.get('niveau', 'TOUS')  # TOUS, SILVER, GOLD, VIP, ou vide pour tous
+    
+    # Calculer la date de début selon la période
+    today = timezone.now().date()
+    if periode == 'jour':
+        date_debut = today
+    elif periode == 'semaine':
+        date_debut = today - timedelta(days=7)
+    elif periode == 'mois':
+        date_debut = today - timedelta(days=30)
+    else:  # tout
+        date_debut = today - timedelta(days=365*10)  # 10 ans en arrière
+    
+    # Récupérer tous les clients
+    clients = Client.objects.filter(est_actif=True)
+    
+    # Filtrer par niveau si spécifié
+    if niveau_filter and niveau_filter != 'TOUS':
+        clients = clients.filter(niveau_fidelite=niveau_filter)
+    
+    # Enrichir chaque client avec ses statistiques
+    clients_stats = []
+    for client in clients:
+        # Statistiques de transactions sur la période
+        transactions = Transaction.objects.filter(
+            client=client,
+            statut='VALIDEE',
+            date_transaction__date__gte=date_debut
+        )
+        
+        total_achats = transactions.aggregate(total=Sum('montant_final'))['total'] or Decimal('0')
+        nb_achats = transactions.count()
+        dernier_achat = transactions.aggregate(max_date=Max('date_transaction'))['max_date']
+        
+        # Calculer l'assiduité (nombre de jours entre aujourd'hui et le dernier achat)
+        if dernier_achat:
+            jours_depuis_dernier_achat = (today - dernier_achat.date()).days
+        else:
+            jours_depuis_dernier_achat = None
+        
+        # Calculer la fréquence d'achat (achats/jours de période)
+        if periode == 'jour':
+            jours_periode = 1
+        elif periode == 'semaine':
+            jours_periode = 7
+        elif periode == 'mois':
+            jours_periode = 30
+        else:
+            jours_periode = 365
+        
+        frequence = nb_achats / jours_periode if jours_periode > 0 else 0
+        
+        # Statut d'assiduité
+        if jours_depuis_dernier_achat is None:
+            assiduite_statut = 'Jamais acheté'
+            assiduite_classe = 'danger'
+        elif jours_depuis_dernier_achat <= 7:
+            assiduite_statut = 'Très actif'
+            assiduite_classe = 'success'
+        elif jours_depuis_dernier_achat <= 30:
+            assiduite_statut = 'Actif'
+            assiduite_classe = 'info'
+        elif jours_depuis_dernier_achat <= 90:
+            assiduite_statut = 'Modéré'
+            assiduite_classe = 'warning'
+        else:
+            assiduite_statut = 'Inactif'
+            assiduite_classe = 'danger'
+        
+        clients_stats.append({
+            'client': client,
+            'total_achats': total_achats,
+            'nb_achats': nb_achats,
+            'dernier_achat': dernier_achat,
+            'jours_depuis_dernier_achat': jours_depuis_dernier_achat,
+            'frequence': frequence,
+            'assiduite_statut': assiduite_statut,
+            'assiduite_classe': assiduite_classe,
+        })
+    
+    # Trier par total des achats décroissant
+    clients_stats.sort(key=lambda x: x['total_achats'], reverse=True)
+    
+    # Statistiques globales
+    total_ca = sum(c['total_achats'] for c in clients_stats)
+    total_transactions = sum(c['nb_achats'] for c in clients_stats)
+    nb_clients_actifs = sum(1 for c in clients_stats if c['jours_depuis_dernier_achat'] and c['jours_depuis_dernier_achat'] <= 30)
+    
+    context = {
+        'clients_stats': clients_stats,
+        'periode': periode,
+        'niveau_filter': niveau_filter,
+        'date_debut': date_debut,
+        'total_ca': total_ca,
+        'total_transactions': total_transactions,
+        'nb_clients_actifs': nb_clients_actifs,
+    }
+    
+    return render(request, 'marketing/clients_details.html', context)
 
 
 @login_required

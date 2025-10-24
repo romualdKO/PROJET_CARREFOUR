@@ -6,6 +6,178 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SuperMarché Plus - Accueil</title>
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        /* Carousel styles */
+        .carousel-container {
+            position: relative;
+            width: 100%;
+            height: 500px;
+            overflow: hidden;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        
+        .carousel-slide {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+        }
+        
+        .carousel-slide.active {
+            opacity: 1;
+        }
+        
+        .carousel-slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .carousel-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .carousel-overlay h2 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .carousel-indicators {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            z-index: 10;
+        }
+        
+        .carousel-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.5);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .carousel-indicator.active {
+            background: white;
+            transform: scale(1.2);
+        }
+        
+        .hero-modern {
+            padding: 5rem 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero-modern::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="2" fill="white" opacity="0.1"/></svg>');
+            opacity: 0.3;
+        }
+        
+        .hero-content-modern {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .hero-text-modern {
+            color: white;
+            animation: fadeInLeft 1s ease-out;
+        }
+        
+        @keyframes fadeInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        .hero-text-modern h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .hero-text-modern h1 span {
+            color: #ffd700;
+            display: block;
+        }
+        
+        .hero-text-modern p {
+            font-size: 1.3rem;
+            margin-bottom: 2.5rem;
+            opacity: 0.95;
+            line-height: 1.6;
+        }
+        
+        .hero-buttons {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .hero-buttons .btn {
+            padding: 1rem 2.5rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .hero-buttons .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+        
+        @media (max-width: 768px) {
+            .hero-content-modern {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+            .hero-text-modern h1 {
+                font-size: 2.5rem;
+            }
+            .carousel-container {
+                height: 300px;
+            }
+        }
+    </style>
 </head>
 <body>
     <!-- Navigation -->
@@ -27,22 +199,49 @@
         </div>
     </nav>
 
-    <!-- Hero Section -->
-    <section class="hero">
+    <!-- Hero Section avec Carrousel -->
+    <section class="hero-modern">
         <div class="container">
-            <div class="hero-content">
-                <div class="hero-text">
+            <div class="hero-content-modern">
+                <div class="hero-text-modern">
                     <h1>Révolutionnez <span>Votre Supermarché</span></h1>
                     <p>Une solution complète pour gérer les stocks, les ventes, les équipes et les clients. Optimisez vos opérations avec notre plateforme tout-en-un.</p>
-                    <div style="display: flex; gap: 1rem;">
-                        <a href="{% url 'login' %}" class="btn btn-primary">Se Connecter</a>
-                        <a href="{% url 'about' %}" class="btn btn-secondary">En Savoir Plus</a>
+                    <div class="hero-buttons">
+                        <a href="{% url 'login' %}" class="btn btn-primary" style="background: #ffd700; color: #333;">Se Connecter</a>
+                        <a href="{% url 'about' %}" class="btn btn-secondary" style="background: white; color: #667eea;">En Savoir Plus</a>
                     </div>
                 </div>
-                <div class="hero-image">
-                    <div style="background: rgba(255,255,255,0.1); padding: 3rem; border-radius: 16px; text-align: center;">
-                        <div style="font-size: 8rem;">🏪</div>
-                        <p style="color: white; font-size: 1.2rem; margin-top: 1rem;">Gestion moderne et efficace</p>
+                <div>
+                    <!-- Carrousel -->
+                    <div class="carousel-container">
+                        <div class="carousel-slide active">
+                            <img src="{% static 'image/Capture d\'écran 2025-10-23 144949.png' %}" alt="Interface 1">
+                            <div class="carousel-overlay">
+                                <h2>Gestion des Stocks Intelligente</h2>
+                                <p>Suivez votre inventaire en temps réel</p>
+                            </div>
+                        </div>
+                        <div class="carousel-slide">
+                            <img src="{% static 'image/Capture d\'écran 2025-10-23 145049.png' %}" alt="Interface 2">
+                            <div class="carousel-overlay">
+                                <h2>Point de Vente Moderne</h2>
+                                <p>Interface rapide et intuitive</p>
+                            </div>
+                        </div>
+                        <div class="carousel-slide">
+                            <img src="{% static 'image/Capture d\'écran 2025-10-23 145257.png' %}" alt="Interface 3">
+                            <div class="carousel-overlay">
+                                <h2>Analyses Avancées</h2>
+                                <p>Tableaux de bord et statistiques détaillées</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Indicateurs -->
+                        <div class="carousel-indicators">
+                            <div class="carousel-indicator active" data-slide="0"></div>
+                            <div class="carousel-indicator" data-slide="1"></div>
+                            <div class="carousel-indicator" data-slide="2"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -50,97 +249,146 @@
     </section>
 
     <!-- Solutions Section -->
-    <section style="padding: 4rem 0;">
+    <section style="padding: 6rem 0; background: linear-gradient(to bottom, #f8f9fa 0%, #ffffff 100%);">
         <div class="container">
-            <div style="text-align: center; margin-bottom: 3rem;">
-                <h2 style="font-size: 2.5rem; color: var(--text-dark); margin-bottom: 1rem;">Nos Solutions Intégrées</h2>
-                <p style="color: var(--text-light); font-size: 1.1rem;">Découvrez comment notre plateforme transforme la gestion de votre supermarché avec des modules interconnectés et intelligents.</p>
+            <div style="text-align: center; margin-bottom: 4rem; animation: fadeInUp 1s ease-out;">
+                <h2 style="font-size: 3rem; color: #2c3e50; margin-bottom: 1rem; font-weight: 800;">Nos Solutions Intégrées</h2>
+                <div style="width: 80px; height: 4px; background: linear-gradient(to right, #667eea, #764ba2); margin: 1rem auto 1.5rem;"></div>
+                <p style="color: #6b7280; font-size: 1.2rem; max-width: 700px; margin: 0 auto;">Découvrez une plateforme complète qui transforme la gestion de votre supermarché</p>
             </div>
             
-            <div class="cards-grid">
-                <div class="card">
-                    <div class="kpi-icon orange" style="margin-bottom: 1rem;">📦</div>
-                    <h3 style="font-size: 1.3rem; margin-bottom: 0.75rem;">Gestion des Stocks</h3>
-                    <p style="color: var(--text-light);">Suivez votre inventaire en temps réel, recevez des alertes de réapprovisionnement et gérez vos fournisseurs efficacement.</p>
-                    <ul style="margin-top: 1rem; padding-left: 1.5rem; color: var(--text-light);">
-                        <li>Inventaire automatisé</li>
-                        <li>Alertes de stock critique</li>
-                        <li>Gestion des commandes fournisseurs</li>
-                    </ul>
-                    <a href="{% url 'login' %}" class="btn btn-primary" style="margin-top: 1.5rem; display: inline-block;">Accéder au module</a>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2.5rem; max-width: 1400px; margin: 0 auto;">
+                <!-- Card 1 -->
+                <div style="background: white; border-radius: 20px; padding: 2.5rem; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.08); transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); border: 2px solid transparent;" class="solution-card">
+                    <div style="width: 90px; height: 90px; margin: 0 auto 1.5rem; background: linear-gradient(135deg, #ff9a56, #ff6b6b); border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 3rem; box-shadow: 0 10px 30px rgba(255, 107, 107, 0.3);">
+                        📦
+                    </div>
+                    <h3 style="font-size: 1.5rem; margin-bottom: 1rem; color: #2c3e50; font-weight: 700;">Gestion des Stocks</h3>
+                    <p style="color: #6b7280; margin-bottom: 2rem; line-height: 1.7; font-size: 1rem;">Suivez votre inventaire en temps réel avec alertes automatiques de réapprovisionnement</p>
+                    <a href="{% url 'login' %}" style="display: inline-block; padding: 0.9rem 2rem; background: linear-gradient(135deg, #ff9a56, #ff6b6b); color: white; text-decoration: none; border-radius: 50px; font-weight: 600; transition: all 0.3s; box-shadow: 0 5px 15px rgba(255, 107, 107, 0.3);">Découvrir →</a>
                 </div>
 
-                <div class="card">
-                    <div class="kpi-icon green" style="margin-bottom: 1rem;">💰</div>
-                    <h3 style="font-size: 1.3rem; margin-bottom: 0.75rem;">Gestion des Caisses</h3>
-                    <p style="color: var(--text-light);">Interface de vente intuitive, support multi-paiements et rapports détaillés pour optimiser votre chiffre d'affaires.</p>
-                    <ul style="margin-top: 1rem; padding-left: 1.5rem; color: var(--text-light);">
-                        <li>Point de vente moderne</li>
-                        <li>Historique et statistiques</li>
-                        <li>Synchronisation temps réel</li>
-                    </ul>
-                    <a href="{% url 'login' %}" class="btn btn-primary" style="margin-top: 1.5rem; display: inline-block;">Accéder au module</a>
+                <!-- Card 2 -->
+                <div style="background: white; border-radius: 20px; padding: 2.5rem; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.08); transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); border: 2px solid transparent;" class="solution-card">
+                    <div style="width: 90px; height: 90px; margin: 0 auto 1.5rem; background: linear-gradient(135deg, #48bb78, #38a169); border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 3rem; box-shadow: 0 10px 30px rgba(72, 187, 120, 0.3);">
+                        💰
+                    </div>
+                    <h3 style="font-size: 1.5rem; margin-bottom: 1rem; color: #2c3e50; font-weight: 700;">Point de Vente</h3>
+                    <p style="color: #6b7280; margin-bottom: 2rem; line-height: 1.7; font-size: 1rem;">Interface moderne et rapide avec support complet des paiements multiples</p>
+                    <a href="{% url 'login' %}" style="display: inline-block; padding: 0.9rem 2rem; background: linear-gradient(135deg, #48bb78, #38a169); color: white; text-decoration: none; border-radius: 50px; font-weight: 600; transition: all 0.3s; box-shadow: 0 5px 15px rgba(72, 187, 120, 0.3);">Découvrir →</a>
                 </div>
 
-                <div class="card">
-                    <div class="kpi-icon blue" style="margin-bottom: 1rem;">👥</div>
-                    <h3 style="font-size: 1.3rem; margin-bottom: 0.75rem;">Ressources Humaines</h3>
-                    <p style="color: var(--text-light);">Gérez vos employés, plannings, présences et formations avec un système RH complet et automatisé.</p>
-                    <ul style="margin-top: 1rem; padding-left: 1.5rem; color: var(--text-light);">
-                        <li>Gestion des employés</li>
-                        <li>Plannings et présences</li>
-                        <li>Formations et évaluations</li>
-                    </ul>
-                    <a href="{% url 'login' %}" class="btn btn-primary" style="margin-top: 1.5rem; display: inline-block;">Accéder au module</a>
+                <!-- Card 3 -->
+                <div style="background: white; border-radius: 20px; padding: 2.5rem; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.08); transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); border: 2px solid transparent;" class="solution-card">
+                    <div style="width: 90px; height: 90px; margin: 0 auto 1.5rem; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 3rem; box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);">
+                        👥
+                    </div>
+                    <h3 style="font-size: 1.5rem; margin-bottom: 1rem; color: #2c3e50; font-weight: 700;">Ressources Humaines</h3>
+                    <p style="color: #6b7280; margin-bottom: 2rem; line-height: 1.7; font-size: 1rem;">Gestion complète de vos équipes, plannings et évaluations de performance</p>
+                    <a href="{% url 'login' %}" style="display: inline-block; padding: 0.9rem 2rem; background: linear-gradient(135deg, #667eea, #764ba2); color: white; text-decoration: none; border-radius: 50px; font-weight: 600; transition: all 0.3s; box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);">Découvrir →</a>
                 </div>
 
-                <div class="card">
-                    <div class="kpi-icon purple" style="margin-bottom: 1rem;">🎁</div>
-                    <h3 style="font-size: 1.3rem; margin-bottom: 0.75rem;">Fidélisation Client</h3>
-                    <p style="color: var(--text-light);">Programme de fidélité, promotions ciblées et gestion des réclamations pour fidéliser votre clientèle.</p>
-                    <ul style="margin-top: 1rem; padding-left: 1.5rem; color: var(--text-light);">
-                        <li>Cartes de fidélité</li>
-                        <li>Campagnes promotionnelles</li>
-                        <li>Gestion des réclamations</li>
-                    </ul>
-                    <a href="{% url 'login' %}" class="btn btn-primary" style="margin-top: 1.5rem; display: inline-block;">Accéder au module</a>
+                <!-- Card 4 -->
+                <div style="background: white; border-radius: 20px; padding: 2.5rem; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.08); transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); border: 2px solid transparent;" class="solution-card">
+                    <div style="width: 90px; height: 90px; margin: 0 auto 1.5rem; background: linear-gradient(135deg, #f093fb, #f5576c); border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 3rem; box-shadow: 0 10px 30px rgba(240, 147, 251, 0.3);">
+                        🎁
+                    </div>
+                    <h3 style="font-size: 1.5rem; margin-bottom: 1rem; color: #2c3e50; font-weight: 700;">Fidélisation Client</h3>
+                    <p style="color: #6b7280; margin-bottom: 2rem; line-height: 1.7; font-size: 1rem;">Programme de fidélité avancé avec promotions et offres personnalisées</p>
+                    <a href="{% url 'login' %}" style="display: inline-block; padding: 0.9rem 2rem; background: linear-gradient(135deg, #f093fb, #f5576c); color: white; text-decoration: none; border-radius: 50px; font-weight: 600; transition: all 0.3s; box-shadow: 0 5px 15px rgba(240, 147, 251, 0.3);">Découvrir →</a>
                 </div>
 
-                <div class="card">
-                    <div class="kpi-icon red" style="margin-bottom: 1rem;">🔒</div>
-                    <h3 style="font-size: 1.3rem; margin-bottom: 0.75rem;">Sécurité et Contrôle</h3>
-                    <p style="color: var(--text-light);">Système de contrôle d'accès robuste avec gestion des permissions et audit complet des opérations.</p>
-                    <ul style="margin-top: 1rem; padding-left: 1.5rem; color: var(--text-light);">
-                        <li>Authentification sécurisée</li>
-                        <li>Gestion des permissions</li>
-                        <li>Historique des actions</li>
-                    </ul>
-                    <a href="{% url 'login' %}" class="btn btn-primary" style="margin-top: 1.5rem; display: inline-block;">Accéder au module</a>
-                </div>
-
-                <div class="card">
-                    <div class="kpi-icon green" style="margin-bottom: 1rem;">📊</div>
-                    <h3 style="font-size: 1.3rem; margin-bottom: 0.75rem;">Analyses et Indicateurs</h3>
-                    <p style="color: var(--text-light);">Tableaux de bord analytiques avec KPIs, graphiques interactifs et rapports automatisés pour piloter votre activité.</p>
-                    <ul style="margin-top: 1rem; padding-left: 1.5rem; color: var(--text-light);">
-                        <li>KPIs en temps réel</li>
-                        <li>Graphiques interactifs</li>
-                        <li>Export PDF/Excel</li>
-                    </ul>
-                    <a href="{% url 'login' %}" class="btn btn-primary" style="margin-top: 1.5rem; display: inline-block;">Accéder au module</a>
+                <!-- Card 5 -->
+                <div style="background: white; border-radius: 20px; padding: 2.5rem; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.08); transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); border: 2px solid transparent;" class="solution-card">
+                    <div style="width: 90px; height: 90px; margin: 0 auto 1.5rem; background: linear-gradient(135deg, #4facfe, #00f2fe); border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 3rem; box-shadow: 0 10px 30px rgba(79, 172, 254, 0.3);">
+                        📊
+                    </div>
+                    <h3 style="font-size: 1.5rem; margin-bottom: 1rem; color: #2c3e50; font-weight: 700;">Analyses & Rapports</h3>
+                    <p style="color: #6b7280; margin-bottom: 2rem; line-height: 1.7; font-size: 1rem;">Tableaux de bord intelligents avec KPIs et rapports exportables</p>
+                    <a href="{% url 'login' %}" style="display: inline-block; padding: 0.9rem 2rem; background: linear-gradient(135deg, #4facfe, #00f2fe); color: white; text-decoration: none; border-radius: 50px; font-weight: 600; transition: all 0.3s; box-shadow: 0 5px 15px rgba(79, 172, 254, 0.3);">Découvrir →</a>
                 </div>
             </div>
         </div>
     </section>
 
     <!-- Footer -->
-    <footer style="background: var(--text-dark); color: white; padding: 2rem 0; margin-top: 4rem;">
+    <footer style="background: #2c3e50; color: white; padding: 3rem 0;">
         <div class="container">
             <div style="text-align: center;">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">🛒</div>
+                <h3 style="margin-bottom: 0.5rem;">SuperMarché Plus</h3>
+                <p style="opacity: 0.8; margin-bottom: 2rem;">Système de gestion intégré pour supermarchés</p>
                 <p>&copy; 2024 SuperMarché Plus. Tous droits réservés.</p>
-                <p style="margin-top: 0.5rem; opacity: 0.7;">Système de gestion intégré pour supermarchés</p>
             </div>
         </div>
     </footer>
+    
+    <script>
+        // Carrousel auto-défilant
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.carousel-slide');
+        const indicators = document.querySelectorAll('.carousel-indicator');
+        const totalSlides = slides.length;
+        
+        function showSlide(index) {
+            slides.forEach(slide => slide.classList.remove('active'));
+            indicators.forEach(indicator => indicator.classList.remove('active'));
+            
+            slides[index].classList.add('active');
+            indicators[index].classList.add('active');
+        }
+        
+        function nextSlide() {
+            currentSlide = (currentSlide + 1) % totalSlides;
+            showSlide(currentSlide);
+        }
+        
+        // Auto-défilement toutes les 4 secondes
+        setInterval(nextSlide, 4000);
+        
+        // Click sur les indicateurs
+        indicators.forEach((indicator, index) => {
+            indicator.addEventListener('click', () => {
+                currentSlide = index;
+                showSlide(currentSlide);
+            });
+        });
+        
+        // Effet hover sur les cartes solutions
+        document.querySelectorAll('.solution-card').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-15px) scale(1.02)';
+                this.style.boxShadow = '0 20px 60px rgba(0,0,0,0.15)';
+                this.style.borderColor = '#667eea';
+            });
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0) scale(1)';
+                this.style.boxShadow = '0 10px 40px rgba(0,0,0,0.08)';
+                this.style.borderColor = 'transparent';
+            });
+        });
+        
+        // Animation au scroll
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+        
+        document.querySelectorAll('.solution-card').forEach((card, index) => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(30px)';
+            card.style.transition = `all 0.6s ease ${index * 0.1}s`;
+            observer.observe(card);
+        });
+    </script>
 </body>
 </html>
